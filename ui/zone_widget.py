@@ -22,11 +22,18 @@ from .constants import CARD_BACK_PATH, CARD_H, CARD_W, MIME_TYPE
 from .signals import game_signals
 
 
+_card_back_cache: Optional[QPixmap] = None
+
+
 def _make_card_back() -> QPixmap:
+    global _card_back_cache
+    if _card_back_cache is not None:
+        return _card_back_cache
     pix = QPixmap(CARD_BACK_PATH)
     if not pix.isNull():
-        return pix.scaled(CARD_W, CARD_H, Qt.AspectRatioMode.IgnoreAspectRatio,
-                          Qt.TransformationMode.SmoothTransformation)
+        _card_back_cache = pix.scaled(CARD_W, CARD_H, Qt.AspectRatioMode.IgnoreAspectRatio,
+                                      Qt.TransformationMode.SmoothTransformation)
+        return _card_back_cache
     # fallback
     pix = QPixmap(CARD_W, CARD_H)
     pix.fill(QColor(20, 20, 140))
@@ -37,7 +44,8 @@ def _make_card_back() -> QPixmap:
     p.setPen(QColor(255, 255, 255))
     p.drawText(QRect(0, 0, CARD_W, CARD_H), Qt.AlignmentFlag.AlignCenter, "DM")
     p.end()
-    return pix
+    _card_back_cache = pix
+    return _card_back_cache
 
 
 def _make_fallback(name: str) -> QPixmap:
@@ -73,6 +81,7 @@ class ZoneWidget(QFrame):
         self.pile_mode = pile_mode  # DECK zone: show as a pile with count
         self.mask_cards = mask_cards  # always render cards face-down
         self._card_positions: List[Tuple[int, int, int]] = []  # (x, y, card_index)
+        self._positions_dirty: bool = True
         self._pix_cache: dict = {}  # (card_id, face_down) -> QPixmap
         self._drag_start: Optional[QPoint] = None
         self._click_timer = QTimer(self)
@@ -83,7 +92,7 @@ class ZoneWidget(QFrame):
         self.setAcceptDrops(True)
         self.setMinimumHeight(CARD_H + self.TITLE_H + 10)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
-        game_signals.zones_updated.connect(self.update)
+        game_signals.zones_updated.connect(self._on_zones_updated)
 
     # ------------------------------------------------------------------
     # Layout helpers
@@ -99,6 +108,9 @@ class ZoneWidget(QFrame):
         return CARD_W if gc.tapped else CARD_H
 
     def _calculate_positions(self):
+        if not self._positions_dirty:
+            return
+        self._positions_dirty = False
         self._card_positions = []
         zone = self._zone()
         cards = zone.cards
@@ -164,6 +176,14 @@ class ZoneWidget(QFrame):
 
     def _invalidate_cache(self):
         self._pix_cache.clear()
+
+    def _on_zones_updated(self):
+        self._positions_dirty = True
+        self.update()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._positions_dirty = True
 
     # ------------------------------------------------------------------
     # Paint
@@ -383,7 +403,10 @@ class ZoneWidget(QFrame):
                 src_type = ZoneType(src)
             except ValueError:
                 return
-            gc = gs.zones[src_type].remove_card(data["card_index"])
+            card_id = data.get("card_id")
+            src_cards = gs.zones[src_type].cards
+            idx = next((i for i, c in enumerate(src_cards) if c.card.id == card_id), data["card_index"])
+            gc = gs.zones[src_type].remove_card(idx)
 
         if not gc:
             return

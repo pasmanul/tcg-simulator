@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from models.game_state import GameState, GameCard, ZoneType
+from models.game_state import GameState, GameCard, ZoneType, _dummy_card
 from models.card import Card
 
 from .deck_manager import DeckManagerDialog
@@ -209,7 +209,6 @@ class BoardWindow(QMainWindow):
         game_signals.zones_updated.emit()
 
     def _add_deck_card(self):
-        from models.game_state import _dummy_card
         gs = GameState.get_instance()
         gs.push_snapshot()
         gs.zones[ZoneType.DECK].add_card(_dummy_card())
@@ -229,7 +228,6 @@ class BoardWindow(QMainWindow):
         current = len(deck)
         if target > current:
             for _ in range(target - current):
-                from models.game_state import _dummy_card
                 deck.add_card(_dummy_card())
         elif target < current:
             for _ in range(current - target):
@@ -277,9 +275,11 @@ class BoardWindow(QMainWindow):
         )
         if not path:
             return
+        gs = GameState.get_instance()
+        snapshot = gs.to_dict()
         try:
-            GameState.get_instance().push_snapshot()
-            GameState.get_instance().load_file(path)
+            gs.load_file(path)
+            gs.push_dict(snapshot)
             game_signals.zones_updated.emit()
         except Exception as e:
             QMessageBox.warning(self, "エラー", f"ロード失敗: {e}")

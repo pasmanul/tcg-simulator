@@ -78,50 +78,56 @@ class _CardLabel(QLabel):
         drag.exec(Qt.DropAction.MoveAction)
 
     def _toggle_tap(self):
+        GameState.get_instance().push_snapshot()
         self.gc.tapped = not self.gc.tapped
         game_signals.zones_updated.emit()
 
     def _toggle_face(self):
+        GameState.get_instance().push_snapshot()
         self.gc.face_down = not self.gc.face_down
         self._refresh()
         game_signals.zones_updated.emit()
 
     def _remove(self):
+        GameState.get_instance().push_snapshot()
         GameState.get_instance().zones[self.zone_type].remove_card(self.index)
         game_signals.zones_updated.emit()
-        # Rebuild the dialog
         dlg = self.parent()
         while dlg and not isinstance(dlg, QDialog):
             dlg = dlg.parent()
-        if dlg:
-            dlg.accept()
+        if dlg and hasattr(dlg, '_rebuild'):
+            dlg._rebuild()
 
 
 class ExpandDialog(QDialog):
     def __init__(self, zone_type: ZoneType, label: str, parent=None):
         super().__init__(parent)
+        self.zone_type = zone_type
         self.setWindowTitle(f"{label} — カード一覧")
         self.resize(600, 180)
 
         layout = QVBoxLayout(self)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        layout.addWidget(self._scroll)
 
+        close_btn = QPushButton("閉じる")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+
+        self._rebuild()
+
+    def _rebuild(self):
         container = QWidget()
         row = QHBoxLayout(container)
         row.setAlignment(Qt.AlignmentFlag.AlignLeft)
         row.setSpacing(6)
 
-        zone = GameState.get_instance().zones[zone_type]
+        zone = GameState.get_instance().zones[self.zone_type]
         for i, gc in enumerate(zone.cards):
-            lbl = _CardLabel(gc, i, zone_type)
+            lbl = _CardLabel(gc, i, self.zone_type)
             row.addWidget(lbl)
 
-        scroll.setWidget(container)
-        layout.addWidget(scroll)
-
-        close_btn = QPushButton("閉じる")
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
+        self._scroll.setWidget(container)

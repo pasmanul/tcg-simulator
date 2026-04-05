@@ -89,6 +89,9 @@ class GameState:
     def push_snapshot(self):
         self._undo_stack.append(self.to_dict())
 
+    def push_dict(self, snapshot: dict):
+        self._undo_stack.append(snapshot)
+
     def undo(self) -> bool:
         if not self._undo_stack:
             return False

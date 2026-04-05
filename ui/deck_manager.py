@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 
 from PyQt6.QtCore import Qt
@@ -23,6 +24,11 @@ from models.deck import Deck
 
 DECKS_DIR = "data/decks"
 THUMB_W, THUMB_H = 52, 73
+
+
+def _sanitize_filename(name: str) -> str:
+    """Remove characters that are invalid in file names on Windows/Mac/Linux."""
+    return re.sub(r'[\\/:*?"<>|\x00-\x1f]', '_', name).strip()
 
 
 class DeckManagerDialog(QDialog):
@@ -282,7 +288,8 @@ class DeckManagerDialog(QDialog):
         if not name:
             QMessageBox.warning(self, "エラー", "デッキ名を入力してください")
             return
-        path = os.path.join(DECKS_DIR, f"{name}.json")
+        safe_name = _sanitize_filename(name)
+        path = os.path.join(DECKS_DIR, f"{safe_name}.json")
         try:
             self.current_deck.save(path)
             self._load_deck_list()
