@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 from models.game_state import GameState, GameCard, ZoneType, _dummy_card
 from models.card import Card
 
+from .constants import BATTLE_CARD_SCALE, CARD_H
 from .deck_manager import DeckManagerDialog
 from .signals import game_signals
 from .zone_widget import ZoneWidget
@@ -74,8 +75,10 @@ class BoardWindow(QMainWindow):
         )
 
         # Battle zone
-        self.battle_zone = ZoneWidget(ZoneType.BATTLE, "バトルゾーン")
-        self.battle_zone.setMinimumHeight(80)
+        battle_ch = int(CARD_H * BATTLE_CARD_SCALE)
+        self.battle_zone = ZoneWidget(ZoneType.BATTLE, "バトルゾーン", card_scale=BATTLE_CARD_SCALE)
+        battle_min_h = battle_ch + battle_ch // 2 + ZoneWidget.TITLE_H + 8
+        self.battle_zone.setMinimumHeight(battle_min_h)
         vsplit.addWidget(self._make_tap_panel(self.battle_zone, ZoneType.BATTLE))
 
         # Middle row: Shield | Deck | Graveyard
@@ -89,17 +92,22 @@ class BoardWindow(QMainWindow):
         mid.setSizes([620, 170, 170])
         vsplit.addWidget(mid)
 
-        # Mana zone
+        # Mana zone + Public hand (horizontal)
+        mana_row = QSplitter(Qt.Orientation.Horizontal)
+        mana_row.setStyleSheet("QSplitter::handle { background: #3a3a5a; width: 4px; }")
+
         self.mana_zone = ZoneWidget(ZoneType.MANA, "マナゾーン")
         self.mana_zone.setMinimumHeight(80)
-        vsplit.addWidget(self._make_tap_panel(self.mana_zone, ZoneType.MANA))
+        mana_row.addWidget(self._make_tap_panel(self.mana_zone, ZoneType.MANA))
 
-        # Public hand
         self.public_hand_zone = ZoneWidget(ZoneType.HAND, "手札", mask_cards=True)
         self.public_hand_zone.setMinimumHeight(80)
-        vsplit.addWidget(self.public_hand_zone)
+        mana_row.addWidget(self.public_hand_zone)
 
-        vsplit.setSizes([240, 160, 220, 120])
+        mana_row.setSizes([780, 180])
+        vsplit.addWidget(mana_row)
+
+        vsplit.setSizes([439, 160, 220])
         outer.addWidget(vsplit)
 
     def _make_tap_panel(self, zone_widget: ZoneWidget, zone_type: ZoneType) -> ZoneWidget:
@@ -120,10 +128,20 @@ class BoardWindow(QMainWindow):
         tap_btn.raise_()
         tap_btn.clicked.connect(lambda: self._set_all_tap(zone_type, True))
 
+        sort_btn = None
+        if zone_type == ZoneType.BATTLE:
+            sort_btn = QPushButton("名前順", zone_widget)
+            sort_btn.setFixedSize(48, 18)
+            sort_btn.setStyleSheet(btn_style)
+            sort_btn.raise_()
+            sort_btn.clicked.connect(self._sort_battle_zone)
+
         def reposition():
             w = zone_widget.width()
             untap_btn.move(w - 46, 2)
             tap_btn.move(w - 46 - 54, 2)
+            if sort_btn:
+                sort_btn.move(w - 46 - 54 - 52, 2)
 
         zone_widget.installEventFilter(self)
         zone_widget._reposition_tap_btns = reposition
@@ -135,6 +153,14 @@ class BoardWindow(QMainWindow):
         if event.type() == QEvent.Type.Resize and hasattr(obj, '_reposition_tap_btns'):
             obj._reposition_tap_btns()
         return super().eventFilter(obj, event)
+
+    def _sort_battle_zone(self):
+        gs = GameState.get_instance()
+        gs.push_snapshot()
+        row0 = sorted([gc for gc in gs.zones[ZoneType.BATTLE].cards if gc.row == 0], key=lambda gc: gc.card.name)
+        row1 = sorted([gc for gc in gs.zones[ZoneType.BATTLE].cards if gc.row == 1], key=lambda gc: gc.card.name)
+        gs.zones[ZoneType.BATTLE].cards[:] = row0 + row1
+        game_signals.zones_updated.emit()
 
     def _set_all_tap(self, zone_type: ZoneType, tapped: bool):
         GameState.get_instance().push_snapshot()

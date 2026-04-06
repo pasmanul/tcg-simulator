@@ -1,8 +1,7 @@
 import json
 from typing import List, Optional, Tuple
 
-from PyQt6.QtCore import QPoint, QRect, Qt, QTimer
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QPoint, QRect, Qt
 from PyQt6.QtGui import (
     QBrush,
     QColor,
@@ -18,11 +17,12 @@ from PyQt6.QtWidgets import QFrame, QMenu
 from models.card import Card
 from models.game_state import GameCard, GameState, ZoneType
 
-from .constants import CARD_BACK_PATH, CARD_H, CARD_W, MIME_TYPE
+from .constants import BATTLE_CARD_SCALE, CARD_BACK_PATH, CARD_H, CARD_W, MIME_TYPE
 from .signals import game_signals
 
 
 _card_back_cache: Optional[QPixmap] = None
+_card_back_tapped_cache: Optional[QPixmap] = None
 
 
 def _make_card_back() -> QPixmap:
@@ -46,6 +46,18 @@ def _make_card_back() -> QPixmap:
     p.end()
     _card_back_cache = pix
     return _card_back_cache
+
+
+def _make_card_back_tapped() -> QPixmap:
+    global _card_back_tapped_cache
+    if _card_back_tapped_cache is not None:
+        return _card_back_tapped_cache
+    back = _make_card_back()
+    t = QTransform().rotate(90)
+    rot = back.transformed(t, Qt.TransformationMode.SmoothTransformation)
+    _card_back_tapped_cache = rot.scaled(CARD_H, CARD_W, Qt.AspectRatioMode.IgnoreAspectRatio,
+                                         Qt.TransformationMode.SmoothTransformation)
+    return _card_back_tapped_cache
 
 
 def _make_fallback(name: str) -> QPixmap:
@@ -74,23 +86,24 @@ class ZoneWidget(QFrame):
 
     TITLE_H = 22  # pixels reserved for zone label
 
-    def __init__(self, zone_type: ZoneType, label: str, pile_mode: bool = False, mask_cards: bool = False, parent=None):
+    def __init__(self, zone_type: ZoneType, label: str, pile_mode: bool = False, mask_cards: bool = False, card_scale: float = 1.0, parent=None):
         super().__init__(parent)
         self.zone_type = zone_type
         self.label = label
         self.pile_mode = pile_mode  # DECK zone: show as a pile with count
         self.mask_cards = mask_cards  # always render cards face-down
+        self._cw = int(CARD_W * card_scale)  # このゾーンのカード幅
+        self._ch = int(CARD_H * card_scale)  # このゾーンのカード高
         self._card_positions: List[Tuple[int, int, int]] = []  # (x, y, card_index)
         self._positions_dirty: bool = True
         self._pix_cache: dict = {}  # (card_id, face_down) -> QPixmap
         self._drag_start: Optional[QPoint] = None
-        self._click_timer = QTimer(self)
-        self._click_timer.setSingleShot(True)
-        self._pending_action = None  # callable fired after double-click interval
-        self._click_timer.timeout.connect(self._fire_pending)
+        self._hover_idx: int = -1  # マウスオーバー中のカードインデックス
 
         self.setAcceptDrops(True)
-        self.setMinimumHeight(CARD_H + self.TITLE_H + 10)
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setMinimumHeight(self._ch + self.TITLE_H + 10)
         self.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Plain)
         game_signals.zones_updated.connect(self._on_zones_updated)
 
@@ -102,10 +115,38 @@ class ZoneWidget(QFrame):
         return GameState.get_instance().zones[self.zone_type]
 
     def _card_w(self, gc: GameCard) -> int:
-        return CARD_H if gc.tapped else CARD_W
+        return self._ch if gc.tapped else self._cw
 
     def _card_h(self, gc: GameCard) -> int:
-        return CARD_W if gc.tapped else CARD_H
+        return self._cw if gc.tapped else self._ch
+
+    def _battle_row_y(self, row: int) -> int:
+        """バトルゾーン各行の y 座標を返す。row=1 が上段、row=0 が下段。"""
+        area_y = self.TITLE_H + 2
+        return area_y if row == 1 else area_y + self._ch // 2
+
+    def _battle_row_from_pos(self, y: int) -> int:
+        """ドロップ y 座標から行(0 or 1)を判定する。"""
+        return 1 if y < self.TITLE_H + 2 + self._ch * 3 // 4 else 0
+
+    def _layout_single_row(self, row_cards: list, area_x: int, area_y: int, area_w: int) -> list:
+        """1行分のカード位置リスト [(x, y, card_index), ...] を返す。"""
+        if not row_cards:
+            return []
+        widths = [self._card_w(gc) for _, gc in row_cards]
+        total = sum(widths) + (len(row_cards) - 1) * 4
+        positions = []
+        if total <= area_w:
+            x = area_x + max(0, (area_w - total) // 2)
+            for (idx, gc), w in zip(row_cards, widths):
+                positions.append((x, area_y, idx))
+                x += w + 4
+        else:
+            max_w = max(widths)
+            spacing = max(16, (area_w - max_w) // max(1, len(row_cards) - 1))
+            for j, (idx, _) in enumerate(row_cards):
+                positions.append((area_x + j * spacing, area_y, idx))
+        return positions
 
     def _calculate_positions(self):
         if not self._positions_dirty:
@@ -123,9 +164,18 @@ class ZoneWidget(QFrame):
         area_w = self.width() - 8
 
         if self.pile_mode:
-            # Show only top card centred
-            cx = area_x + max(0, (area_w - CARD_W) // 2)
+            cx = area_x + max(0, (area_w - self._cw) // 2)
             self._card_positions = [(cx, area_y, n - 1)]
+            return
+
+        if self.zone_type == ZoneType.BATTLE:
+            # 下段(row=0)を先に、上段(row=1)を後に追加（描画・ヒットテスト順）
+            row0 = [(i, gc) for i, gc in enumerate(cards) if gc.row == 0]
+            row1 = [(i, gc) for i, gc in enumerate(cards) if gc.row == 1]
+            self._card_positions = (
+                self._layout_single_row(row0, area_x, self._battle_row_y(0), area_w) +
+                self._layout_single_row(row1, area_x, self._battle_row_y(1), area_w)
+            )
             return
 
         widths = [self._card_w(gc) for gc in cards]
@@ -145,12 +195,20 @@ class ZoneWidget(QFrame):
 
     def _is_overlapping(self) -> bool:
         cards = self._zone().cards
-        n = len(cards)
-        if n == 0 or self.pile_mode:
+        if not cards or self.pile_mode:
+            return False
+        area_w = self.width() - 8
+        if self.zone_type == ZoneType.BATTLE:
+            for row in (0, 1):
+                rc = [gc for gc in cards if gc.row == row]
+                if not rc:
+                    continue
+                widths = [self._card_w(gc) for gc in rc]
+                if sum(widths) + (len(rc) - 1) * 4 > area_w:
+                    return True
             return False
         widths = [self._card_w(gc) for gc in cards]
-        area_w = self.width() - 8
-        return sum(widths) + (n - 1) * 4 > area_w
+        return sum(widths) + (len(cards) - 1) * 4 > area_w
 
     # ------------------------------------------------------------------
     # Pixmap helpers
@@ -167,7 +225,7 @@ class ZoneWidget(QFrame):
                 if pix.isNull():
                     pix = _make_fallback(gc.card.name)
                 pix = pix.scaled(
-                    CARD_W, CARD_H,
+                    self._cw, self._ch,
                     Qt.AspectRatioMode.IgnoreAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
@@ -211,8 +269,8 @@ class ZoneWidget(QFrame):
         if self.pile_mode and n > 0:
             # Draw single back card + big count overlay
             x, y, _ = self._card_positions[0]
-            painter.drawPixmap(x, y, CARD_W, CARD_H, _make_card_back())
-            count_rect = QRect(x, y + CARD_H - 24, CARD_W, 24)
+            painter.drawPixmap(x, y, self._cw, self._ch, _make_card_back())
+            count_rect = QRect(x, y + self._ch - 24, self._cw, 24)
             painter.fillRect(count_rect, QColor(0, 0, 0, 200))
             painter.setFont(QFont("Arial", 13, QFont.Weight.Bold))
             painter.setPen(QColor(255, 255, 0))
@@ -228,27 +286,31 @@ class ZoneWidget(QFrame):
             for s in range(min(stack_count, 3), 0, -1):
                 offset = s * 3
                 painter.setOpacity(0.5)
-                painter.drawPixmap(x - offset, y + offset, CARD_W, CARD_H, _make_card_back())
+                if gc.tapped:
+                    oy = (self._ch - self._cw) // 2
+                    painter.drawPixmap(x - offset, y + oy + offset, self._ch, self._cw, _make_card_back_tapped())
+                else:
+                    painter.drawPixmap(x - offset, y + offset, self._cw, self._ch, _make_card_back())
                 painter.setOpacity(1.0)
 
             if gc.tapped:
                 t = QTransform().rotate(90)
                 rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
                 rot = rot.scaled(
-                    CARD_H, CARD_W,
+                    self._ch, self._cw,
                     Qt.AspectRatioMode.IgnoreAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
-                oy = (CARD_H - CARD_W) // 2
+                oy = (self._ch - self._cw) // 2
                 painter.drawPixmap(x, y + oy, rot)
                 painter.setPen(QPen(QColor(255, 200, 0), 2))
-                painter.drawRect(x, y + oy, CARD_H - 1, CARD_W - 1)
+                painter.drawRect(x, y + oy, self._ch - 1, self._cw - 1)
             elif self.zone_type == ZoneType.MANA:
                 t = QTransform().rotate(180)
                 rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
-                painter.drawPixmap(x, y, CARD_W, CARD_H, rot)
+                painter.drawPixmap(x, y, self._cw, self._ch, rot)
             else:
-                painter.drawPixmap(x, y, CARD_W, CARD_H, pix)
+                painter.drawPixmap(x, y, self._cw, self._ch, pix)
 
             # スタック枚数バッジ
             if stack_count > 0:
@@ -270,13 +332,16 @@ class ZoneWidget(QFrame):
     def _card_at(self, pos: QPoint) -> Tuple[Optional[GameCard], int]:
         self._calculate_positions()
         zone = self._zone()
+        n = len(zone.cards)
         for x, y, i in reversed(self._card_positions):
+            if i >= n:
+                continue
             gc = zone.cards[i]
             if gc.tapped:
-                oy = (CARD_H - CARD_W) // 2
-                rect = QRect(x, y + oy, CARD_H, CARD_W)
+                oy = (self._ch - self._cw) // 2
+                rect = QRect(x, y + oy, self._ch, self._cw)
             else:
-                rect = QRect(x, y, CARD_W, CARD_H)
+                rect = QRect(x, y, self._cw, self._ch)
             if rect.contains(pos):
                 return gc, i
         return None, -1
@@ -295,6 +360,7 @@ class ZoneWidget(QFrame):
 
     def mouseMoveEvent(self, event):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
+            _, self._hover_idx = self._card_at(event.pos())
             return
         if self._drag_start is None:
             return
@@ -302,40 +368,65 @@ class ZoneWidget(QFrame):
         if gc is None:
             return
         self._drag_start = None
+        self._hover_idx = -1
         self._start_drag(gc, idx)
+
+    def enterEvent(self, event):
+        self.setFocus()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover_idx = -1
+        super().leaveEvent(event)
+
+    def keyPressEvent(self, event):
+        if self._hover_idx == -1:
+            super().keyPressEvent(event)
+            return
+        cards = self._zone().cards
+        idx = self._hover_idx
+        key = event.key()
+
+        # 上下キー: バトルゾーンの行移動
+        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and self.zone_type == ZoneType.BATTLE:
+            gc = cards[idx]
+            new_row = 1 if key == Qt.Key.Key_Up else 0
+            if gc.row != new_row:
+                GameState.get_instance().push_snapshot()
+                gc.row = new_row
+                self._positions_dirty = True
+                game_signals.zones_updated.emit()
+        # 左右キー: 同行内で位置移動
+        elif key == Qt.Key.Key_Left and idx > 0:
+            GameState.get_instance().push_snapshot()
+            cards[idx], cards[idx - 1] = cards[idx - 1], cards[idx]
+            self._hover_idx -= 1
+            self._positions_dirty = True
+            game_signals.zones_updated.emit()
+        elif key == Qt.Key.Key_Right and idx < len(cards) - 1:
+            GameState.get_instance().push_snapshot()
+            cards[idx], cards[idx + 1] = cards[idx + 1], cards[idx]
+            self._hover_idx += 1
+            self._positions_dirty = True
+            game_signals.zones_updated.emit()
+        else:
+            super().keyPressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self._drag_start is not None:
             gc, _ = self._card_at(self._drag_start)
-            if gc:
-                if self.zone_type in (ZoneType.MANA, ZoneType.BATTLE):
-                    self._pending_action = lambda g=gc: self._toggle_tap(g)
-                elif not gc.face_down and not self.mask_cards:
-                    pos = event.globalPosition().toPoint()
-                    self._pending_action = lambda g=gc, p=pos: self._show_zoom(g, p)
-                if self._pending_action:
-                    self._click_timer.start(QApplication.doubleClickInterval())
+            if gc and self.zone_type in (ZoneType.MANA, ZoneType.BATTLE):
+                self._toggle_tap(gc)
         self._drag_start = None
 
     def mouseDoubleClickEvent(self, event):
-        self._click_timer.stop()
-        self._pending_action = None
-        if self.zone_type in (ZoneType.MANA, ZoneType.BATTLE):
-            gc, _ = self._card_at(event.pos())
-            if gc and not gc.face_down:
-                self._show_zoom(gc, event.globalPosition().toPoint())
-            return
-        if len(self._zone().cards) > 0:
+        gc, _ = self._card_at(event.pos())
+        if gc is None and len(self._zone().cards) > 0:
             self._open_expand()
 
     # ------------------------------------------------------------------
     # Zoom
     # ------------------------------------------------------------------
-
-    def _fire_pending(self):
-        if self._pending_action:
-            self._pending_action()
-            self._pending_action = None
 
     def _show_zoom(self, gc: GameCard, global_pos=None):
         from .card_zoom import CardZoomDialog
@@ -364,7 +455,7 @@ class ZoneWidget(QFrame):
         mime.setData(MIME_TYPE, payload.encode())
         drag.setMimeData(mime)
         drag.setPixmap(self._get_pixmap(gc))
-        drag.setHotSpot(QPoint(CARD_W // 2, CARD_H // 2))
+        drag.setHotSpot(QPoint(self._cw // 2, self._ch // 2))
         drag.exec(Qt.DropAction.MoveAction)
 
     # ------------------------------------------------------------------
@@ -391,9 +482,40 @@ class ZoneWidget(QFrame):
         self._invalidate_cache()
         game_signals.zones_updated.emit()
 
+    def _calc_insert_index(self, drop_pos: QPoint, src_idx: int) -> int:
+        """ドロップ位置 X 座標から、src_idx の card を取り除いた後の挿入インデックスを返す。"""
+        positions = self._card_positions  # [(x, y, card_idx), ...] — 左から順
+        if not positions:
+            return 0
+        drop_x = drop_pos.x()
+        old_insert = len(self._zone().cards)  # デフォルト: 末尾
+        for x, y, card_idx in positions:
+            card_center_x = x + CARD_W // 2
+            if drop_x < card_center_x:
+                old_insert = card_idx
+                break
+        # src_idx の card を取り除くとインデックスがずれる
+        if src_idx < old_insert:
+            return old_insert - 1
+        return old_insert
+
     def _handle_drop(self, data: dict, drop_pos: QPoint = None):
         gs = GameState.get_instance()
         src = data["source_zone"]
+
+        is_same_zone = (src == self.zone_type.value and src != "deck_list")
+
+        # 同一ゾーン並び替え: カード除去前に挿入インデックスを計算
+        target_insert_idx = None
+        if is_same_zone and drop_pos is not None:
+            self._calculate_positions()
+            card_id_pre = data.get("card_id")
+            src_cards_pre = gs.zones[self.zone_type].cards
+            src_idx_pre = next(
+                (i for i, c in enumerate(src_cards_pre) if c.card.id == card_id_pre),
+                data["card_index"],
+            )
+            target_insert_idx = self._calc_insert_index(drop_pos, src_idx_pre)
 
         if src == "deck_list":
             card = Card(name=data["card_name"], image_path=data["image_path"], id=data["card_id"])
@@ -411,12 +533,15 @@ class ZoneWidget(QFrame):
         if not gc:
             return
 
-        # バトルゾーンで既存カードの上にドロップ → 進化
+        # カード除去後は位置キャッシュが古くなるので再計算フラグを立てる
+        self._positions_dirty = True
+
+        # バトルゾーンで既存カードの上にドロップ → 進化（同一ゾーン含む）
         if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
             target, _ = self._card_at(drop_pos)
             if target and target is not gc:
-                # gc が新しいトップ、target 以下をそのまま引き継ぐ
                 gc.tapped = target.tapped
+                gc.row = target.row
                 gc.under_cards = [target] + target.under_cards
                 target.under_cards = []
                 zone = gs.zones[self.zone_type]
@@ -425,6 +550,15 @@ class ZoneWidget(QFrame):
                         zone.cards[i] = gc
                         break
                 return
+
+        # バトルゾーンはドロップ位置の y で行を決定
+        if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
+            gc.row = self._battle_row_from_pos(drop_pos.y())
+
+        # 同一ゾーン内並び替え
+        if is_same_zone and target_insert_idx is not None:
+            gs.zones[self.zone_type].insert_card(target_insert_idx, gc)
+            return
 
         if self.zone_type == ZoneType.SHIELD:
             gc.face_down = True
@@ -440,6 +574,14 @@ class ZoneWidget(QFrame):
         menu.addAction(tap_text, lambda: self._toggle_tap(gc))
         face_text = "表向きにする" if gc.face_down else "裏向きにする"
         menu.addAction(face_text, lambda: self._toggle_face(gc))
+        if not gc.face_down and not self.mask_cards:
+            menu.addAction("拡大表示", lambda: self._show_zoom(gc))
+        if self.zone_type == ZoneType.BATTLE:
+            menu.addSeparator()
+            if gc.row == 0:
+                menu.addAction("上段へ移動", lambda: self._move_row(gc, 1))
+            else:
+                menu.addAction("下段へ移動", lambda: self._move_row(gc, 0))
         if gc.under_cards:
             menu.addSeparator()
             menu.addAction(f"スタックを確認（{len(gc.under_cards) + 1}枚）",
@@ -448,6 +590,12 @@ class ZoneWidget(QFrame):
         menu.addSeparator()
         menu.addAction("このゾーンから削除", lambda: self._remove_card(idx))
         menu.exec(pos)
+
+    def _move_row(self, gc: GameCard, row: int):
+        GameState.get_instance().push_snapshot()
+        gc.row = row
+        self._positions_dirty = True
+        game_signals.zones_updated.emit()
 
     def _show_stack(self, gc: GameCard):
         from .stack_dialog import StackDialog
@@ -469,6 +617,8 @@ class ZoneWidget(QFrame):
     def _toggle_tap(self, gc: GameCard):
         GameState.get_instance().push_snapshot()
         gc.tapped = not gc.tapped
+        for under in gc.under_cards:
+            under.tapped = gc.tapped
         self._invalidate_cache()
         game_signals.zones_updated.emit()
 

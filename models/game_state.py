@@ -20,6 +20,7 @@ def _gc_to_dict(gc: "GameCard") -> dict:
         "card": {"name": gc.card.name, "image_path": gc.card.image_path, "id": gc.card.id},
         "tapped": gc.tapped,
         "face_down": gc.face_down,
+        "row": gc.row,
         "under_cards": [_gc_to_dict(c) for c in gc.under_cards],
     }
 
@@ -29,6 +30,7 @@ def _gc_from_dict(d: dict) -> "GameCard":
     gc = GameCard(card)
     gc.tapped = d["tapped"]
     gc.face_down = d["face_down"]
+    gc.row = d.get("row", 0)
     gc.under_cards = [_gc_from_dict(c) for c in d.get("under_cards", [])]
     return gc
 
@@ -48,6 +50,7 @@ class GameCard:
         self.tapped: bool = False
         self.face_down: bool = False
         self.under_cards: List["GameCard"] = []
+        self.row: int = 0  # 0=下段, 1=上段（バトルゾーン用）
 
 
 class Zone:
@@ -57,6 +60,9 @@ class Zone:
 
     def add_card(self, game_card: GameCard):
         self.cards.append(game_card)
+
+    def insert_card(self, index: int, game_card: GameCard):
+        self.cards.insert(max(0, min(index, len(self.cards))), game_card)
 
     def remove_card(self, index: int) -> Optional[GameCard]:
         if 0 <= index < len(self.cards):
@@ -135,6 +141,7 @@ class GameState:
 
     def initialize_field(self):
         self.reset_field()
+        self.zones[ZoneType.HAND].cards.clear()
         for _ in range(5):
             self.zones[ZoneType.SHIELD].add_card(_dummy_card())
         for _ in range(30):

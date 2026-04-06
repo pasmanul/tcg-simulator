@@ -11,20 +11,15 @@ from PyQt6.QtWidgets import (
 )
 
 from models.game_state import GameCard
-from .constants import CARD_H, CARD_W, CARD_BACK_PATH
+from .constants import CARD_H, CARD_W
 
 
 def _card_pixmap(gc: GameCard) -> QPixmap:
-    if gc.face_down:
-        pix = QPixmap(CARD_BACK_PATH)
-        if pix.isNull():
-            pix = QPixmap(CARD_W, CARD_H)
-            pix.fill(QColor(20, 20, 140))
-    else:
-        pix = QPixmap(gc.card.image_path)
-        if pix.isNull():
-            pix = QPixmap(CARD_W, CARD_H)
-            pix.fill(QColor(70, 70, 70))
+    # 進化スタックの中身は常に表面を表示（公開情報）
+    pix = QPixmap(gc.card.image_path)
+    if pix.isNull():
+        pix = QPixmap(CARD_W, CARD_H)
+        pix.fill(QColor(70, 70, 70))
     return pix.scaled(CARD_W, CARD_H,
                       Qt.AspectRatioMode.IgnoreAspectRatio,
                       Qt.TransformationMode.SmoothTransformation)

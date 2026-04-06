@@ -11,6 +11,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from models.card import Card
+from models.game_state import GameCard, GameState, ZoneType
+from .signals import game_signals
+
 from .constants import CARD_H, CARD_W, MIME_TYPE
 
 THUMB_W = 110
@@ -64,6 +68,14 @@ class _DeckCardEntry(QFrame):
         count_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         count_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(count_lbl)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.RightButton:
+            gs = GameState.get_instance()
+            gs.push_snapshot()
+            gc = GameCard(Card(name=self.card.name, image_path=self.card.image_path, id=self.card.id))
+            gs.zones[ZoneType.HAND].add_card(gc)
+            game_signals.zones_updated.emit()
 
     def mouseMoveEvent(self, event):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
