@@ -61,13 +61,30 @@ class _DeckCardEntry(QFrame):
         name_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(name_lbl)
 
-        # Count
+        # Mana + Count row
+        info_row_widget = QWidget()
+        info_row_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        info_row_widget.setStyleSheet("background: transparent;")
+        from PyQt6.QtWidgets import QHBoxLayout as _HBox
+        info_row = _HBox(info_row_widget)
+        info_row.setContentsMargins(0, 0, 0, 0)
+        info_row.setSpacing(4)
+
+        mana_lbl = QLabel(f"M{card.mana}")
+        mana_lbl.setFont(QFont("Arial", 9, QFont.Weight.Bold))
+        mana_lbl.setStyleSheet("color: #44bbff; border: none;")
+        mana_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        mana_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        info_row.addWidget(mana_lbl)
+
         count_lbl = QLabel(f"×{card.count}")
         count_lbl.setFont(QFont("Arial", 9, QFont.Weight.Bold))
         count_lbl.setStyleSheet("color: #ffdd44; border: none;")
         count_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         count_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(count_lbl)
+        info_row.addWidget(count_lbl)
+
+        layout.addWidget(info_row_widget)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:

@@ -21,7 +21,15 @@ class Deck:
         return {
             "name": self.name,
             "cards": [
-                {"id": c.id, "name": c.name, "image_path": c.image_path, "count": c.count}
+                {
+                    "id": c.id,
+                    "name": c.name,
+                    "image_path": c.image_path,
+                    "count": c.count,
+                    "mana": c.mana,
+                    "civilizations": c.civilizations,
+                    "card_type": c.card_type,
+                }
                 for c in self.cards
             ],
         }
@@ -35,6 +43,9 @@ class Deck:
                     name=c["name"],
                     image_path=c["image_path"],
                     count=c.get("count", 1),
+                    mana=c.get("mana", 0),
+                    civilizations=c.get("civilizations", []),
+                    card_type=c.get("card_type", ""),
                     id=c.get("id", str(uuid.uuid4())),
                 )
             )
