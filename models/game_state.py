@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 from .card import Card
 
 
-def _dummy_card() -> "GameCard":
+def make_dummy_card() -> "GameCard":
     card = Card(name="ダミー", image_path="", id=f"dummy_{uuid.uuid4()}")
     gc = GameCard(card)
     gc.face_down = True
@@ -143,6 +143,6 @@ class GameState:
         self.reset_field()
         self.zones[ZoneType.HAND].cards.clear()
         for _ in range(5):
-            self.zones[ZoneType.SHIELD].add_card(_dummy_card())
+            self.zones[ZoneType.SHIELD].add_card(make_dummy_card())
         for _ in range(30):
-            self.zones[ZoneType.DECK].add_card(_dummy_card())
+            self.zones[ZoneType.DECK].add_card(make_dummy_card())

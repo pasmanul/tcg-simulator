@@ -1,10 +1,11 @@
 import json
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QMimeData, Qt
 from PyQt6.QtGui import QColor, QDrag, QFont, QPixmap
 from PyQt6.QtWidgets import (
     QFrame,
     QGridLayout,
+    QHBoxLayout,
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -65,8 +66,7 @@ class _DeckCardEntry(QFrame):
         info_row_widget = QWidget()
         info_row_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         info_row_widget.setStyleSheet("background: transparent;")
-        from PyQt6.QtWidgets import QHBoxLayout as _HBox
-        info_row = _HBox(info_row_widget)
+        info_row = QHBoxLayout(info_row_widget)
         info_row.setContentsMargins(0, 0, 0, 0)
         info_row.setSpacing(4)
 
@@ -98,7 +98,6 @@ class _DeckCardEntry(QFrame):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return
         drag = QDrag(self)
-        from PyQt6.QtCore import QMimeData
         mime = QMimeData()
         payload = json.dumps({
             "source_zone": "deck_list",

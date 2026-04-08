@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel
 
@@ -31,7 +31,6 @@ class CardZoomDialog(QDialog):
             p = QPainter(pix)
             p.setPen(QColor(220, 220, 220))
             p.setFont(QFont("Arial", 7))
-            from PyQt6.QtCore import QRect
             p.drawText(
                 QRect(2, 2, CARD_W - 4, CARD_H - 4),
                 Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap,

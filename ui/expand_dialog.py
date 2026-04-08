@@ -1,6 +1,6 @@
 import json
 
-from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtCore import QMimeData, QPoint, Qt
 from PyQt6.QtGui import QColor, QDrag, QPixmap
 from PyQt6.QtWidgets import (
     QDialog,
@@ -20,11 +20,12 @@ from .signals import game_signals
 
 
 class _CardLabel(QLabel):
-    def __init__(self, gc: GameCard, index: int, zone_type: ZoneType, parent=None):
+    def __init__(self, gc: GameCard, index: int, zone_type: ZoneType, on_remove=None, parent=None):
         super().__init__(parent)
         self.gc = gc
         self.index = index
         self.zone_type = zone_type
+        self._on_remove = on_remove
         self.setFixedSize(CARD_W, CARD_H)
         self.setToolTip(gc.card.name)
         self._refresh()
@@ -62,7 +63,6 @@ class _CardLabel(QLabel):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return
         drag = QDrag(self)
-        from PyQt6.QtCore import QMimeData
         mime = QMimeData()
         payload = json.dumps({
             "source_zone": self.zone_type.value,
@@ -92,11 +92,8 @@ class _CardLabel(QLabel):
         GameState.get_instance().push_snapshot()
         GameState.get_instance().zones[self.zone_type].remove_card(self.index)
         game_signals.zones_updated.emit()
-        dlg = self.parent()
-        while dlg and not isinstance(dlg, QDialog):
-            dlg = dlg.parent()
-        if dlg and hasattr(dlg, '_rebuild'):
-            dlg._rebuild()
+        if self._on_remove:
+            self._on_remove()
 
 
 class ExpandDialog(QDialog):
@@ -127,7 +124,7 @@ class ExpandDialog(QDialog):
 
         zone = GameState.get_instance().zones[self.zone_type]
         for i, gc in enumerate(zone.cards):
-            lbl = _CardLabel(gc, i, self.zone_type)
+            lbl = _CardLabel(gc, i, self.zone_type, on_remove=self._rebuild)
             row.addWidget(lbl)
 
         self._scroll.setWidget(container)

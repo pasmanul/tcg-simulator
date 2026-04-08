@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional, Tuple
 
-from PyQt6.QtCore import QPoint, QRect, Qt
+from PyQt6.QtCore import QMimeData, QPoint, QRect, Qt
 from PyQt6.QtGui import (
     QBrush,
     QColor,
@@ -116,9 +116,6 @@ class ZoneWidget(QFrame):
 
     def _card_w(self, gc: GameCard) -> int:
         return self._ch if gc.tapped else self._cw
-
-    def _card_h(self, gc: GameCard) -> int:
-        return self._cw if gc.tapped else self._ch
 
     def _battle_row_y(self, row: int) -> int:
         """バトルゾーン各行の y 座標を返す。row=1 が上段、row=0 が下段。"""
@@ -443,7 +440,6 @@ class ZoneWidget(QFrame):
 
     def _start_drag(self, gc: GameCard, idx: int):
         drag = QDrag(self)
-        from PyQt6.QtCore import QMimeData
         mime = QMimeData()
         payload = json.dumps({
             "source_zone": self.zone_type.value,
@@ -457,10 +453,6 @@ class ZoneWidget(QFrame):
         drag.setPixmap(self._get_pixmap(gc))
         drag.setHotSpot(QPoint(self._cw // 2, self._ch // 2))
         drag.exec(Qt.DropAction.MoveAction)
-
-    # ------------------------------------------------------------------
-    # Drop
-    # ------------------------------------------------------------------
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat(MIME_TYPE):
@@ -490,7 +482,7 @@ class ZoneWidget(QFrame):
         drop_x = drop_pos.x()
         old_insert = len(self._zone().cards)  # デフォルト: 末尾
         for x, y, card_idx in positions:
-            card_center_x = x + CARD_W // 2
+            card_center_x = x + self._cw // 2
             if drop_x < card_center_x:
                 old_insert = card_idx
                 break

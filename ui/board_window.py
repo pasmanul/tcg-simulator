@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from models.game_state import GameState, GameCard, ZoneType, _dummy_card
+from models.game_state import GameState, GameCard, ZoneType, make_dummy_card
 from models.card import Card
 
 from .constants import BATTLE_CARD_SCALE, CARD_H
@@ -237,7 +237,7 @@ class BoardWindow(QMainWindow):
     def _add_deck_card(self):
         gs = GameState.get_instance()
         gs.push_snapshot()
-        gs.zones[ZoneType.DECK].add_card(_dummy_card())
+        gs.zones[ZoneType.DECK].add_card(make_dummy_card())
         game_signals.zones_updated.emit()
 
     def _set_deck_count(self):
@@ -254,7 +254,7 @@ class BoardWindow(QMainWindow):
         current = len(deck)
         if target > current:
             for _ in range(target - current):
-                deck.add_card(_dummy_card())
+                deck.add_card(make_dummy_card())
         elif target < current:
             for _ in range(current - target):
                 deck.remove_card(len(deck) - 1)

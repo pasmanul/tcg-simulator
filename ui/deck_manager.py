@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QMimeData, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QDrag, QFont, QPixmap
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -164,7 +164,6 @@ class _LibraryCardEntry(QFrame):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return
         drag = QDrag(self)
-        from PyQt6.QtCore import QMimeData
         mime = QMimeData()
         payload = json.dumps({
             "id": self.lib_card.id,
