@@ -11,6 +11,7 @@ class Deck:
 
     def __init__(self, name: str = "新しいデッキ"):
         self.name = name
+        self.back_image_path: str = ""
         self.cards: List[Card] = []
 
     @property
@@ -20,6 +21,7 @@ class Deck:
     def to_dict(self) -> dict:
         return {
             "name": self.name,
+            "back_image_path": self.back_image_path,
             "cards": [
                 {
                     "id": c.id,
@@ -37,6 +39,7 @@ class Deck:
     @classmethod
     def from_dict(cls, data: dict) -> "Deck":
         deck = cls(data["name"])
+        deck.back_image_path = data.get("back_image_path", "")
         for c in data.get("cards", []):
             deck.cards.append(
                 Card(

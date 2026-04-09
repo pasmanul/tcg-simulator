@@ -158,7 +158,10 @@ class HandWindow(QMainWindow):
             self.current_deck = Deck.load(path)
             self.deck_label.setText(self.current_deck.name)
             self.deck_list.set_deck(self.current_deck)
-            GameState.get_instance().current_deck = self.current_deck
+            gs = GameState.get_instance()
+            gs.current_deck = self.current_deck
+            gs.back_image_path = self.current_deck.back_image_path
+            game_signals.zones_updated.emit()
             cfg = _load_config()
             cfg["last_deck"] = path
             _save_config(cfg)
