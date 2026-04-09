@@ -1,0 +1,47 @@
+name: Build Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onedir --windowed --name dmapp main.py
+
+      - name: Copy data folder into dist
+        run: |
+          Copy-Item -Path data -Destination dist\dmapp\data -Recurse -Exclude saves
+
+      - name: Create empty saves and decks directories
+        run: |
+          New-Item -ItemType Directory -Force -Path dist\dmapp\data\saves
+          New-Item -ItemType Directory -Force -Path dist\dmapp\data\decks
+
+      - name: Create zip archive
+        run: |
+          Compress-Archive -Path dist\dmapp\* -DestinationPath dmapp-${{ github.ref_name }}-windows.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dmapp-${{ github.ref_name }}-windows.zip
+          generate_release_notes: true
