@@ -90,6 +90,7 @@ class GameState:
     def __init__(self):
         self.zones: Dict[ZoneType, Zone] = {zt: Zone(zt) for zt in ZoneType}
         self.current_deck = None
+        self.back_image_path: str = ""
         self._undo_stack: deque = deque(maxlen=self._UNDO_LIMIT)
 
     @classmethod

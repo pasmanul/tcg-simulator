@@ -22,8 +22,8 @@ from .constants import BATTLE_CARD_SCALE, CARD_BACK_PATH, CARD_H, CARD_W, MIME_T
 from .signals import game_signals
 
 
-_card_back_cache: Optional[QPixmap] = None
-_card_back_tapped_cache: Optional[QPixmap] = None
+_card_back_cache: dict = {}
+_card_back_tapped_cache: dict = {}
 
 _MARKER_COLORS = {
     "red":    QColor(220, 60,  60),
@@ -41,15 +41,15 @@ _MARKER_LABELS = {
 }
 
 
-def _make_card_back() -> QPixmap:
-    global _card_back_cache
-    if _card_back_cache is not None:
-        return _card_back_cache
-    pix = QPixmap(CARD_BACK_PATH)
+def _make_card_back(path: str = CARD_BACK_PATH) -> QPixmap:
+    if path in _card_back_cache:
+        return _card_back_cache[path]
+    pix = QPixmap(path)
     if not pix.isNull():
-        _card_back_cache = pix.scaled(CARD_W, CARD_H, Qt.AspectRatioMode.IgnoreAspectRatio,
-                                      Qt.TransformationMode.SmoothTransformation)
-        return _card_back_cache
+        result = pix.scaled(CARD_W, CARD_H, Qt.AspectRatioMode.IgnoreAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation)
+        _card_back_cache[path] = result
+        return result
     # fallback
     pix = QPixmap(CARD_W, CARD_H)
     pix.fill(QColor(20, 20, 140))
@@ -60,20 +60,20 @@ def _make_card_back() -> QPixmap:
     p.setPen(QColor(255, 255, 255))
     p.drawText(QRect(0, 0, CARD_W, CARD_H), Qt.AlignmentFlag.AlignCenter, "DM")
     p.end()
-    _card_back_cache = pix
-    return _card_back_cache
+    _card_back_cache[path] = pix
+    return pix
 
 
-def _make_card_back_tapped() -> QPixmap:
-    global _card_back_tapped_cache
-    if _card_back_tapped_cache is not None:
-        return _card_back_tapped_cache
-    back = _make_card_back()
+def _make_card_back_tapped(path: str = CARD_BACK_PATH) -> QPixmap:
+    if path in _card_back_tapped_cache:
+        return _card_back_tapped_cache[path]
+    back = _make_card_back(path)
     t = QTransform().rotate(90)
     rot = back.transformed(t, Qt.TransformationMode.SmoothTransformation)
-    _card_back_tapped_cache = rot.scaled(CARD_H, CARD_W, Qt.AspectRatioMode.IgnoreAspectRatio,
-                                         Qt.TransformationMode.SmoothTransformation)
-    return _card_back_tapped_cache
+    result = rot.scaled(CARD_H, CARD_W, Qt.AspectRatioMode.IgnoreAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+    _card_back_tapped_cache[path] = result
+    return result
 
 
 def _make_fallback(name: str) -> QPixmap:
@@ -230,13 +230,16 @@ class ZoneWidget(QFrame):
     # Pixmap helpers
     # ------------------------------------------------------------------
 
+    def _back_path(self) -> str:
+        return GameState.get_instance().back_image_path or CARD_BACK_PATH
+
     def _get_pixmap(self, gc: GameCard) -> QPixmap:
         # mask_cards=True でも revealed=True なら表向きにする
         face_down = gc.face_down or (self.mask_cards and not gc.revealed)
-        key = (gc.card.id, face_down)
+        key = (gc.card.id, face_down, self._back_path() if face_down else "")
         if key not in self._pix_cache:
             if face_down:
-                pix = _make_card_back()
+                pix = _make_card_back(self._back_path())
             else:
                 pix = QPixmap(gc.card.image_path)
                 if pix.isNull():
@@ -297,7 +300,7 @@ class ZoneWidget(QFrame):
         if self.pile_mode and n > 0:
             # Draw single back card + big count overlay
             x, y, _ = self._card_positions[0]
-            painter.drawPixmap(x, y, self._cw, self._ch, _make_card_back())
+            painter.drawPixmap(x, y, self._cw, self._ch, _make_card_back(self._back_path()))
             count_rect = QRect(x, y + self._ch - 24, self._cw, 24)
             painter.fillRect(count_rect, QColor(0, 0, 0, 200))
             painter.setFont(QFont("Arial", 13, QFont.Weight.Bold))
@@ -322,9 +325,9 @@ class ZoneWidget(QFrame):
                 painter.setOpacity(0.5)
                 if gc.tapped:
                     oy = (self._ch - self._cw) // 2
-                    painter.drawPixmap(x - offset, y + oy + offset, self._ch, self._cw, _make_card_back_tapped())
+                    painter.drawPixmap(x - offset, y + oy + offset, self._ch, self._cw, _make_card_back_tapped(self._back_path()))
                 else:
-                    painter.drawPixmap(x - offset, y + offset, self._cw, self._ch, _make_card_back())
+                    painter.drawPixmap(x - offset, y + offset, self._cw, self._ch, _make_card_back(self._back_path()))
                 painter.setOpacity(1.0)
 
             if gc.tapped:
@@ -506,7 +509,7 @@ class ZoneWidget(QFrame):
         # 非公開ゾーン（手札・シールド・山札）またはマスク中のゾーンからのドラッグは
         # カーソルに裏面を表示し、画面共有時に内容が漏れないようにする
         use_back = gc.face_down or self.mask_cards or (self.zone_type in self._HIDDEN_ZONES)
-        drag.setPixmap(_make_card_back() if use_back else self._get_pixmap(gc))
+        drag.setPixmap(_make_card_back(self._back_path()) if use_back else self._get_pixmap(gc))
         drag.setHotSpot(QPoint(self._cw // 2, self._ch // 2))
         drag.exec(Qt.DropAction.MoveAction)
 

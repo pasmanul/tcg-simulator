@@ -722,6 +722,23 @@ class DeckManagerDialog(QDialog):
         name_row.addWidget(self.count_label)
         layout.addLayout(name_row)
 
+        back_row = QHBoxLayout()
+        back_row.addWidget(QLabel("裏面画像:"))
+        self.back_img_edit = QLineEdit()
+        self.back_img_edit.setPlaceholderText("未設定（デフォルト）")
+        self.back_img_edit.textChanged.connect(self._on_back_image_changed)
+        back_row.addWidget(self.back_img_edit)
+        back_browse_btn = QPushButton("...")
+        back_browse_btn.setFixedWidth(28)
+        back_browse_btn.clicked.connect(self._browse_back_image)
+        back_row.addWidget(back_browse_btn)
+        back_clear_btn = QPushButton("×")
+        back_clear_btn.setFixedWidth(24)
+        back_clear_btn.setToolTip("裏面をデフォルトに戻す")
+        back_clear_btn.clicked.connect(lambda: self.back_img_edit.clear())
+        back_row.addWidget(back_clear_btn)
+        layout.addLayout(back_row)
+
         layout.addWidget(QLabel("デッキ内容（ここへドロップ）"))
 
         self.deck_card_grid = _DeckCardGrid(on_drop=self._on_library_drop)
@@ -774,6 +791,7 @@ class DeckManagerDialog(QDialog):
         try:
             self.current_deck = Deck.load(path)
             self.deck_name_edit.setText(self.current_deck.name)
+            self.back_img_edit.setText(self.current_deck.back_image_path)
             self._refresh_deck_grid()
         except Exception as e:
             QMessageBox.warning(self, "エラー", f"読み込み失敗: {e}")
@@ -781,6 +799,7 @@ class DeckManagerDialog(QDialog):
     def _new_deck(self):
         self.current_deck = Deck()
         self.deck_name_edit.setText(self.current_deck.name)
+        self.back_img_edit.clear()
         self._refresh_deck_grid()
 
     def _delete_deck(self):
@@ -800,6 +819,18 @@ class DeckManagerDialog(QDialog):
     def _on_deck_name_changed(self, text: str):
         if self.current_deck:
             self.current_deck.name = text
+
+    def _on_back_image_changed(self, text: str):
+        if self.current_deck:
+            self.current_deck.back_image_path = text.strip()
+
+    def _browse_back_image(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "裏面画像を選択", "",
+            "Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)"
+        )
+        if path:
+            self.back_img_edit.setText(path)
 
     # -----------------------------------------------------------------------
     # Card form (inline)
