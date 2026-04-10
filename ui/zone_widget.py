@@ -8,6 +8,7 @@ from PyQt6.QtGui import (
     QDrag,
     QFont,
     QIcon,
+    QKeySequence,
     QPainter,
     QPen,
     QPixmap,
@@ -18,8 +19,31 @@ from PyQt6.QtWidgets import QFrame, QMenu, QMessageBox
 from models.card import Card
 from models.game_state import GameCard, GameState, ZoneType
 
+from . import keybindings as _kb
 from .constants import BATTLE_CARD_SCALE, CARD_BACK_PATH, CARD_H, CARD_W, MIME_TYPE
 from .signals import game_signals
+
+
+_KEY_ZONE: dict[str, ZoneType] = {}
+
+
+def _build_key_zone():
+    global _KEY_ZONE
+    _KEY_ZONE = {
+        _kb.get("move_battle"):    ZoneType.BATTLE,
+        _kb.get("move_mana"):      ZoneType.MANA,
+        _kb.get("move_graveyard"): ZoneType.GRAVEYARD,
+        _kb.get("move_hand"):      ZoneType.HAND,
+        _kb.get("move_shield"):    ZoneType.SHIELD,
+    }
+
+
+def rebuild_key_zone():
+    """キーバインド変更後に呼ぶ。ゾーン移動ショートカットマップを再構築する。"""
+    _build_key_zone()
+
+
+_build_key_zone()
 
 
 _card_back_cache: dict = {}
@@ -99,6 +123,18 @@ def _make_fallback(name: str) -> QPixmap:
     )
     p.end()
     return pix
+
+
+def _make_marker_icon(key: str) -> QIcon:
+    pix = QPixmap(14, 14)
+    pix.fill(Qt.GlobalColor.transparent)
+    p = QPainter(pix)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.setBrush(QBrush(_MARKER_COLORS[key]))
+    p.setPen(QPen(QColor(200, 200, 200), 1))
+    p.drawEllipse(1, 1, 12, 12)
+    p.end()
+    return QIcon(pix)
 
 
 class ZoneWidget(QFrame):
@@ -330,76 +366,77 @@ class ZoneWidget(QFrame):
         for x, y, i in self._card_positions:
             if i >= len(zone.cards):
                 continue
-            gc = zone.cards[i]
-            pix = self._get_pixmap(gc)
-
-            # 進化スタックの影
-            stack_count = len(gc.under_cards)
-            for s in range(min(stack_count, 3), 0, -1):
-                offset = s * 3
-                painter.setOpacity(0.5)
-                if gc.tapped:
-                    oy = (self._ch - self._cw) // 2
-                    painter.drawPixmap(x - offset, y + oy + offset, self._ch, self._cw, _make_card_back_tapped(self._back_path()))
-                else:
-                    painter.drawPixmap(x - offset, y + offset, self._cw, self._ch, _make_card_back(self._back_path()))
-                painter.setOpacity(1.0)
-
-            if gc.tapped:
-                t = QTransform().rotate(90)
-                rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
-                rot = rot.scaled(
-                    self._ch, self._cw,
-                    Qt.AspectRatioMode.IgnoreAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-                oy = (self._ch - self._cw) // 2
-                painter.drawPixmap(x, y + oy, rot)
-                painter.setPen(QPen(QColor(255, 200, 0), 2))
-                painter.drawRect(x, y + oy, self._ch - 1, self._cw - 1)
-            elif self.zone_type == ZoneType.MANA:
-                t = QTransform().rotate(180)
-                rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
-                painter.drawPixmap(x, y, self._cw, self._ch, rot)
-            else:
-                painter.drawPixmap(x, y, self._cw, self._ch, pix)
-
-            # 選択ハイライト
-            if gc.card.id in self._selected_ids:
-                painter.setPen(QPen(QColor(80, 180, 255), 3))
-                painter.setBrush(Qt.BrushStyle.NoBrush)
-                if gc.tapped:
-                    oy = (self._ch - self._cw) // 2
-                    painter.drawRect(x + 1, y + oy + 1, self._ch - 3, self._cw - 3)
-                else:
-                    painter.drawRect(x + 1, y + 1, self._cw - 3, self._ch - 3)
-
-            # スタック枚数バッジ
-            if stack_count > 0:
-                badge = QRect(x, y, 20, 16)
-                painter.fillRect(badge, QColor(180, 60, 0, 220))
-                painter.setFont(QFont("Arial", 8, QFont.Weight.Bold))
-                painter.setPen(QColor(255, 255, 255))
-                painter.drawText(badge, Qt.AlignmentFlag.AlignCenter, str(stack_count + 1))
-
-            # カラーマーク（右上に色付き円）
-            if gc.marker and gc.marker in _MARKER_COLORS:
-                r = 7
-                if gc.tapped:
-                    oy = (self._ch - self._cw) // 2
-                    mx = x + self._ch - r - 3
-                    my = y + oy + r + 3
-                else:
-                    mx = x + self._cw - r - 3
-                    my = y + r + 3
-                painter.setBrush(QBrush(_MARKER_COLORS[gc.marker]))
-                painter.setPen(QPen(QColor(255, 255, 255), 1))
-                painter.drawEllipse(QPoint(mx, my), r, r)
+            self._paint_card(painter, zone.cards[i], x, y)
 
         if self._is_overlapping():
             painter.setFont(QFont("Arial", 7))
             painter.setPen(QColor(200, 255, 200))
             painter.drawText(2, self.height() - 3, "ダブルクリックで展開")
+
+    def _paint_card(self, painter: QPainter, gc: GameCard, x: int, y: int):
+        """1枚のカードをペイントする（影・回転・ハイライト・バッジ・マーカー含む）。"""
+        pix = self._get_pixmap(gc)
+        stack_count = len(gc.under_cards)
+        oy = (self._ch - self._cw) // 2  # タップ時の y オフセット
+
+        # 進化スタックの影
+        for s in range(min(stack_count, 3), 0, -1):
+            offset = s * 3
+            painter.setOpacity(0.5)
+            if gc.tapped:
+                painter.drawPixmap(x - offset, y + oy + offset, self._ch, self._cw,
+                                   _make_card_back_tapped(self._back_path()))
+            else:
+                painter.drawPixmap(x - offset, y + offset, self._cw, self._ch,
+                                   _make_card_back(self._back_path()))
+            painter.setOpacity(1.0)
+
+        # カード本体
+        if gc.tapped:
+            t = QTransform().rotate(90)
+            rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
+            rot = rot.scaled(self._ch, self._cw,
+                             Qt.AspectRatioMode.IgnoreAspectRatio,
+                             Qt.TransformationMode.SmoothTransformation)
+            painter.drawPixmap(x, y + oy, rot)
+            painter.setPen(QPen(QColor(255, 200, 0), 2))
+            painter.drawRect(x, y + oy, self._ch - 1, self._cw - 1)
+        elif self.zone_type == ZoneType.MANA:
+            t = QTransform().rotate(180)
+            rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
+            painter.drawPixmap(x, y, self._cw, self._ch, rot)
+        else:
+            painter.drawPixmap(x, y, self._cw, self._ch, pix)
+
+        # 選択ハイライト
+        if gc.card.id in self._selected_ids:
+            painter.setPen(QPen(QColor(80, 180, 255), 3))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            if gc.tapped:
+                painter.drawRect(x + 1, y + oy + 1, self._ch - 3, self._cw - 3)
+            else:
+                painter.drawRect(x + 1, y + 1, self._cw - 3, self._ch - 3)
+
+        # スタック枚数バッジ
+        if stack_count > 0:
+            badge = QRect(x, y, 20, 16)
+            painter.fillRect(badge, QColor(180, 60, 0, 220))
+            painter.setFont(QFont("Arial", 8, QFont.Weight.Bold))
+            painter.setPen(QColor(255, 255, 255))
+            painter.drawText(badge, Qt.AlignmentFlag.AlignCenter, str(stack_count + 1))
+
+        # カラーマーク（右上に色付き円）
+        if gc.marker and gc.marker in _MARKER_COLORS:
+            r = 7
+            if gc.tapped:
+                mx = x + self._ch - r - 3
+                my = y + oy + r + 3
+            else:
+                mx = x + self._cw - r - 3
+                my = y + r + 3
+            painter.setBrush(QBrush(_MARKER_COLORS[gc.marker]))
+            painter.setPen(QPen(QColor(255, 255, 255), 1))
+            painter.drawEllipse(QPoint(mx, my), r, r)
 
     # ------------------------------------------------------------------
     # Hit testing
@@ -451,7 +488,7 @@ class ZoneWidget(QFrame):
                 self._hover_timer.stop()
                 if gc and not gc.face_down and not self.mask_cards and not self.pile_mode:
                     self._hover_card_id = gc.card.id
-                    self._hover_timer.start(1200)
+                    self._hover_timer.start(600)
                 else:
                     self._hover_card_id = None
             return
@@ -467,6 +504,7 @@ class ZoneWidget(QFrame):
         self._start_drag(gc, idx)
 
     def enterEvent(self, event):
+        self.window().activateWindow()
         self.setFocus()
         super().enterEvent(event)
 
@@ -506,7 +544,12 @@ class ZoneWidget(QFrame):
             self._hover_idx += 1
             self._positions_dirty = True
             game_signals.zones_updated.emit()
+        # ゾーン移動ショートカット
         else:
+            ks = QKeySequence(key).toString()
+            if ks in _KEY_ZONE:
+                self._move_hovered_to_zone(_KEY_ZONE[ks])
+                return
             super().keyPressEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -543,12 +586,58 @@ class ZoneWidget(QFrame):
 
     def _show_zoom(self, gc: GameCard, global_pos=None):
         from .card_zoom import CardZoomDialog
-        dlg = CardZoomDialog(gc, self)
+        dlg = CardZoomDialog(gc.card.image_path, gc.card.name, self)
         window = self.window()
         center = window.geometry().center()
         dlg.move(center.x() - dlg.sizeHint().width() // 2,
                  center.y() - dlg.sizeHint().height() // 2)
         dlg.exec()
+
+    def _move_hovered_to_zone(self, dest: ZoneType):
+        idx = self._hover_idx
+        cards = self._zone().cards
+        if idx < 0 or idx >= len(cards):
+            return
+        gc = cards[idx]
+        if dest == self.zone_type:
+            return
+        gs = GameState.get_instance()
+        gs.push_snapshot()
+
+        cards.pop(idx)
+        self._hover_idx = -1
+        self._hover_timer.stop()
+        self._hover_card_id = None
+        self._positions_dirty = True
+        self._invalidate_cache()
+
+        gc.tapped = False
+        gc.row = 0
+
+        if dest == ZoneType.DECK:
+            # 山札へは先頭（一番上）に戻す
+            all_cards = [gc] + gc.under_cards
+            gc.under_cards = []
+            for c in all_cards:
+                c.tapped = False
+                c.row = 0
+                c.face_down = False
+            for c in reversed(all_cards):
+                gs.zones[dest].insert_card(0, c)
+        else:
+            if dest == ZoneType.SHIELD:
+                gc.face_down = True
+            gs.zones[dest].add_card(gc)
+
+        dest_name = _ZONE_NAMES.get(dest, dest.value)
+        _is_private = (
+            dest in self._HIDDEN_ZONES
+            or self.zone_type == ZoneType.TEMP
+            or gc.face_down
+        )
+        display = "カード" if _is_private else f"「{gc.card.name}」"
+        game_signals.action_logged.emit(f"{display}を{dest_name}へ移動")
+        game_signals.zones_updated.emit()
 
     # ------------------------------------------------------------------
     # Drag
@@ -782,15 +871,7 @@ class ZoneWidget(QFrame):
         mark_menu.addSeparator()
         for key, label in _MARKER_LABELS.items():
             action = mark_menu.addAction(label, lambda k=key: self._set_marker(gc, k))
-            pix = QPixmap(14, 14)
-            pix.fill(Qt.GlobalColor.transparent)
-            p = QPainter(pix)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing)
-            p.setBrush(QBrush(_MARKER_COLORS[key]))
-            p.setPen(QPen(QColor(200, 200, 200), 1))
-            p.drawEllipse(1, 1, 12, 12)
-            p.end()
-            action.setIcon(QIcon(pix))
+            action.setIcon(_make_marker_icon(key))
 
         if self.zone_type == ZoneType.HAND:
             menu.addSeparator()

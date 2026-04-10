@@ -19,11 +19,12 @@ from PyQt6.QtWidgets import (
 from models.card_library import card_sort_key
 from models.game_state import GameState, ZoneType
 
+from . import keybindings as kb
 from .action_log_widget import ActionLogWidget
 from .constants import BATTLE_CARD_SCALE, CARD_H
 from .deck_manager import DeckManagerDialog
 from .signals import game_signals
-from .zone_widget import ZoneWidget
+from .zone_widget import ZoneWidget, rebuild_key_zone
 
 
 class BoardWindow(QMainWindow):
@@ -40,7 +41,6 @@ class BoardWindow(QMainWindow):
         menu = self.menuBar()
         game_menu = menu.addMenu("ファイル")
         game_menu.addAction("初期状態にリセット", self._initialize_field)
-        game_menu.addAction("フィールドを全消去", self._reset_field)
         game_menu.addSeparator()
         save_action = QAction("試合を保存", self)
         save_action.setShortcut(QKeySequence("Ctrl+S"))
@@ -53,6 +53,9 @@ class BoardWindow(QMainWindow):
         game_menu.addAction(undo_action)
         game_menu.addSeparator()
         game_menu.addAction("デッキ管理を開く", self._open_deck_manager)
+
+        settings_menu = menu.addMenu("設定")
+        settings_menu.addAction("キーバインド設定…", self._open_keybinding_settings)
 
     def _setup_ui(self):
         central = QWidget()
@@ -258,7 +261,20 @@ class BoardWindow(QMainWindow):
         game_signals.zones_updated.emit()
 
     def _setup_shortcuts(self):
-        pass
+        self._reset_action = QAction("ゲームリセット", self)
+        self._reset_action.setShortcut(QKeySequence(kb.get("game_reset")))
+        self._reset_action.triggered.connect(self._initialize_field)
+        self.addAction(self._reset_action)
+
+        self._draw_action = QAction("ドロー", self)
+        self._draw_action.setShortcut(QKeySequence(kb.get("draw")))
+        self._draw_action.triggered.connect(self._draw_card)
+        self.addAction(self._draw_action)
+
+    def _refresh_shortcuts(self):
+        self._reset_action.setShortcut(QKeySequence(kb.get("game_reset")))
+        self._draw_action.setShortcut(QKeySequence(kb.get("draw")))
+        rebuild_key_zone()
 
     def _save_game(self):
         os.makedirs("data/saves", exist_ok=True)
@@ -304,6 +320,12 @@ class BoardWindow(QMainWindow):
         else:
             self._dice_dialog.raise_()
             self._dice_dialog.activateWindow()
+
+    def _open_keybinding_settings(self):
+        from .keybinding_dialog import KeybindingDialog
+        dlg = KeybindingDialog(self)
+        if dlg.exec():
+            self._refresh_shortcuts()
 
     def _open_deck_manager(self):
         DeckManagerDialog(self).exec()

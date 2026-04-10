@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QFont, QPixmap
 from PyQt6.QtWidgets import (
     QFrame,
@@ -13,6 +13,8 @@ from PyQt6.QtWidgets import (
 THUMB_W = 110
 THUMB_H = 154
 
+_HOVER_DELAY_MS = 600
+
 
 class _DeckCardEntry(QFrame):
     """Card tile in the deck list (image + name + count)."""
@@ -22,6 +24,11 @@ class _DeckCardEntry(QFrame):
         self.card = card
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         self.setStyleSheet("QFrame { background: #2a2a2a; border: 1px solid #555; border-radius: 4px; }")
+        self.setMouseTracking(True)
+
+        self._hover_timer = QTimer(self)
+        self._hover_timer.setSingleShot(True)
+        self._hover_timer.timeout.connect(self._show_zoom)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
@@ -76,6 +83,25 @@ class _DeckCardEntry(QFrame):
         info_row.addWidget(count_lbl)
 
         layout.addWidget(info_row_widget)
+
+    def enterEvent(self, event):
+        self._hover_timer.start(_HOVER_DELAY_MS)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover_timer.stop()
+        super().leaveEvent(event)
+
+    def _show_zoom(self):
+        from .card_zoom import CardZoomDialog
+        popup = CardZoomDialog(self.card.image_path, self.card.name, self)
+        window = self.window()
+        center = window.geometry().center()
+        popup.move(
+            center.x() - popup.sizeHint().width() // 2,
+            center.y() - popup.sizeHint().height() // 2,
+        )
+        popup.exec()
 
 
 class DeckListWidget(QWidget):

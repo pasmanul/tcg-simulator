@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import uuid
@@ -668,6 +669,12 @@ class DeckManagerDialog(QDialog):
         btns.addWidget(new_btn)
         btns.addWidget(del_btn)
         layout.addLayout(btns)
+
+        import_btn = QPushButton("JSON インポート")
+        import_btn.setToolTip("デッキ JSON ファイルを読み込んでデッキ一覧に追加する")
+        import_btn.clicked.connect(self._import_deck)
+        layout.addWidget(import_btn)
+
         return w
 
     # ---- Panel 2: Card library ----
@@ -892,6 +899,38 @@ class DeckManagerDialog(QDialog):
         self.current_deck = None
         self._load_deck_list()
 
+    def _import_deck(self):
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "デッキ JSON をインポート", DECKS_DIR,
+            "Deck JSON (*.json)"
+        )
+        if not paths:
+            return
+        imported, skipped = [], []
+        for path in paths:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                deck = Deck.from_dict(data)
+                base = _sanitize_filename(deck.name) or _sanitize_filename(os.path.splitext(os.path.basename(path))[0])
+                dest = os.path.join(DECKS_DIR, f"{base}.json")
+                # 名前衝突時は連番を付ける
+                counter = 1
+                while os.path.exists(dest):
+                    dest = os.path.join(DECKS_DIR, f"{base}_{counter}.json")
+                    counter += 1
+                deck.save(dest)
+                imported.append(deck.name)
+            except Exception as e:
+                skipped.append(f"{os.path.basename(path)}: {e}")
+        self._load_deck_list()
+        msg_parts = []
+        if imported:
+            msg_parts.append(f"{len(imported)} 件インポートしました:\n" + "\n".join(f"  ・{n}" for n in imported))
+        if skipped:
+            msg_parts.append("以下は失敗しました:\n" + "\n".join(skipped))
+        QMessageBox.information(self, "インポート完了", "\n\n".join(msg_parts))
+
     def _on_deck_name_changed(self, text: str):
         if self.current_deck:
             self.current_deck.name = text
@@ -977,6 +1016,7 @@ class DeckManagerDialog(QDialog):
             card_type=self._f_type.currentText(),
             id=self._editing_card_id or str(uuid.uuid4()),
         )
+        was_new = not self._editing_card_id
         if self._editing_card_id:
             for i, c in enumerate(self._library.cards):
                 if c.id == self._editing_card_id:
@@ -986,10 +1026,14 @@ class DeckManagerDialog(QDialog):
             self._library.add_card(card)
 
         self._library.save()
-        self._editing_card_id = card.id
-        self._f_save_btn.setText("更新")
-        self._f_delete_btn.setEnabled(True)
         self._refresh_library()
+        if was_new:
+            self._clear_card_form()
+            self._f_name.setFocus()
+        else:
+            self._editing_card_id = card.id
+            self._f_save_btn.setText("更新")
+            self._f_delete_btn.setEnabled(True)
 
     def _delete_card(self):
         if not self._editing_card_id:

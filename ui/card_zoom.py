@@ -2,7 +2,6 @@ from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel
 
-from models.game_state import GameCard
 from .constants import CARD_W, CARD_H
 
 _ZOOM = 3.0
@@ -11,7 +10,7 @@ _ZOOM = 3.0
 class CardZoomDialog(QDialog):
     """Click anywhere to close."""
 
-    def __init__(self, gc: GameCard, parent=None):
+    def __init__(self, image_path: str, name: str, parent=None):
         super().__init__(parent, Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -24,7 +23,7 @@ class CardZoomDialog(QDialog):
         label = QLabel()
         label.setFixedSize(w, h)
 
-        pix = QPixmap(gc.card.image_path)
+        pix = QPixmap(image_path)
         if pix.isNull():
             pix = QPixmap(CARD_W, CARD_H)
             pix.fill(QColor(70, 70, 70))
@@ -34,7 +33,7 @@ class CardZoomDialog(QDialog):
             p.drawText(
                 QRect(2, 2, CARD_W - 4, CARD_H - 4),
                 Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap,
-                gc.card.name,
+                name,
             )
             p.end()
 
