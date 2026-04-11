@@ -762,14 +762,20 @@ class ZoneWidget(QFrame):
                     c.face_down = True
                 elif self.zone_type == ZoneType.DECK:
                     c.face_down = False
-                gs.zones[self.zone_type].add_card(c)
+                if self.zone_type == ZoneType.MANA:
+                    gs.zones[self.zone_type].insert_card(0, c)
+                else:
+                    gs.zones[self.zone_type].add_card(c)
             return
 
         if self.zone_type == ZoneType.SHIELD:
             gc.face_down = True
         elif self.zone_type == ZoneType.DECK:
             gc.face_down = False
-        gs.zones[self.zone_type].add_card(gc)
+        if self.zone_type == ZoneType.MANA:
+            gs.zones[self.zone_type].insert_card(0, gc)
+        else:
+            gs.zones[self.zone_type].add_card(gc)
 
     # ------------------------------------------------------------------
     # Context menu
@@ -862,7 +868,10 @@ class ZoneWidget(QFrame):
                 gc.face_down = True
             if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
                 gc.row = self._battle_row_from_pos(drop_pos.y())
-            gs.zones[self.zone_type].add_card(gc)
+            if self.zone_type == ZoneType.MANA:
+                gs.zones[self.zone_type].insert_card(0, gc)
+            else:
+                gs.zones[self.zone_type].add_card(gc)
 
         # ログ（プライバシー考慮）
         dest_name = _ZONE_NAMES.get(self.zone_type, self.zone_type.value)
