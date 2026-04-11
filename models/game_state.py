@@ -9,40 +9,6 @@ from typing import Dict, List, Optional
 from .card import Card
 
 
-def _gc_to_dict(gc: "GameCard") -> dict:
-    c = gc.card
-    return {
-        "card": {
-            "name": c.name, "image_path": c.image_path, "id": c.id,
-            "mana": c.mana, "civilizations": c.civilizations, "card_type": c.card_type,
-        },
-        "tapped": gc.tapped,
-        "face_down": gc.face_down,
-        "revealed": gc.revealed,
-        "row": gc.row,
-        "marker": gc.marker,
-        "under_cards": [_gc_to_dict(c) for c in gc.under_cards],
-    }
-
-
-def _gc_from_dict(d: dict) -> "GameCard":
-    cd = d["card"]
-    card = Card(
-        name=cd["name"], image_path=cd["image_path"], id=cd["id"],
-        mana=cd.get("mana", 0),
-        civilizations=cd.get("civilizations", []),
-        card_type=cd.get("card_type", ""),
-    )
-    gc = GameCard(card)
-    gc.tapped = d["tapped"]
-    gc.face_down = d["face_down"]
-    gc.revealed = d.get("revealed", False)
-    gc.row = d.get("row", 0)
-    gc.marker = d.get("marker", None)
-    gc.under_cards = [_gc_from_dict(c) for c in d.get("under_cards", [])]
-    return gc
-
-
 class ZoneType(Enum):
     BATTLE = "battle"
     SHIELD = "shield"
@@ -62,6 +28,39 @@ class GameCard:
         self.under_cards: List["GameCard"] = []
         self.row: int = 0  # 0=下段, 1=上段（バトルゾーン用）
         self.marker: Optional[str] = None  # 色マーク (例: "red", "blue", ...)
+
+    def to_dict(self) -> dict:
+        c = self.card
+        return {
+            "card": {
+                "name": c.name, "image_path": c.image_path, "id": c.id,
+                "mana": c.mana, "civilizations": c.civilizations, "card_type": c.card_type,
+            },
+            "tapped": self.tapped,
+            "face_down": self.face_down,
+            "revealed": self.revealed,
+            "row": self.row,
+            "marker": self.marker,
+            "under_cards": [uc.to_dict() for uc in self.under_cards],
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "GameCard":
+        cd = d["card"]
+        card = Card(
+            name=cd["name"], image_path=cd["image_path"], id=cd["id"],
+            mana=cd.get("mana", 0),
+            civilizations=cd.get("civilizations", []),
+            card_type=cd.get("card_type", ""),
+        )
+        gc = cls(card)
+        gc.tapped = d["tapped"]
+        gc.face_down = d["face_down"]
+        gc.revealed = d.get("revealed", False)
+        gc.row = d.get("row", 0)
+        gc.marker = d.get("marker", None)
+        gc.under_cards = [cls.from_dict(c) for c in d.get("under_cards", [])]
+        return gc
 
 
 class Zone:
@@ -123,7 +122,7 @@ class GameState:
     def to_dict(self) -> dict:
         return {
             "zones": {
-                zt.value: [_gc_to_dict(gc) for gc in zone.cards]
+                zt.value: [gc.to_dict() for gc in zone.cards]
                 for zt, zone in self.zones.items()
             }
         }
@@ -132,7 +131,7 @@ class GameState:
         for zt in ZoneType:
             self.zones[zt].cards.clear()
             for gc_dict in d.get("zones", {}).get(zt.value, []):
-                self.zones[zt].add_card(_gc_from_dict(gc_dict))
+                self.zones[zt].add_card(GameCard.from_dict(gc_dict))
 
     def save(self, path: str):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
