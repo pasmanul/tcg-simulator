@@ -7,7 +7,6 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -232,7 +231,7 @@ class BoardWindow(QMainWindow):
     def _shuffle_deck(self):
         gs = GameState.get_instance()
         deck = gs.zones[ZoneType.DECK]
-        if len(deck) == 0:
+        if not deck.cards:
             return
         gs.push_snapshot()
         random.shuffle(deck.cards)

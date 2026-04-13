@@ -490,18 +490,15 @@ class DeckManagerDialog(QDialog):
         if lib_card is None:
             return
         existing = next((c for c in self.current_deck.cards if c.id == card_id), None)
+        if existing and existing.count >= 4:
+            QMessageBox.warning(self, "エラー", "同じカードは4枚までです")
+            return
+        if self.current_deck.total_count >= Deck.MAX_SIZE:
+            QMessageBox.warning(self, "エラー", "40枚を超えます")
+            return
         if existing:
-            if existing.count >= 4:
-                QMessageBox.warning(self, "エラー", "同じカードは4枚までです")
-                return
-            if self.current_deck.total_count >= Deck.MAX_SIZE:
-                QMessageBox.warning(self, "エラー", "40枚を超えます")
-                return
             existing.count += 1
         else:
-            if self.current_deck.total_count >= Deck.MAX_SIZE:
-                QMessageBox.warning(self, "エラー", "40枚を超えます")
-                return
             self.current_deck.cards.append(Card(
                 name=lib_card.name,
                 image_path=lib_card.image_path,

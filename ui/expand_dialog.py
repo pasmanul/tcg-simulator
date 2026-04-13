@@ -89,8 +89,9 @@ class _CardLabel(QLabel):
         game_signals.zones_updated.emit()
 
     def _remove(self):
-        GameState.get_instance().push_snapshot()
-        GameState.get_instance().zones[self.zone_type].remove_card(self.index)
+        gs = GameState.get_instance()
+        gs.push_snapshot()
+        gs.zones[self.zone_type].remove_card(self.index)
         game_signals.zones_updated.emit()
         if self._on_remove:
             self._on_remove()

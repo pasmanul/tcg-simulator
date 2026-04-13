@@ -925,10 +925,11 @@ class ZoneWidget(QFrame):
     def _pop_stack(self, gc: GameCard, idx: int):
         if not gc.under_cards:
             return
-        GameState.get_instance().push_snapshot()
+        gs = GameState.get_instance()
+        gs.push_snapshot()
         popped = gc.under_cards.pop(0)
         popped.tapped = gc.tapped
-        GameState.get_instance().zones[self.zone_type].add_card(popped)
+        gs.zones[self.zone_type].add_card(popped)
         self._invalidate_cache()
         game_signals.zones_updated.emit()
 

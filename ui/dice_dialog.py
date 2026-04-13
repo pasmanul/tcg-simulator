@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPen
@@ -109,7 +110,7 @@ class DiceDialog(QDialog):
         self.setWindowTitle("ダイス")
         self.setFixedWidth(260)
         self.setStyleSheet("background:#1a1a2e; color:#ddd;")
-        self._history: list[str] = []
+        self._history: deque[str] = deque(maxlen=10)
         self._build_ui()
 
     def _build_ui(self):
@@ -173,9 +174,7 @@ class DiceDialog(QDialog):
         self._face.roll_animation(result)
 
         entry = f"d{sides}={result}"
-        self._history.insert(0, entry)
-        if len(self._history) > 10:
-            self._history.pop()
+        self._history.appendleft(entry)
         self._history_lbl.setText("履歴: " + "  ".join(self._history))
 
         game_signals.action_logged.emit(f"d{sides} → {result}")

@@ -228,7 +228,7 @@ class SearchDialog(QDialog):
         civ_q = self._civ_combo.currentText()
         type_q = self._type_combo.currentText()
 
-        col = row = 0
+        visible = 0
         for tile in self._tiles:
             c = tile.gc.card
             if name_q and name_q not in c.name.lower():
@@ -241,11 +241,8 @@ class SearchDialog(QDialog):
                 tile.hide()
                 continue
             tile.show()
-            self._grid.addWidget(tile, row, col)
-            col += 1
-            if col >= _COLS:
-                col = 0
-                row += 1
+            self._grid.addWidget(tile, visible // _COLS, visible % _COLS)
+            visible += 1
 
         self._update_count()
 

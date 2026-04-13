@@ -72,7 +72,7 @@ def sanitize_filename(name: str) -> str:
 
 
 def _is_rainbow(civs: list[str]) -> bool:
-    return len([c for c in civs if c != "無色"]) >= 2
+    return sum(1 for c in civs if c != "無色") >= 2
 
 
 # ── Widgets ─────────────────────────────────────────────────────────────────
@@ -358,18 +358,15 @@ class _LibraryCardGrid(QWidget):
         self._populate(apply_sort(filtered, self._sort_combo.currentText()))
 
     def _reset_filters(self):
-        self._search_edit.blockSignals(True)
-        self._mana_combo.blockSignals(True)
-        self._civ_combo.blockSignals(True)
-        self._type_combo.blockSignals(True)
+        widgets = [self._search_edit, self._mana_combo, self._civ_combo, self._type_combo]
+        for w in widgets:
+            w.blockSignals(True)
         self._search_edit.clear()
         self._mana_combo.setCurrentIndex(0)
         self._civ_combo.setCurrentIndex(0)
         self._type_combo.setCurrentIndex(0)
-        self._search_edit.blockSignals(False)
-        self._mana_combo.blockSignals(False)
-        self._civ_combo.blockSignals(False)
-        self._type_combo.blockSignals(False)
+        for w in widgets:
+            w.blockSignals(False)
         self._refresh_filter()
 
     def _populate(self, cards: list[LibraryCard]):
