@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QFrame,
 )
 
-from models.game_state import GameCard, GameState, ZoneType
+from models.game_state import GameCard, GameState
 from .signals import game_signals
 
 _THUMB_W = 110
@@ -22,10 +22,10 @@ _THUMB_H = 154
 _COLS = 4
 
 _DEST_OPTIONS = [
-    ("手札", ZoneType.HAND),
-    ("保留", ZoneType.TEMP),
-    ("マナゾーン", ZoneType.MANA),
-    ("墓地", ZoneType.GRAVEYARD),
+    ("手札", "hand"),
+    ("保留", "temp"),
+    ("マナゾーン", "mana"),
+    ("墓地", "graveyard"),
 ]
 
 
@@ -196,7 +196,7 @@ class SearchDialog(QDialog):
 
     def _populate(self):
         gs = GameState.get_instance()
-        deck_cards = gs.zones[ZoneType.DECK].cards
+        deck_cards = gs.zones["deck"].cards
 
         civs = sorted({civ for gc in deck_cards for civ in gc.card.civilizations})
         types = sorted({gc.card.card_type for gc in deck_cards if gc.card.card_type})
@@ -256,8 +256,8 @@ class SearchDialog(QDialog):
         if not selected:
             return
         selected_ids = [t.gc.card.id for t in selected]
-        dest_label, dest_zone = _DEST_OPTIONS[self._dest_combo.currentIndex()]
-        if GameState.get_instance().search_deck(selected_ids, dest_zone):
+        dest_label, dest_zone_id = _DEST_OPTIONS[self._dest_combo.currentIndex()]
+        if GameState.get_instance().search_deck(selected_ids, dest_zone_id):
             names = "、".join(f"「{t.gc.card.name}」" for t in selected)
             game_signals.action_logged.emit(f"サーチ → {dest_label}: {names}")
             game_signals.zones_updated.emit()

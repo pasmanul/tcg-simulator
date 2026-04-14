@@ -13,18 +13,18 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from models.game_state import GameCard, GameState, ZoneType
+from models.game_state import GameCard, GameState
 
 from .constants import CARD_BACK_PATH, CARD_H, CARD_W, MIME_TYPE
 from .signals import game_signals
 
 
 class _CardLabel(QLabel):
-    def __init__(self, gc: GameCard, index: int, zone_type: ZoneType, on_remove=None, parent=None):
+    def __init__(self, gc: GameCard, index: int, zone_id: str, on_remove=None, parent=None):
         super().__init__(parent)
         self.gc = gc
         self.index = index
-        self.zone_type = zone_type
+        self.zone_id = zone_id
         self._on_remove = on_remove
         self.setFixedSize(CARD_W, CARD_H)
         self.setToolTip(gc.card.name)
@@ -65,7 +65,7 @@ class _CardLabel(QLabel):
         drag = QDrag(self)
         mime = QMimeData()
         payload = json.dumps({
-            "source_zone": self.zone_type.value,
+            "source_zone": self.zone_id,
             "card_index": self.index,
             "card_id": self.gc.card.id,
             "card_name": self.gc.card.name,
@@ -91,16 +91,16 @@ class _CardLabel(QLabel):
     def _remove(self):
         gs = GameState.get_instance()
         gs.push_snapshot()
-        gs.zones[self.zone_type].remove_card(self.index)
+        gs.zones[self.zone_id].remove_card(self.index)
         game_signals.zones_updated.emit()
         if self._on_remove:
             self._on_remove()
 
 
 class ExpandDialog(QDialog):
-    def __init__(self, zone_type: ZoneType, label: str, parent=None):
+    def __init__(self, zone_id: str, label: str, parent=None):
         super().__init__(parent)
-        self.zone_type = zone_type
+        self.zone_id = zone_id
         self.setWindowTitle(f"{label} — カード一覧")
         self.resize(600, 180)
 
@@ -123,9 +123,9 @@ class ExpandDialog(QDialog):
         row.setAlignment(Qt.AlignmentFlag.AlignLeft)
         row.setSpacing(6)
 
-        zone = GameState.get_instance().zones[self.zone_type]
+        zone = GameState.get_instance().zones[self.zone_id]
         for i, gc in enumerate(zone.cards):
-            lbl = _CardLabel(gc, i, self.zone_type, on_remove=self._rebuild)
+            lbl = _CardLabel(gc, i, self.zone_id, on_remove=self._rebuild)
             row.addWidget(lbl)
 
         self._scroll.setWidget(container)
