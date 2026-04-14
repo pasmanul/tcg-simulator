@@ -58,10 +58,10 @@ class ZoneDefinition:
     name: str            # 表示名（例: "バトルゾーン"）
     window_id: str       # 所属ウィンドウのID
     grid_pos: GridPos    # グリッド上の位置（col, row, col_span, row_span）
-    pile_mode: bool = False   # True: 枚数のみ表示（山札）
-    hidden: bool = False      # True: 裏面強制表示（非公開ゾーン）
-    tappable: bool = False    # True: タップ/アンタップ操作あり
-    card_scale: float = 1.0   # カードサイズ倍率
+    visibility: str = "public"   # "public": カード表向き表示 / "private": 常に裏面強制表示
+    pile_mode: bool = False      # True: 枚数のみ表示（山札）
+    tappable: bool = False       # True: タップ/アンタップ操作あり
+    card_scale: float = 1.0      # カードサイズ倍率
 
 @dataclass
 class WindowDefinition:
@@ -108,6 +108,7 @@ class GameState:
       "name": "バトルゾーン",
       "window_id": "board",
       "grid_pos": { "col": 0, "row": 0, "col_span": 12, "row_span": 3 },
+      "visibility": "public",
       "tappable": true,
       "card_scale": 1.2
     },
@@ -116,26 +117,29 @@ class GameState:
       "name": "シールド",
       "window_id": "board",
       "grid_pos": { "col": 0, "row": 3, "col_span": 4, "row_span": 2 },
-      "hidden": true
+      "visibility": "private"
     },
     {
       "id": "deck",
       "name": "山札",
       "window_id": "board",
       "grid_pos": { "col": 4, "row": 3, "col_span": 2, "row_span": 2 },
+      "visibility": "private",
       "pile_mode": true
     },
     {
       "id": "graveyard",
       "name": "墓地",
       "window_id": "board",
-      "grid_pos": { "col": 6, "row": 3, "col_span": 3, "row_span": 2 }
+      "grid_pos": { "col": 6, "row": 3, "col_span": 3, "row_span": 2 },
+      "visibility": "public"
     },
     {
       "id": "mana",
       "name": "マナゾーン",
       "window_id": "board",
       "grid_pos": { "col": 0, "row": 5, "col_span": 9, "row_span": 3 },
+      "visibility": "public",
       "tappable": true
     },
     {
@@ -143,14 +147,14 @@ class GameState:
       "name": "手札",
       "window_id": "hand",
       "grid_pos": { "col": 0, "row": 0, "col_span": 6, "row_span": 5 },
-      "hidden": true
+      "visibility": "private"
     },
     {
       "id": "temp",
       "name": "保留",
       "window_id": "hand",
       "grid_pos": { "col": 0, "row": 5, "col_span": 6, "row_span": 2 },
-      "hidden": true
+      "visibility": "private"
     }
   ]
 }
@@ -180,8 +184,8 @@ class GameState:
 
 - コンストラクタ引数を `ZoneDefinition` を受け取る形に変更
 - `zone_type: ZoneType` → `zone_id: str` に変更
-- `_HIDDEN_ZONES` タプルを廃止し、`ZoneDefinition.hidden` フラグで判定
-- プライバシー判定ロジックも `hidden` フラグベースに変更
+- `_HIDDEN_ZONES` タプルを廃止し、`ZoneDefinition.visibility == "private"` で判定
+- プライバシー判定ロジックも `visibility` フィールドベースに変更
 
 ---
 
