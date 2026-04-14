@@ -1,0 +1,85 @@
+{
+  "windows": [
+    {
+      "id": "board",
+      "title": "フィールド（公開）",
+      "width": 960,
+      "height": 780,
+      "grid_cols": 12,
+      "grid_rows": 10
+    },
+    {
+      "id": "hand",
+      "title": "手札・デッキ（非公開）",
+      "width": 540,
+      "height": 720,
+      "grid_cols": 6,
+      "grid_rows": 12
+    }
+  ],
+  "zones": [
+    {
+      "id": "battle",
+      "name": "バトルゾーン",
+      "window_id": "board",
+      "grid_pos": {"col": 0, "row": 0, "col_span": 12, "row_span": 4},
+      "visibility": "public",
+      "tappable": true,
+      "card_scale": 1.2,
+      "two_row": true
+    },
+    {
+      "id": "shield",
+      "name": "シールド",
+      "window_id": "board",
+      "grid_pos": {"col": 0, "row": 4, "col_span": 4, "row_span": 3},
+      "visibility": "private"
+    },
+    {
+      "id": "deck",
+      "name": "山札",
+      "window_id": "board",
+      "grid_pos": {"col": 4, "row": 4, "col_span": 2, "row_span": 3},
+      "visibility": "private",
+      "pile_mode": true
+    },
+    {
+      "id": "graveyard",
+      "name": "墓地",
+      "window_id": "board",
+      "grid_pos": {"col": 6, "row": 4, "col_span": 3, "row_span": 3},
+      "visibility": "public"
+    },
+    {
+      "id": "mana",
+      "name": "マナゾーン",
+      "window_id": "board",
+      "grid_pos": {"col": 0, "row": 7, "col_span": 9, "row_span": 3},
+      "visibility": "public",
+      "tappable": true
+    },
+    {
+      "id": "hand_view",
+      "name": "手札",
+      "window_id": "board",
+      "grid_pos": {"col": 9, "row": 4, "col_span": 3, "row_span": 6},
+      "visibility": "private",
+      "masked": true,
+      "source_zone_id": "hand"
+    },
+    {
+      "id": "hand",
+      "name": "手札",
+      "window_id": "hand",
+      "grid_pos": {"col": 0, "row": 0, "col_span": 6, "row_span": 5},
+      "visibility": "private"
+    },
+    {
+      "id": "temp",
+      "name": "保留",
+      "window_id": "hand",
+      "grid_pos": {"col": 0, "row": 5, "col_span": 6, "row_span": 2},
+      "visibility": "private"
+    }
+  ]
+}
