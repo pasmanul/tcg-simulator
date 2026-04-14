@@ -225,6 +225,23 @@ class GameState:
 
 ---
 
+## ビジュアルデザイン
+
+`DESIGN.md`（Composio インスパイア）を参照。PyQt6 QSS で以下のように翻訳する：
+
+| DESIGN.md トークン | PyQt6 QSS 適用 |
+|---|---|
+| Void Black `#0f0f0f` | `QMainWindow`, `QWidget` background |
+| Pure Black `#000000` | ZoneWidget, カード内部背景 |
+| Border Mist 10 `rgba(255,255,255,0.10)` | ZoneWidget border |
+| Pure White `#ffffff` | ラベル・ボタンテキスト（強調） |
+| Ghost White `rgba(255,255,255,0.6)` | セカンダリテキスト |
+| Electric Cyan `#00ffff` | アクセント（レイアウト編集モードのハイライト等） |
+| Signal Blue `#0089ff` | ボタンborder、フォーカス状態 |
+| Hard-offset shadow `4px 4px` | 選択・アクティブなZoneWidget |
+
+---
+
 ## エラーハンドリング
 
 - `game.json` が存在しない場合：デフォルト設定（DM標準）で起動し、警告を表示
