@@ -104,6 +104,24 @@
       "masked": false
     },
     {
+      "id": "deck_list",
+      "name": "デッキカード一覧",
+      "window_id": "hand",
+      "grid_pos": {
+        "col": 0,
+        "row": 8,
+        "col_span": 6,
+        "row_span": 4
+      },
+      "visibility": "private",
+      "pile_mode": false,
+      "tappable": false,
+      "card_scale": 1.0,
+      "two_row": false,
+      "masked": false,
+      "ui_widget": "deck_list"
+    },
+    {
       "id": "hand",
       "name": "手札",
       "window_id": "hand",
@@ -128,7 +146,7 @@
         "col": 0,
         "row": 5,
         "col_span": 6,
-        "row_span": 2
+        "row_span": 3
       },
       "visibility": "private",
       "pile_mode": false,

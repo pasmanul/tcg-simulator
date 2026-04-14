@@ -38,7 +38,7 @@ def main():
     # ── GameState を game.json のゾーン定義で初期化 ─────────────────
     gs = GameState.get_instance()
     # source_zone_id を持つビューゾーンは GameState には持たない
-    real_zone_ids = [z.id for z in zone_defs if z.source_zone_id is None]
+    real_zone_ids = [z.id for z in zone_defs if z.source_zone_id is None and z.ui_widget is None]
     gs.initialize_zones(real_zone_ids)
 
     # ── ウィンドウを生成・表示 ────────────────────────────────────────

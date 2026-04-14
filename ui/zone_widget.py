@@ -91,7 +91,7 @@ class ZoneWidget(QFrame):
         self.zone_def: ZoneDefinition = zone_def
         self.label: str = zone_def.name
         self.pile_mode: bool = zone_def.pile_mode
-        self._mask: bool = zone_def.masked or (zone_def.visibility == "private")
+        self._mask: bool = zone_def.masked
         self._render_zone_id: str = zone_def.source_zone_id or zone_def.id
         self._cw = int(CARD_W * zone_def.card_scale)  # このゾーンのカード幅
         self._ch = int(CARD_H * zone_def.card_scale)  # このゾーンのカード高
@@ -112,7 +112,7 @@ class ZoneWidget(QFrame):
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setMinimumHeight(self._ch + self.TITLE_H + 10)
+        self.setMinimumHeight(self.TITLE_H + 4)
         self.setFrameStyle(QFrame.Shape.NoFrame)
         self.setGraphicsEffect(zone_shadow())
         game_signals.zones_updated.connect(self._on_zones_updated)

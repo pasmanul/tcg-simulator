@@ -147,7 +147,7 @@ class GameState:
         """山札の一番上から手札へ1枚ドローする。成功したら True を返す。"""
         deck = self.zones.get("deck")
         hand = self.zones.get("hand")
-        if not deck or not hand or not deck.cards:
+        if deck is None or hand is None or not deck.cards:
             return False
         self.push_snapshot()
         gc = deck.remove_card(len(deck) - 1)
@@ -161,7 +161,7 @@ class GameState:
         """指定IDのカードを山札から抜き取り dest ゾーンへ移動する。"""
         deck = self.zones.get("deck")
         dest_zone = self.zones.get(dest)
-        if not deck or not dest_zone:
+        if deck is None or dest_zone is None:
             return False
         id_set = set(card_ids)
         targets = [gc for gc in deck.cards if gc.card.id in id_set]

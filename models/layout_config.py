@@ -26,6 +26,7 @@ class ZoneDefinition:
     two_row: bool = False        # バトルゾーンの2段レイアウト
     masked: bool = False         # 常に裏面強制表示（同ゾーンの別ビュー用）
     source_zone_id: Optional[str] = None  # 別ゾーンのデータを表示する場合
+    ui_widget: Optional[str] = None       # ゲームゾーン以外の UI ウィジェット ("deck_list" 等)
 
 
 @dataclass
@@ -70,6 +71,7 @@ def load_game_config(path: str) -> tuple[list[WindowDefinition], list[ZoneDefini
             two_row=z.get("two_row", False),
             masked=z.get("masked", False),
             source_zone_id=z.get("source_zone_id", None),
+            ui_widget=z.get("ui_widget", None),
         ))
 
     return windows, zones
@@ -95,6 +97,7 @@ def save_game_config(path: str, windows: list[WindowDefinition], zones: list[Zon
                 "two_row": z.two_row,
                 "masked": z.masked,
                 **({"source_zone_id": z.source_zone_id} if z.source_zone_id else {}),
+                **({"ui_widget": z.ui_widget} if z.ui_widget else {}),
             }
             for z in zones
         ]

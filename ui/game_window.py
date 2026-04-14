@@ -44,6 +44,7 @@ class GameWindow(QMainWindow):
     def __init__(self, win_def: WindowDefinition, zone_defs: list[ZoneDefinition]):
         super().__init__()
         self.win_def = win_def
+        self._all_zone_defs = zone_defs  # 全ウィンドウのゾーン定義（layout editor 保存用）
         # この window に属するゾーン定義（source_zone_id を持つビューゾーンも含む）
         self.zone_defs = [z for z in zone_defs if z.window_id == win_def.id]
         self.zone_widgets: dict[str, ZoneWidget] = {}  # zone_id → ZoneWidget
@@ -56,6 +57,8 @@ class GameWindow(QMainWindow):
         self._setup_menu()
         self._setup_ui()
         self._setup_shortcuts()
+
+        game_signals.layout_updated.connect(self._reload_layout)
 
         if self._is_hand_window:
             self._restore_last_deck()
@@ -101,26 +104,34 @@ class GameWindow(QMainWindow):
             dice_btn.clicked.connect(self._open_dice)
             toolbar.addWidget(dice_btn)
 
-        toolbar.addStretch()
+            toolbar.addStretch()
 
-        reset_btn = QPushButton("初期状態にリセット")
-        reset_btn.setFixedHeight(28)
-        reset_btn.setStyleSheet(btn_reset())
-        reset_btn.clicked.connect(self._initialize_field)
-        toolbar.addWidget(reset_btn)
+            reset_btn = QPushButton("初期状態にリセット")
+            reset_btn.setFixedHeight(28)
+            reset_btn.setStyleSheet(btn_reset())
+            reset_btn.clicked.connect(self._initialize_field)
+            toolbar.addWidget(reset_btn)
+
         outer.addLayout(toolbar)
 
         # ── ゾーングリッド ──────────────────────────────────────────
-        grid_container = QWidget()
-        self._grid_layout = QGridLayout(grid_container)
+        self._grid_container = QWidget()
+        self._grid_layout = QGridLayout(self._grid_container)
         self._grid_layout.setSpacing(4)
         self._grid_layout.setContentsMargins(0, 0, 0, 0)
+
+        for c in range(self.win_def.grid_cols):
+            self._grid_layout.setColumnStretch(c, 1)
+        for r in range(self.win_def.grid_rows):
+            self._grid_layout.setRowStretch(r, 1)
 
         for zd in self.zone_defs:
             widget = self._make_zone_widget(zd)
             self.zone_widgets[zd.id] = widget
             gp = zd.grid_pos
             self._grid_layout.addWidget(widget, gp.row, gp.col, gp.row_span, gp.col_span)
+            if zd.ui_widget == "deck_list":
+                self.deck_list = widget
 
         # アクションログ（手札ウィンドウ以外に追加）
         if not self._is_hand_window:
@@ -132,7 +143,7 @@ class GameWindow(QMainWindow):
                 self._action_log, 0, self.win_def.grid_cols, self.win_def.grid_rows, 1
             )
 
-        outer.addWidget(grid_container, 1)
+        outer.addWidget(self._grid_container, 1)
 
         # ── 手札ウィンドウ専用: デッキ読み込みパネル ─────────────────
         if self._is_hand_window:
@@ -150,17 +161,17 @@ class GameWindow(QMainWindow):
             mgr_btn.setStyleSheet(btn_load())
             mgr_btn.clicked.connect(self._open_deck_manager)
             ctrl.addWidget(mgr_btn)
+            reset_btn = QPushButton("初期状態にリセット")
+            reset_btn.setFixedHeight(26)
+            reset_btn.setStyleSheet(btn_reset())
+            reset_btn.clicked.connect(self._initialize_field)
+            ctrl.addWidget(reset_btn)
             outer.insertLayout(0, ctrl)
 
-            deck_list_label = QLabel("デッキカード一覧")
-            deck_list_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            deck_list_label.setStyleSheet("color:#7799bb;font-weight:bold;font-family:'Yu Gothic UI';font-size:10px;padding:2px 0;")
-            outer.addWidget(deck_list_label)
+    def _make_zone_widget(self, zd: ZoneDefinition):
+        if zd.ui_widget == "deck_list":
+            return DeckListWidget()
 
-            self.deck_list = DeckListWidget()
-            outer.addWidget(self.deck_list, 1)
-
-    def _make_zone_widget(self, zd: ZoneDefinition) -> ZoneWidget:
         widget = ZoneWidget(zd)
 
         if zd.tappable:
@@ -415,5 +426,44 @@ class GameWindow(QMainWindow):
 
     def _open_layout_editor(self):
         from .layout_editor import LayoutEditorDialog
-        dlg = LayoutEditorDialog(self.win_def, self.zone_defs, self)
+        dlg = LayoutEditorDialog(self.win_def, self._all_zone_defs, self)
         dlg.exec()
+
+    def _reload_layout(self):
+        from models.layout_config import load_game_config
+        from .zone_widget import register_zone_defs
+
+        _, zone_defs = load_game_config("data/game.json")
+        self._all_zone_defs = zone_defs
+        self.zone_defs = [z for z in zone_defs if z.window_id == self.win_def.id]
+        register_zone_defs(zone_defs)
+
+        # グリッドの全アイテムを取り出す（ウィジェット自体は消えない）
+        while self._grid_layout.count():
+            self._grid_layout.takeAt(0)
+
+        # stretch を再設定
+        for c in range(self.win_def.grid_cols):
+            self._grid_layout.setColumnStretch(c, 1)
+        for r in range(self.win_def.grid_rows):
+            self._grid_layout.setRowStretch(r, 1)
+
+        # ゾーンウィジェットを新しい位置に再配置し、内部の zone_def も更新
+        for zd in self.zone_defs:
+            widget = self.zone_widgets.get(zd.id)
+            if widget is None:
+                continue
+            if isinstance(widget, ZoneWidget):
+                widget.zone_def = zd
+            gp = zd.grid_pos
+            self._grid_layout.addWidget(widget, gp.row, gp.col, gp.row_span, gp.col_span)
+
+        # アクションログを右端に再追加
+        if hasattr(self, '_action_log'):
+            self._grid_layout.addWidget(
+                self._action_log, 0, self.win_def.grid_cols, self.win_def.grid_rows, 1
+            )
+
+        # Qt にレイアウト再計算を強制
+        self._grid_layout.activate()
+        self._grid_container.update()
