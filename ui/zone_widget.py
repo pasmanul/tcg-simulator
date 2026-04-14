@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 from PyQt6.QtCore import QMimeData, QPoint, QRect, QRectF, Qt, QTimer
 from PyQt6.QtGui import (
@@ -18,7 +18,8 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QFrame, QMenu, QMessageBox
 
 from models.card import Card
-from models.game_state import GameCard, GameState, ZoneType
+from models.game_state import GameCard, GameState
+from models.layout_config import ZoneDefinition
 
 from . import keybindings as _kb
 from ._card_pixmap import (
@@ -37,17 +38,17 @@ from .theme import FONT_JP, zone_colors, zone_shadow
 _ZONE_RADIUS = 10  # 角丸半径（px）
 
 
-_KEY_ZONE: dict[str, ZoneType] = {}
+_KEY_ZONE: dict[str, str] = {}
 
 
 def _build_key_zone():
     global _KEY_ZONE
     _KEY_ZONE = {
-        _kb.get("move_battle"):    ZoneType.BATTLE,
-        _kb.get("move_mana"):      ZoneType.MANA,
-        _kb.get("move_graveyard"): ZoneType.GRAVEYARD,
-        _kb.get("move_hand"):      ZoneType.HAND,
-        _kb.get("move_shield"):    ZoneType.SHIELD,
+        _kb.get("move_battle"):    "battle",
+        _kb.get("move_mana"):      "mana",
+        _kb.get("move_graveyard"): "graveyard",
+        _kb.get("move_hand"):      "hand",
+        _kb.get("move_shield"):    "shield",
     }
 
 
@@ -57,6 +58,20 @@ def rebuild_key_zone():
 
 
 _build_key_zone()
+
+_ZONE_DEFS: dict[str, ZoneDefinition] = {}
+
+
+def register_zone_defs(zone_defs: list[ZoneDefinition]) -> None:
+    """main.py 起動時に呼ぶ。zone_id → ZoneDefinition のマップを登録する。"""
+    _ZONE_DEFS.clear()
+    for zd in zone_defs:
+        _ZONE_DEFS[zd.id] = zd
+
+
+def _is_private_zone(zone_id: str) -> bool:
+    zd = _ZONE_DEFS.get(zone_id)
+    return zd is not None and zd.visibility == "private"
 
 
 class ZoneWidget(QFrame):
@@ -70,15 +85,17 @@ class ZoneWidget(QFrame):
 
     TITLE_H = 22  # pixels reserved for zone label
 
-    def __init__(self, zone_type: ZoneType, label: str, pile_mode: bool = False, mask_cards: bool = False, card_scale: float = 1.0, parent=None):
+    def __init__(self, zone_def: ZoneDefinition, parent=None):
         super().__init__(parent)
-        self.zone_type = zone_type
-        self.label = label
-        self.pile_mode = pile_mode  # DECK zone: show as a pile with count
-        self.mask_cards = mask_cards  # always render cards face-down
-        self._cw = int(CARD_W * card_scale)  # このゾーンのカード幅
-        self._ch = int(CARD_H * card_scale)  # このゾーンのカード高
-        self._card_positions: List[Tuple[int, int, int]] = []  # (x, y, card_index)
+        self.zone_id: str = zone_def.id
+        self.zone_def: ZoneDefinition = zone_def
+        self.label: str = zone_def.name
+        self.pile_mode: bool = zone_def.pile_mode
+        self._mask: bool = zone_def.masked or (zone_def.visibility == "private")
+        self._render_zone_id: str = zone_def.source_zone_id or zone_def.id
+        self._cw = int(CARD_W * zone_def.card_scale)  # このゾーンのカード幅
+        self._ch = int(CARD_H * zone_def.card_scale)  # このゾーンのカード高
+        self._card_positions: list[Tuple[int, int, int]] = []  # (x, y, card_index)
         self._positions_dirty: bool = True
         self._pix_cache: dict = {}  # (card_id, face_down) -> QPixmap
         self._drag_start: Optional[QPoint] = None
@@ -105,7 +122,7 @@ class ZoneWidget(QFrame):
     # ------------------------------------------------------------------
 
     def _zone(self):
-        return GameState.get_instance().zones[self.zone_type]
+        return GameState.get_instance().zones[self._render_zone_id]
 
     def _card_w(self, gc: GameCard) -> int:
         return self._ch if gc.tapped else self._cw
@@ -158,7 +175,7 @@ class ZoneWidget(QFrame):
             self._card_positions = [(cx, area_y, n - 1)]
             return
 
-        if self.zone_type == ZoneType.BATTLE:
+        if self.zone_def.two_row:
             # 下段(row=0)を先に、上段(row=1)を後に追加（描画・ヒットテスト順）
             row0 = [(i, gc) for i, gc in enumerate(cards) if gc.row == 0]
             row1 = [(i, gc) for i, gc in enumerate(cards) if gc.row == 1]
@@ -188,7 +205,7 @@ class ZoneWidget(QFrame):
         if not cards or self.pile_mode:
             return False
         area_w = self.width() - 8
-        if self.zone_type == ZoneType.BATTLE:
+        if self.zone_def.two_row:
             for row in (0, 1):
                 rc = [gc for gc in cards if gc.row == row]
                 if not rc:
@@ -208,8 +225,8 @@ class ZoneWidget(QFrame):
         return GameState.get_instance().back_image_path or CARD_BACK_PATH
 
     def _get_pixmap(self, gc: GameCard) -> QPixmap:
-        # mask_cards=True でも revealed=True なら表向きにする
-        face_down = gc.face_down or (self.mask_cards and not gc.revealed)
+        # _mask=True でも revealed=True なら表向きにする
+        face_down = gc.face_down or (self._mask and not gc.revealed)
         key = (gc.card.id, face_down, self._back_path() if face_down else "")
         if key not in self._pix_cache:
             if face_down:
@@ -256,7 +273,7 @@ class ZoneWidget(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        zc = zone_colors(self.zone_type.value)
+        zc = zone_colors(self.zone_id)
         r = _ZONE_RADIUS
         w, h = self.width(), self.height()
 
@@ -360,7 +377,7 @@ class ZoneWidget(QFrame):
             painter.drawPixmap(x, y + oy, rot)
             painter.setPen(QPen(QColor(255, 200, 0), 2))
             painter.drawRect(x, y + oy, self._ch - 1, self._cw - 1)
-        elif self.zone_type == ZoneType.MANA:
+        elif self.zone_id == "mana":
             t = QTransform().rotate(180)
             rot = pix.transformed(t, Qt.TransformationMode.SmoothTransformation)
             painter.drawPixmap(x, y, self._cw, self._ch, rot)
@@ -445,7 +462,7 @@ class ZoneWidget(QFrame):
             if new_idx != self._hover_idx:
                 self._hover_idx = new_idx
                 self._hover_timer.stop()
-                if gc and not gc.face_down and not self.mask_cards and not self.pile_mode:
+                if gc and not gc.face_down and not self._mask and not self.pile_mode:
                     self._hover_card_id = gc.card.id
                     self._hover_timer.start(600)
                 else:
@@ -482,7 +499,7 @@ class ZoneWidget(QFrame):
         key = event.key()
 
         # 上下キー: バトルゾーンの行移動
-        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and self.zone_type == ZoneType.BATTLE:
+        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and self.zone_def.two_row:
             gc = cards[idx]
             new_row = 1 if key == Qt.Key.Key_Up else 0
             if gc.row != new_row:
@@ -519,7 +536,7 @@ class ZoneWidget(QFrame):
                 self.update()
             else:
                 gc, _ = self._card_at(self._drag_start)
-                if gc and self.zone_type in (ZoneType.MANA, ZoneType.BATTLE):
+                if gc and self.zone_def.tappable:
                     self._toggle_tap(gc)
         self._drag_start = None
 
@@ -540,7 +557,7 @@ class ZoneWidget(QFrame):
             None,
         )
         self._hover_card_id = None
-        if gc and not gc.face_down and not self.mask_cards:
+        if gc and not gc.face_down and not self._mask:
             self._show_zoom(gc)
 
     def _show_zoom(self, gc: GameCard, global_pos=None):
@@ -552,13 +569,13 @@ class ZoneWidget(QFrame):
                  center.y() - dlg.sizeHint().height() // 2)
         dlg.exec()
 
-    def _move_hovered_to_zone(self, dest: ZoneType):
+    def _move_hovered_to_zone(self, dest: str):
         idx = self._hover_idx
         cards = self._zone().cards
         if idx < 0 or idx >= len(cards):
             return
         gc = cards[idx]
-        if dest == self.zone_type:
+        if dest == self.zone_id:
             return
         gs = GameState.get_instance()
         gs.push_snapshot()
@@ -573,7 +590,7 @@ class ZoneWidget(QFrame):
         gc.tapped = False
         gc.row = 0
 
-        if dest == ZoneType.DECK:
+        if dest == "deck":
             # 山札へは先頭（一番上）に戻す
             all_cards = [gc] + gc.under_cards
             gc.under_cards = []
@@ -584,14 +601,14 @@ class ZoneWidget(QFrame):
             for c in reversed(all_cards):
                 gs.zones[dest].insert_card(0, c)
         else:
-            if dest == ZoneType.SHIELD:
+            if dest == "shield":
                 gc.face_down = True
             gs.zones[dest].add_card(gc)
 
-        dest_name = _ZONE_NAMES.get(dest, dest.value)
+        dest_name = _ZONE_NAMES.get(dest, dest)
         _is_private = (
-            dest in self._HIDDEN_ZONES
-            or self.zone_type == ZoneType.TEMP
+            _is_private_zone(dest)
+            or self.zone_id == "temp"
             or gc.face_down
         )
         display = "カード" if _is_private else f"「{gc.card.name}」"
@@ -602,8 +619,6 @@ class ZoneWidget(QFrame):
     # Drag
     # ------------------------------------------------------------------
 
-    _HIDDEN_ZONES = (ZoneType.HAND, ZoneType.SHIELD, ZoneType.DECK, ZoneType.TEMP)
-
     def _start_drag(self, gc: GameCard, idx: int):
         is_multi = len(self._selected_ids) > 1 and gc.card.id in self._selected_ids
 
@@ -611,7 +626,7 @@ class ZoneWidget(QFrame):
         mime = QMimeData()
         if is_multi:
             payload = json.dumps({
-                "source_zone": self.zone_type.value,
+                "source_zone": self.zone_id,
                 "card_ids": list(self._selected_ids),
                 "card_id": gc.card.id,
                 "card_name": gc.card.name,
@@ -620,7 +635,7 @@ class ZoneWidget(QFrame):
         else:
             self._selected_ids.clear()
             payload = json.dumps({
-                "source_zone": self.zone_type.value,
+                "source_zone": self.zone_id,
                 "card_index": idx,
                 "card_id": gc.card.id,
                 "card_name": gc.card.name,
@@ -628,9 +643,9 @@ class ZoneWidget(QFrame):
             })
         mime.setData(MIME_TYPE, payload.encode())
         drag.setMimeData(mime)
-        # 非公開ゾーン（手札・シールド・山札）またはマスク中のゾーンからのドラッグは
+        # 非公開ゾーンまたはマスク中のゾーンからのドラッグは
         # カーソルに裏面を表示し、画面共有時に内容が漏れないようにする
-        use_back = gc.face_down or self.mask_cards or (self.zone_type in self._HIDDEN_ZONES)
+        use_back = gc.face_down or self._mask or _is_private_zone(self.zone_id)
         drag.setPixmap(_make_card_back(self._back_path()) if use_back else self._get_pixmap(gc))
         drag.setHotSpot(QPoint(self._cw // 2, self._ch // 2))
         drag.exec(Qt.DropAction.MoveAction)
@@ -667,17 +682,16 @@ class ZoneWidget(QFrame):
         # 山札へのドロップはダイアログで一番上/下を選ぶ。
         # QMessageBox をドラッグイベント中に開くと Qt がクラッシュするため、
         # カードを先に抜き取り、QTimer でイベント完了後にダイアログを表示する。
-        if self.zone_type == ZoneType.DECK and src != "deck_list":
-            try:
-                src_type = ZoneType(src)
-            except ValueError:
+        if self.zone_id == "deck" and src != "deck_list":
+            src_zone = gs.zones.get(src)
+            if src_zone is None:
                 return
             gs.push_snapshot()
             card_id = data.get("card_id")
-            src_cards = gs.zones[src_type].cards
+            src_cards = src_zone.cards
             idx = next((i for i, c in enumerate(src_cards) if c.card.id == card_id),
                        data.get("card_index", -1))
-            gc = gs.zones[src_type].remove_card(idx)
+            gc = src_zone.remove_card(idx)
             if not gc:
                 return
             # 山札（非公開ゾーン）への移動は常に非公開
@@ -701,8 +715,8 @@ class ZoneWidget(QFrame):
         self._handle_drop(data, drop_pos)
         event.acceptProposedAction()
         self._invalidate_cache()
-        if src != self.zone_type.value:
-            dest_name = _ZONE_NAMES.get(self.zone_type, self.zone_type.value)
+        if src != self.zone_id:
+            dest_name = _ZONE_NAMES.get(self.zone_id, self.zone_id)
             display = "カード" if _is_private else f"「{data.get('card_name', '?')}」"
             game_signals.action_logged.emit(f"{display}を{dest_name}へ移動")
         game_signals.zones_updated.emit()
@@ -728,14 +742,14 @@ class ZoneWidget(QFrame):
         gs = GameState.get_instance()
         src = data["source_zone"]
 
-        is_same_zone = (src == self.zone_type.value and src != "deck_list")
+        is_same_zone = (src == self.zone_id and src != "deck_list")
 
         # 同一ゾーン並び替え: カード除去前に挿入インデックスを計算
         target_insert_idx = None
         if is_same_zone and drop_pos is not None:
             self._calculate_positions()
             card_id_pre = data.get("card_id")
-            src_cards_pre = gs.zones[self.zone_type].cards
+            src_cards_pre = gs.zones[self.zone_id].cards
             src_idx_pre = next(
                 (i for i, c in enumerate(src_cards_pre) if c.card.id == card_id_pre),
                 data["card_index"],
@@ -751,14 +765,13 @@ class ZoneWidget(QFrame):
             )
             gc = GameCard(card)
         else:
-            try:
-                src_type = ZoneType(src)
-            except ValueError:
+            src_zone = gs.zones.get(src)
+            if src_zone is None:
                 return
             card_id = data.get("card_id")
-            src_cards = gs.zones[src_type].cards
+            src_cards = src_zone.cards
             idx = next((i for i, c in enumerate(src_cards) if c.card.id == card_id), data["card_index"])
-            gc = gs.zones[src_type].remove_card(idx)
+            gc = src_zone.remove_card(idx)
 
         if not gc:
             return
@@ -767,14 +780,14 @@ class ZoneWidget(QFrame):
         self._positions_dirty = True
 
         # バトルゾーンで既存カードの上にドロップ → 進化（同一ゾーン含む）
-        if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
+        if self.zone_id == "battle" and drop_pos is not None:
             target, _ = self._card_at(drop_pos)
             if target and target is not gc:
                 gc.tapped = target.tapped
                 gc.row = target.row
                 gc.under_cards = [target] + target.under_cards
                 target.under_cards = []
-                zone = gs.zones[self.zone_type]
+                zone = gs.zones[self.zone_id]
                 for i, card in enumerate(zone.cards):
                     if card is target:
                         zone.cards[i] = gc
@@ -782,42 +795,42 @@ class ZoneWidget(QFrame):
                 return
 
         # バトルゾーンはドロップ位置の y で行を決定
-        if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
+        if self.zone_id == "battle" and drop_pos is not None:
             gc.row = self._battle_row_from_pos(drop_pos.y())
 
         # 同一ゾーン内並び替え
         if is_same_zone and target_insert_idx is not None:
-            gs.zones[self.zone_type].insert_card(target_insert_idx, gc)
+            gs.zones[self.zone_id].insert_card(target_insert_idx, gc)
             return
 
         # ゾーン移動時に公開フラグをリセット
         gc.revealed = False
 
         # バトルゾーン以外への移動時、進化スタックを分離して個別に追加
-        if self.zone_type != ZoneType.BATTLE and gc.under_cards:
+        if self.zone_id != "battle" and gc.under_cards:
             all_cards = [gc] + gc.under_cards
             gc.under_cards = []
             for c in all_cards:
                 c.tapped = False
                 c.row = 0
-                if self.zone_type == ZoneType.SHIELD:
+                if self.zone_id == "shield":
                     c.face_down = True
-                elif self.zone_type == ZoneType.DECK:
+                elif self.zone_id == "deck":
                     c.face_down = False
-                if self.zone_type == ZoneType.MANA:
-                    gs.zones[self.zone_type].insert_card(0, c)
+                if self.zone_id == "mana":
+                    gs.zones[self.zone_id].insert_card(0, c)
                 else:
-                    gs.zones[self.zone_type].add_card(c)
+                    gs.zones[self.zone_id].add_card(c)
             return
 
-        if self.zone_type == ZoneType.SHIELD:
+        if self.zone_id == "shield":
             gc.face_down = True
-        elif self.zone_type == ZoneType.DECK:
+        elif self.zone_id == "deck":
             gc.face_down = False
-        if self.zone_type == ZoneType.MANA:
-            gs.zones[self.zone_type].insert_card(0, gc)
+        if self.zone_id == "mana":
+            gs.zones[self.zone_id].insert_card(0, gc)
         else:
-            gs.zones[self.zone_type].add_card(gc)
+            gs.zones[self.zone_id].add_card(gc)
 
     # ------------------------------------------------------------------
     # Context menu
@@ -838,11 +851,11 @@ class ZoneWidget(QFrame):
             action = mark_menu.addAction(label, lambda k=key: self._set_marker(gc, k))
             action.setIcon(_make_marker_icon(key))
 
-        if self.zone_type == ZoneType.HAND:
+        if self.zone_id == "hand":
             menu.addSeparator()
             reveal_text = "非公開にする" if gc.revealed else "公開する"
             menu.addAction(reveal_text, lambda: self._toggle_revealed(gc))
-        if self.zone_type == ZoneType.BATTLE:
+        if self.zone_id == "battle":
             menu.addSeparator()
             if gc.row == 0:
                 menu.addAction("上段へ移動", lambda: self._move_row(gc, 1))
@@ -853,7 +866,7 @@ class ZoneWidget(QFrame):
             menu.addAction(f"スタックを確認（{len(gc.under_cards) + 1}枚）",
                            lambda: self._show_stack(gc))
             menu.addAction("一番下を切り離す", lambda: self._pop_stack(gc, idx))
-        if self.zone_type == ZoneType.DECK:
+        if self.zone_id == "deck":
             menu.addSeparator()
             menu.addAction("山札をサーチ...", self._open_search_dialog)
         menu.exec(pos)
@@ -866,20 +879,19 @@ class ZoneWidget(QFrame):
 
     def _gc_is_private(self, gc: GameCard) -> bool:
         """GC オブジェクトを直接使うプライバシー判定（移動先ゾーンが self）。"""
-        if self.zone_type in self._HIDDEN_ZONES:
+        if _is_private_zone(self.zone_id):
             return True
         return gc.face_down
 
     def _handle_multi_drop(self, src: str, card_ids: list, drop_pos: QPoint, gs):
         """複数カードを同時に移動する。同一ゾーン内の並び替えは対象外。"""
-        if src == self.zone_type.value:
+        if src == self.zone_id:
             return  # 同一ゾーン内マルチ移動は未対応
-        try:
-            src_type = ZoneType(src)
-        except ValueError:
+
+        src_zone = gs.zones.get(src)
+        if src_zone is None:
             return
 
-        src_zone = gs.zones[src_type]
         id_set = set(card_ids)
         # ソースゾーンの順序を保持して収集
         gcs = [gc for gc in src_zone.cards if gc.card.id in id_set]
@@ -893,7 +905,7 @@ class ZoneWidget(QFrame):
         for gc in gcs:
             src_zone.cards.remove(gc)
 
-        if self.zone_type == ZoneType.DECK:
+        if self.zone_id == "deck":
             for gc in gcs:
                 gc.tapped = False
                 gc.row = 0
@@ -906,22 +918,22 @@ class ZoneWidget(QFrame):
 
         for gc in gcs:
             gc.revealed = False
-            if self.zone_type == ZoneType.SHIELD:
+            if self.zone_id == "shield":
                 gc.face_down = True
-            if self.zone_type == ZoneType.BATTLE and drop_pos is not None:
+            if self.zone_id == "battle" and drop_pos is not None:
                 gc.row = self._battle_row_from_pos(drop_pos.y())
-            if self.zone_type == ZoneType.MANA:
-                gs.zones[self.zone_type].insert_card(0, gc)
+            if self.zone_id == "mana":
+                gs.zones[self.zone_id].insert_card(0, gc)
             else:
-                gs.zones[self.zone_type].add_card(gc)
+                gs.zones[self.zone_id].add_card(gc)
 
         # ログ（プライバシー考慮）
-        dest_name = _ZONE_NAMES.get(self.zone_type, self.zone_type.value)
+        dest_name = _ZONE_NAMES.get(self.zone_id, self.zone_id)
         # ログ用に face_down を復元して判定（シールド行きは上書きされる前の値を使用）
         parts = []
         for gc in gcs:
             orig_face_down = face_down_map[gc.card.id]
-            is_private = self.zone_type in self._HIDDEN_ZONES or orig_face_down or src == ZoneType.TEMP.value
+            is_private = _is_private_zone(self.zone_id) or orig_face_down or src == "temp"
             parts.append("カード" if is_private else f"「{gc.card.name}」")
         game_signals.action_logged.emit("、".join(parts) + f"を{dest_name}へ移動")
 
@@ -934,24 +946,24 @@ class ZoneWidget(QFrame):
         元ゾーンが手札/公開ゾーンの場合は card.face_down で判断。
         """
         # 移動先が非公開ゾーンなら常に非公開
-        if self.zone_type in self._HIDDEN_ZONES:
+        if _is_private_zone(self.zone_id):
             return True
         # 保留ゾーンからの移動は常に非公開
-        if src == ZoneType.TEMP.value:
+        if src == "temp":
             return True
         # deck_list（デッキエディタ）からのドロップは公開
         if src == "deck_list":
             return False
         # すべてのゾーンで card.face_down で判断
-        try:
-            card_id = data.get("card_id")
-            src_gc = next(
-                (c for c in gs.zones[ZoneType(src)].cards if c.card.id == card_id),
-                None,
-            )
-            return src_gc.face_down if src_gc else False
-        except ValueError:
+        card_id = data.get("card_id")
+        src_zone = gs.zones.get(src)
+        if src_zone is None:
             return False
+        src_gc = next(
+            (c for c in src_zone.cards if c.card.id == card_id),
+            None,
+        )
+        return src_gc.face_down if src_gc else False
 
     def _open_search_dialog(self):
         from .search_dialog import SearchDialog
@@ -971,7 +983,7 @@ class ZoneWidget(QFrame):
         gs.push_snapshot()
         popped = gc.under_cards.pop(0)
         popped.tapped = gc.tapped
-        gs.zones[self.zone_type].add_card(popped)
+        gs.zones[self.zone_id].add_card(popped)
         self._invalidate_cache()
         game_signals.zones_updated.emit()
 
@@ -982,7 +994,7 @@ class ZoneWidget(QFrame):
             under.tapped = gc.tapped
         self._invalidate_cache()
         action = "アンタップ" if not gc.tapped else "タップ"
-        is_private = gc.face_down or self.zone_type in self._HIDDEN_ZONES
+        is_private = gc.face_down or _is_private_zone(self.zone_id)
         name = "カード" if is_private else f"「{gc.card.name}」"
         game_signals.action_logged.emit(f"{name}を{action}")
         game_signals.zones_updated.emit()
@@ -1012,7 +1024,7 @@ class ZoneWidget(QFrame):
         top_btn = box.addButton("一番上", QMessageBox.ButtonRole.AcceptRole)
         box.addButton("一番下", QMessageBox.ButtonRole.RejectRole)
         box.exec()
-        deck = GameState.get_instance().zones[ZoneType.DECK]
+        deck = GameState.get_instance().zones["deck"]
         if box.clickedButton() is top_btn:
             # 末尾 = 一番上。先頭カードが一番上になるよう逆順で追加
             for c in reversed(cards):
@@ -1030,7 +1042,7 @@ class ZoneWidget(QFrame):
 
     def _open_expand(self):
         from .expand_dialog import ExpandDialog
-        dlg = ExpandDialog(self.zone_type, self.label, self)
+        dlg = ExpandDialog(self.zone_id, self.label, self)
         dlg.exec()
         self._invalidate_cache()
         game_signals.zones_updated.emit()
