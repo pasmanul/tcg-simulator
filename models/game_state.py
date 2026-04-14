@@ -3,20 +3,9 @@ import os
 import random
 import uuid
 from collections import deque
-from enum import Enum
 from typing import Dict, List, Optional
 
 from .card import Card
-
-
-class ZoneType(Enum):
-    BATTLE = "battle"
-    SHIELD = "shield"
-    DECK = "deck"
-    GRAVEYARD = "graveyard"
-    MANA = "mana"
-    HAND = "hand"
-    TEMP = "temp"  # 手札とは別の非公開保留ゾーン
 
 
 class GameCard:
@@ -64,8 +53,8 @@ class GameCard:
 
 
 class Zone:
-    def __init__(self, zone_type: ZoneType):
-        self.zone_type = zone_type
+    def __init__(self, zone_id: str):
+        self.zone_id = zone_id
         self.cards: List[GameCard] = []
 
     def add_card(self, game_card: GameCard):
@@ -88,7 +77,8 @@ class GameState:
     _UNDO_LIMIT = 50
 
     def __init__(self):
-        self.zones: Dict[ZoneType, Zone] = {zt: Zone(zt) for zt in ZoneType}
+        _DEFAULT_ZONE_IDS = ["battle", "shield", "deck", "graveyard", "mana", "hand", "temp"]
+        self.zones: dict[str, Zone] = {zid: Zone(zid) for zid in _DEFAULT_ZONE_IDS}
         self.current_deck = None
         self.back_image_path: str = ""
         self._undo_stack: deque = deque(maxlen=self._UNDO_LIMIT)
@@ -98,6 +88,10 @@ class GameState:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
+
+    def initialize_zones(self, zone_ids: list[str]):
+        """zone_ids リストに合わせてゾーンを再構築する。game.json ロード後に呼ぶ。"""
+        self.zones = {zid: Zone(zid) for zid in zone_ids}
 
     # ------------------------------------------------------------------
     # Snapshot / Undo
@@ -122,16 +116,18 @@ class GameState:
     def to_dict(self) -> dict:
         return {
             "zones": {
-                zt.value: [gc.to_dict() for gc in zone.cards]
-                for zt, zone in self.zones.items()
+                zid: [gc.to_dict() for gc in zone.cards]
+                for zid, zone in self.zones.items()
             }
         }
 
     def from_dict(self, d: dict):
-        for zt in ZoneType:
-            self.zones[zt].cards.clear()
-            for gc_dict in d.get("zones", {}).get(zt.value, []):
-                self.zones[zt].add_card(GameCard.from_dict(gc_dict))
+        for zid in self.zones:
+            self.zones[zid].cards.clear()
+        for zid, cards in d.get("zones", {}).items():
+            if zid in self.zones:
+                for gc_dict in cards:
+                    self.zones[zid].add_card(GameCard.from_dict(gc_dict))
 
     def save(self, path: str):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -148,20 +144,22 @@ class GameState:
 
     def draw_card(self) -> bool:
         """山札の一番上から手札へ1枚ドローする。成功したら True を返す。"""
-        deck = self.zones[ZoneType.DECK]
-        if not deck.cards:
+        deck = self.zones.get("deck")
+        if not deck or not deck.cards:
             return False
         self.push_snapshot()
         gc = deck.remove_card(len(deck) - 1)
         if gc:
             gc.face_down = False
-            self.zones[ZoneType.HAND].add_card(gc)
+            self.zones["hand"].add_card(gc)
             return True
         return False
 
-    def search_deck(self, card_ids: list, dest: ZoneType = ZoneType.HAND) -> bool:
+    def search_deck(self, card_ids: list, dest: str = "hand") -> bool:
         """指定IDのカードを山札から抜き取り dest ゾーンへ移動する。"""
-        deck = self.zones[ZoneType.DECK]
+        deck = self.zones.get("deck")
+        if not deck:
+            return False
         id_set = set(card_ids)
         targets = [gc for gc in deck.cards if gc.card.id in id_set]
         if not targets:
@@ -174,13 +172,15 @@ class GameState:
         return True
 
     def reset_field(self):
-        for zt in [ZoneType.BATTLE, ZoneType.SHIELD, ZoneType.DECK, ZoneType.GRAVEYARD, ZoneType.MANA]:
-            self.zones[zt].cards.clear()
+        for zid in ["battle", "shield", "deck", "graveyard", "mana"]:
+            if zid in self.zones:
+                self.zones[zid].cards.clear()
 
     def initialize_field(self):
         self.reset_field()
-        self.zones[ZoneType.HAND].cards.clear()
-        self.zones[ZoneType.TEMP].cards.clear()
+        for zid in ["hand", "temp"]:
+            if zid in self.zones:
+                self.zones[zid].cards.clear()
         if self.current_deck is None:
             return
         # デッキカードを枚数分展開してシャッフル
@@ -200,11 +200,11 @@ class GameState:
         # シールド5枚（裏向き）
         for gc in cards[:5]:
             gc.face_down = True
-            self.zones[ZoneType.SHIELD].add_card(gc)
+            self.zones["shield"].add_card(gc)
         # 手札5枚
         for gc in cards[5:10]:
-            self.zones[ZoneType.HAND].add_card(gc)
+            self.zones["hand"].add_card(gc)
         # 残りを山札へ
         for gc in cards[10:]:
             gc.face_down = False
-            self.zones[ZoneType.DECK].add_card(gc)
+            self.zones["deck"].add_card(gc)
