@@ -45,3 +45,7 @@ data/config.json
 
 # UI/UX PRO MAX
 .claude/skills/ui-ux-pro-max/
+
+# Playwright
+web/test-results/
+web/playwright-report/
