@@ -120,14 +120,21 @@ export function stackCard(
 
   const fromIdx = fromZone.cards.findIndex(c => c.instanceId === instanceId)
   if (fromIdx === -1) return zones
-  const [card] = fromZone.cards.splice(fromIdx, 1)
 
+  // splice前にtargetIdxを確定する（同ゾーン内でsplice後にインデックスがずれるのを防ぐ）
   const targetIdx = toZone.cards.findIndex(c => c.instanceId === targetInstanceId)
   if (targetIdx === -1) return zones
-  const target = toZone.cards[targetIdx]
+
+  const [card] = fromZone.cards.splice(fromIdx, 1)
+
+  // 同ゾーン内かつfromIdx < targetIdxの場合、spliceにより1つずれる
+  const adjustedTargetIdx = (fromZoneId === toZoneId && fromIdx < targetIdx)
+    ? targetIdx - 1
+    : targetIdx
+  const target = toZone.cards[adjustedTargetIdx]
 
   // 新しいトップカードの under_cards = [旧トップ, ...旧トップの under_cards]
-  toZone.cards[targetIdx] = { ...card, under_cards: [{ ...target, under_cards: [] }, ...target.under_cards] }
+  toZone.cards[adjustedTargetIdx] = { ...card, under_cards: [{ ...target, under_cards: [] }, ...target.under_cards] }
   return next
 }
 

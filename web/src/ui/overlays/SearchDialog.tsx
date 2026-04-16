@@ -42,6 +42,12 @@ export function SearchDialog() {
     })
   }
 
+  function handleClose() {
+    setSelected(new Set())
+    setFilter('')
+    closeDialog()
+  }
+
   function handleMove() {
     const targetLabel = MOVE_TARGETS.find(t => t.id === target)?.label ?? target
     for (const id of selected) {
@@ -49,9 +55,7 @@ export function SearchDialog() {
       moveCard('deck', id, target)
       addLog(`サーチ: ${name} → ${targetLabel}`)
     }
-    setSelected(new Set())
-    setFilter('')
-    closeDialog()
+    handleClose()
   }
 
   const overlay: React.CSSProperties = {
@@ -128,7 +132,7 @@ export function SearchDialog() {
   }
 
   return (
-    <div style={overlay} onClick={closeDialog}>
+    <div style={overlay} onClick={handleClose}>
       <div style={dialog} onClick={e => e.stopPropagation()}>
         <div style={title}>DECK SEARCH</div>
         <div style={{ color: '#505c78', fontSize: 11 }}>
@@ -198,7 +202,7 @@ export function SearchDialog() {
             style={{ ...btn, background: '#1a1a2e', color: '#505c78', border: '1px solid #303050' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#22223a')}
             onMouseLeave={e => (e.currentTarget.style.background = '#1a1a2e')}
-            onClick={closeDialog}
+            onClick={handleClose}
           >
             キャンセル
           </button>

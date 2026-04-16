@@ -62,8 +62,12 @@ export async function uploadSnapshot(): Promise<GameStateSnapshot | null> {
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) { resolve(null); return }
-      const text = await file.text()
-      resolve(JSON.parse(text) as GameStateSnapshot)
+      try {
+        const text = await file.text()
+        resolve(JSON.parse(text) as GameStateSnapshot)
+      } catch {
+        resolve(null)
+      }
     }
     input.click()
   })

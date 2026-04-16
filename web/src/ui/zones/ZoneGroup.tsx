@@ -177,7 +177,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
             <CardShape
               key={gc.instanceId}
               gc={gc}
-              x={pos.x - x}  // relative to group? No — absolute
+              x={pos.x}
               y={pos.y}
               cardW={pos.cardW}
               cardH={pos.cardH}

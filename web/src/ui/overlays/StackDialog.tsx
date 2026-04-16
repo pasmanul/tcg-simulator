@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
 import type { GameCard } from '../../domain/types'
@@ -13,18 +14,23 @@ export function StackDialog() {
     unstackCard: s.unstackCard,
   }))
 
-  if (!stackInfo) return null
-
   // 最新状態のカードをストアから取得（ダイアログ表示後に変化している可能性があるため）
-  const topCard = zones[stackInfo.zoneId]?.cards.find(
-    c => c.instanceId === stackInfo.gc.instanceId,
-  ) ?? stackInfo.gc
+  const topCard = stackInfo
+    ? zones[stackInfo.zoneId]?.cards.find(c => c.instanceId === stackInfo.gc.instanceId)
+    : undefined
+
+  // ゾーンやカードが消えていたら自動クローズ
+  useEffect(() => {
+    if (stackInfo && !topCard) closeStackDialog()
+  }, [stackInfo, topCard, closeStackDialog])
+
+  if (!stackInfo || !topCard) return null
 
   const allCards: GameCard[] = [topCard, ...topCard.under_cards]
 
   function handleDetach(gc: GameCard, index: number) {
     if (index === 0) return // トップカードは切り離さない
-    unstackCard(stackInfo!.zoneId, topCard.instanceId, gc.instanceId)
+    unstackCard(stackInfo!.zoneId, topCard!.instanceId, gc.instanceId)
     addLog(`${gc.card.name} をスタックから切り離し`)
     closeStackDialog()
   }

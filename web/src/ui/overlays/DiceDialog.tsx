@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUIStore } from '../../store/uiStore'
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20]
@@ -16,17 +16,28 @@ export function DiceDialog() {
   const [display, setDisplay] = useState<number | null>(null)
   const [rolling, setRolling] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ダイアログを閉じた時にロール中のintervalをキャンセル
+  useEffect(() => {
+    if (activeDialog !== 'dice' && intervalRef.current !== null) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+      setRolling(false)
+    }
+  }, [activeDialog])
 
   const roll = useCallback(() => {
     if (rolling) return
     setRolling(true)
     const final = Math.floor(Math.random() * sides) + 1
     let count = 0
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setDisplay(Math.floor(Math.random() * sides) + 1)
       count++
       if (count >= 14) {
-        clearInterval(interval)
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
         setDisplay(final)
         setRolling(false)
         setHistory(h => [{ sides, result: final }, ...h].slice(0, 10))
