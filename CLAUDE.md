@@ -158,3 +158,134 @@ git tag v0.x.x && git push origin v0.x.x
 - `data/` 以下のパスは `main.py` で `os.chdir()` しているため相対パスで書いてよい
 - PyInstaller frozen 時は `sys.executable` の親ディレクトリが作業ディレクトリになる
 - ゾーン追加・変更は `data/game.json` を編集するか「設定 → レイアウト編集」から行う
+
+---
+
+# Web 版（React + Vite + Konva）
+
+## 技術スタック
+
+- React 18 + TypeScript + Vite
+- react-konva / Konva（canvas 描画）
+- Zustand（状態管理）
+- File System Access API（カードフォルダ・セーブデータ読み書き）
+
+## ディレクトリ構成
+
+```
+web/
+├── index.html          # ボードページ (board)
+├── hand.html           # 手札ウィンドウ (hand)
+├── deck.html           # デッキビルダー
+├── vite.config.ts      # マルチページ設定 (index/hand/deck)
+└── src/
+    ├── domain/
+    │   ├── types.ts        # GameCard, Zone, ZoneDefinition, GameStateSnapshot 等
+    │   └── gameLogic.ts    # 純粋関数: moveCard, stackCard, unstackCard, shuffleZone 等
+    ├── store/
+    │   ├── gameStore.ts    # ゲーム状態 + アクション（アンドゥスタック含む）
+    │   ├── uiStore.ts      # UI 状態（ダイアログ・ログ・コンテキストメニュー等）
+    │   ├── layoutStore.ts  # レイアウト定義（game.json 相当、ZoneDefinition[]）
+    │   └── libraryStore.ts # カードライブラリ・画像キャッシュ・dirHandle
+    ├── sync/
+    │   └── useTabSync.ts   # BroadcastChannel によるタブ間状態同期
+    ├── lib/
+    │   └── saveStorage.ts  # File System Access API / ダウンロードフォールバック
+    └── ui/
+        ├── pages/
+        │   ├── BoardPage.tsx   # ボード全体レイアウト
+        │   └── DeckPage.tsx    # デッキビルダー UI
+        ├── stage/
+        │   └── BoardStage.tsx  # Konva Stage + card-drop イベント処理
+        ├── zones/
+        │   ├── ZoneGroup.tsx          # ゾーン背景・カード描画（Konva）
+        │   └── ZoneOverlayButtons.tsx # 全タップ等の DOM ボタン
+        ├── cards/
+        │   └── CardShape.tsx   # カード 1 枚の Konva Group
+        ├── hud/
+        │   └── BoardHud.tsx    # 上部ボタンバー
+        ├── overlays/           # ダイアログ群（常にマウント・自己非表示パターン）
+        │   ├── ContextMenu.tsx
+        │   ├── SetupDialog.tsx
+        │   ├── SearchDialog.tsx
+        │   ├── DiceDialog.tsx
+        │   ├── StackDialog.tsx
+        │   ├── SaveLoadDialog.tsx
+        │   ├── DeckDropDialog.tsx
+        │   ├── ActionLog.tsx
+        │   └── ...
+        └── hooks/
+            ├── useStageSize.ts   # コンテナサイズ監視
+            └── useCardLayout.ts  # calcCardPositions（絶対座標を返す）
+```
+
+## アーキテクチャ
+
+### Zustand ストア
+
+| ストア | 主な内容 |
+|--------|---------|
+| `gameStore` | `zones: Record<string, Zone>`、アンドゥスタック（最大50件）、moveCard / tapCard / stackCard / loadSnapshot 等 |
+| `uiStore` | activeDialog / contextMenu / stackInfo / deckDropInfo / actionLog（最大200件）/ deckPanelOpen |
+| `layoutStore` | `ZoneDefinition[]` + `WindowDefinition[]`（game.json 相当）|
+| `libraryStore` | カードライブラリ・`dirHandle`（File System Access API）・画像 URL 解決 |
+
+### ゲームロジック（`domain/gameLogic.ts`）
+
+- 全関数は純粋関数。`zones` を受け取り新しい `zones` を返す（イミュータブル更新）
+- `cloneZones` で deep clone してから変更する
+- アクション実行前に `gameStore` 側で `undoStack.push(snapshot)` する
+
+### Konva 描画・座標系
+
+- `calcCardPositions(cards, areaX, areaY, areaW, areaH, cardW, cardH, twoRow)` は **絶対座標** を返す
+- `ZoneGroup` 内の `CardShape` には `x={pos.x}` / `y={pos.y}` を直接渡す（`ZoneGroup` の `<Group>` に offset なし）
+- ドラッグ終了後の位置リセットも同じ絶対座標で `e.target.x(x + offsetX)` する
+
+### ドラッグ＆ドロップ
+
+1. `CardShape.onDragEnd` で `window.dispatchEvent(new CustomEvent('card-drop', { detail: { fromZoneId, instanceId, dropX, dropY } }))` を発火
+2. `BoardStage.handleCardDrop` がイベントを受け取り：
+   - まずカード上へのドロップを検出（`calcCardPositions` で各カードの bounding box を計算）→ `stackCard`
+   - 山札へのドロップ → `setDeckDropInfo`（DeckDropDialog で上/下を選択）
+   - それ以外 → `moveCard`
+
+### ダイアログパターン
+
+- 全ダイアログは `BoardPage` に**常時マウント**
+- `if (activeDialog !== 'xxx') return null` で自己非表示
+- `StackDialog` / `DeckDropDialog` は独自 state（`stackInfo` / `deckDropInfo`）で制御
+- ダイアログを閉じた時のステートリセット責任はダイアログ自身が持つ
+
+### カード進化スタック
+
+- `GameCard.under_cards: GameCard[]` にスタック下のカードを格納
+- 上に重ねると `{ ...newCard, under_cards: [oldTop, ...oldTop.under_cards] }` に置き換え
+- `stackCard` で **splice 前に targetIdx を確定**する（同ゾーン内でインデックスがずれるため）
+- `CardShape` のスタックバッジ（オレンジ枚数表示）をクリックで `StackDialog` を開く
+
+### マルチウィンドウ同期
+
+- `useTabSync(windowId)` が `BroadcastChannel('tcg-sim-state')` でタブ間同期
+- ボード (`index.html`) と手札ウィンドウ (`hand.html`) で同じ `gameStore` 状態を共有
+
+### File System Access API / セーブ
+
+- `libraryStore.dirHandle`: ルートフォルダハンドル（IndexedDB で永続化）
+- `saveStorage.ts`: `saves/` サブフォルダへ JSON 読み書き
+- `dirHandle` がない場合: セーブはダウンロード、ロードはファイルピッカーにフォールバック
+
+## 開発・ビルド
+
+```bash
+cd web
+npm install
+npm run dev     # 開発サーバー（http://localhost:5173）
+npm run build   # dist/ に出力
+npx tsc --noEmit  # 型チェックのみ
+```
+
+## 受け入れ基準
+
+`docs/acceptance/web-parity.md` に 101 件の AC が定義されている。
+全件 `[CODE]`（コードあり・ブラウザ動作未確認）。`[PENDING]` は 0 件。
