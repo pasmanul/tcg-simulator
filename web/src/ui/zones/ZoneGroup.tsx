@@ -32,11 +32,12 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   const cards = useGameStore(s => s.zones[effectiveZoneId]?.cards ?? [])
   const moveCard = useGameStore(s => s.moveCard)
   const tapCard = useGameStore(s => s.tapCard)
-  const { selectedCardIds, selectCard, clearSelection, openContextMenu, addLog } = useUIStore(s => ({
+  const { selectedCardIds, selectCard, clearSelection, openContextMenu, openStackDialog, addLog } = useUIStore(s => ({
     selectedCardIds: s.selectedCardIds,
     selectCard: s.selectCard,
     clearSelection: s.clearSelection,
     openContextMenu: s.openContextMenu,
+    openStackDialog: s.openStackDialog,
     addLog: s.addLog,
   }))
 
@@ -185,6 +186,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
               draggable={!zoneDef.masked}
               onTap={handleTap}
               onContextMenu={handleContextMenu}
+              onBadgeClick={(gc) => openStackDialog(gc, zoneDef.id)}
               onDragStart={() => clearSelection()}
               onDragEnd={handleDragEnd}
             />

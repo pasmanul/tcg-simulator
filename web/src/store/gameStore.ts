@@ -7,6 +7,8 @@ import {
   shuffleZone,
   shuffleArray,
   initializeField,
+  stackCard,
+  unstackCard,
 } from '../domain/gameLogic'
 
 interface GameStore {
@@ -31,8 +33,15 @@ interface GameStore {
   // Load deck cards into deck zone only (preserves other zones)
   loadToDeck: (deckCards: GameCard[]) => void
 
+  // Stack (evolution)
+  stackCard: (fromZoneId: string, instanceId: string, toZoneId: string, targetInstanceId: string) => void
+  unstackCard: (zoneId: string, topInstanceId: string, detachInstanceId: string) => void
+
   // Undo
   undo: () => void
+
+  // Apply snapshot with undo push (save/load)
+  loadSnapshot: (snapshot: GameStateSnapshot) => void
 
   // Internal: apply snapshot from remote tab (no undo push)
   _applySnapshot: (snapshot: GameStateSnapshot) => void
@@ -156,6 +165,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return { zones, undoStack }
     }),
 
+  stackCard: (fromZoneId, instanceId, toZoneId, targetInstanceId) =>
+    set((s) => {
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      const zones = stackCard(s.zones, fromZoneId, instanceId, toZoneId, targetInstanceId)
+      return { zones, undoStack }
+    }),
+
+  unstackCard: (zoneId, topInstanceId, detachInstanceId) =>
+    set((s) => {
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      const zones = unstackCard(s.zones, zoneId, topInstanceId, detachInstanceId)
+      return { zones, undoStack }
+    }),
+
   undo: () =>
     set((s) => {
       if (s.undoStack.length === 0) return s
@@ -163,6 +186,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const snap = stack.pop()!
       return { zones: cloneZones(snap.zones), undoStack: stack }
     }),
+
+  loadSnapshot: (snapshot) =>
+    set((s) => ({
+      zones: cloneZones(snapshot.zones),
+      undoStack: pushSnapshot(s.undoStack, s.zones),
+    })),
 
   _applySnapshot: (snapshot) =>
     set(() => ({ zones: cloneZones(snapshot.zones) })),

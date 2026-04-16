@@ -3,9 +3,8 @@ import { useUIStore } from '../../store/uiStore'
 
 export function BoardHud() {
   const undo = useGameStore(s => s.undo)
-  const { openDialog, addLog, openDeckPanel } = useUIStore(s => ({
+  const { openDialog, openDeckPanel } = useUIStore(s => ({
     openDialog: s.openDialog,
-    addLog: s.addLog,
     openDeckPanel: s.openDeckPanel,
   }))
 
@@ -42,12 +41,18 @@ export function BoardHud() {
         style={{ ...btn, background: '#0e1440', color: '#a0b8ff', border: '1px solid #283880' }}
         onMouseEnter={e => (e.currentTarget.style.background = '#141c60')}
         onMouseLeave={e => (e.currentTarget.style.background = '#0e1440')}
-        onClick={() => {
-          const n = Math.floor(Math.random() * 6) + 1
-          addLog(`ダイス: ${n}`)
-        }}
+        onClick={() => openDialog('dice')}
       >
         DICE
+      </button>
+
+      <button
+        style={{ ...btn, background: '#0c1820', color: '#88c4aa', border: '1px solid #204040' }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#0f2030')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#0c1820')}
+        onClick={() => openDialog('save-load')}
+      >
+        SAVE/LOAD
       </button>
 
       <button

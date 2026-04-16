@@ -21,10 +21,12 @@ const MARKERS = [
 ]
 
 export function ContextMenu() {
-  const { contextMenu, closeContextMenu, addLog } = useUIStore(s => ({
+  const { contextMenu, closeContextMenu, addLog, openDialog, openStackDialog } = useUIStore(s => ({
     contextMenu: s.contextMenu,
     closeContextMenu: s.closeContextMenu,
     addLog: s.addLog,
+    openDialog: s.openDialog,
+    openStackDialog: s.openStackDialog,
   }))
   const { tapCard, flipCard, setMarker, moveCard } = useGameStore(s => ({
     tapCard: s.tapCard,
@@ -97,6 +99,30 @@ export function ContextMenu() {
   return (
     <div ref={ref} style={menuStyle}>
       <div style={headerStyle}>{card.card.name.slice(0, 18)}</div>
+
+      {/* スタック確認 — スタックカードがある場合のみ */}
+      {card.under_cards.length > 0 && (
+        <div
+          style={{ ...itemStyle, color: '#e07020' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(224,112,32,0.15)')}
+          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          onClick={() => action(() => openStackDialog(card, zoneId))}
+        >
+          スタック確認 ({card.under_cards.length + 1})
+        </div>
+      )}
+
+      {/* サーチ — 山札のみ */}
+      {zoneId === 'deck' && (
+        <div
+          style={{ ...itemStyle, color: '#00FFFF' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,255,255,0.1)')}
+          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          onClick={() => action(() => openDialog('search'))}
+        >
+          サーチ
+        </div>
+      )}
 
       <div
         style={itemStyle}

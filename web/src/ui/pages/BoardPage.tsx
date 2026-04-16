@@ -8,6 +8,10 @@ import { BoardHud } from '../hud/BoardHud'
 import { ActionLog } from '../overlays/ActionLog'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { SetupDialog } from '../overlays/SetupDialog'
+import { SearchDialog } from '../overlays/SearchDialog'
+import { DiceDialog } from '../overlays/DiceDialog'
+import { StackDialog } from '../overlays/StackDialog'
+import { SaveLoadDialog } from '../overlays/SaveLoadDialog'
 import { DeckPage } from './DeckPage'
 
 // CRT scanline overlay style
@@ -65,6 +69,10 @@ export function BoardPage() {
       {/* Overlays */}
       <ContextMenu />
       <SetupDialog />
+      <SearchDialog />
+      <DiceDialog />
+      <StackDialog />
+      <SaveLoadDialog />
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

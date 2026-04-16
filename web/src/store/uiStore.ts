@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { GameCard, ActionLogEntry } from '../domain/types'
 
-export type DialogType = 'setup' | 'search' | 'dice' | null
+export type DialogType = 'setup' | 'search' | 'dice' | 'save-load' | null
 
 interface ContextMenuState {
   x: number
@@ -11,12 +11,18 @@ interface ContextMenuState {
   card: GameCard
 }
 
+interface StackInfo {
+  gc: GameCard
+  zoneId: string
+}
+
 interface UIStore {
   selectedCardIds: Set<string>
   zoomCard: GameCard | null
   zoomPos: { x: number; y: number } | null
   contextMenu: ContextMenuState | null
   activeDialog: DialogType
+  stackInfo: StackInfo | null
   actionLog: ActionLogEntry[]
   deckPanelOpen: boolean
 
@@ -27,6 +33,8 @@ interface UIStore {
   closeContextMenu: () => void
   openDialog: (name: DialogType) => void
   closeDialog: () => void
+  openStackDialog: (gc: GameCard, zoneId: string) => void
+  closeStackDialog: () => void
   addLog: (message: string) => void
   openDeckPanel: () => void
   closeDeckPanel: () => void
@@ -38,6 +46,7 @@ export const useUIStore = create<UIStore>((set) => ({
   zoomPos: null,
   contextMenu: null,
   activeDialog: null,
+  stackInfo: null,
   actionLog: [],
   deckPanelOpen: false,
 
@@ -63,6 +72,9 @@ export const useUIStore = create<UIStore>((set) => ({
   openDialog: (name) => set({ activeDialog: name }),
 
   closeDialog: () => set({ activeDialog: null }),
+
+  openStackDialog: (gc, zoneId) => set({ stackInfo: { gc, zoneId } }),
+  closeStackDialog: () => set({ stackInfo: null }),
 
   openDeckPanel: () => set({ deckPanelOpen: true }),
   closeDeckPanel: () => set({ deckPanelOpen: false }),

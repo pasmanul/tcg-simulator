@@ -4,9 +4,10 @@ import { useLayoutStore } from '../../store/layoutStore'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useStageSize, gridToPixel } from '../hooks/useStageSize'
+import { calcCardPositions } from '../hooks/useCardLayout'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
-import { TOKENS } from '../../theme'
+import { TOKENS, CARD_W, CARD_H } from '../../theme'
 
 export function BoardStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -14,7 +15,9 @@ export function BoardStage() {
 
   const zoneDefs = useLayoutStore(s => s.getWindowZones('board'))
   const winDef = useLayoutStore(s => s.getWindow('board'))
+  const zones = useGameStore(s => s.zones)
   const moveCard = useGameStore(s => s.moveCard)
+  const stackCard = useGameStore(s => s.stackCard)
   const addLog = useUIStore(s => s.addLog)
   const closeContextMenu = useUIStore(s => s.closeContextMenu)
 
@@ -24,33 +27,66 @@ export function BoardStage() {
 
     if (!winDef || size.width === 0) return
 
-    // Find which zone the drop target is
     const cellW = size.width / winDef.grid_cols
     const cellH = size.height / winDef.grid_rows
 
+    // Find which zone contains the drop point
     let targetZoneId: string | null = null
     for (const zd of zoneDefs) {
       if (zd.source_zone_id || zd.ui_widget) continue
-      const rect = {
+      const r = {
         x: zd.grid_pos.col * cellW,
         y: zd.grid_pos.row * cellH,
         w: zd.grid_pos.col_span * cellW,
         h: zd.grid_pos.row_span * cellH,
       }
-      if (
-        dropX >= rect.x && dropX <= rect.x + rect.w &&
-        dropY >= rect.y && dropY <= rect.y + rect.h
-      ) {
+      if (dropX >= r.x && dropX <= r.x + r.w && dropY >= r.y && dropY <= r.y + r.h) {
         targetZoneId = zd.id
         break
       }
     }
 
-    if (targetZoneId && targetZoneId !== fromZoneId) {
-      moveCard(fromZoneId, instanceId, targetZoneId)
-      addLog(`カード移動 → ${zoneDefs.find(z => z.id === targetZoneId)?.name}`)
+    if (!targetZoneId) return
+
+    const TITLE_H = 22
+    const targetZone = zoneDefs.find(z => z.id === targetZoneId)
+    const targetCards = zones[targetZoneId]?.cards ?? []
+
+    // Check if the drop point lands on a specific card → stack/evolve
+    if (targetZone && !targetZone.pile_mode && targetCards.length > 0) {
+      const r = {
+        x: targetZone.grid_pos.col * cellW,
+        y: targetZone.grid_pos.row * cellH,
+        w: targetZone.grid_pos.col_span * cellW,
+        h: targetZone.grid_pos.row_span * cellH,
+      }
+      const cardScale = targetZone.card_scale ?? 1.0
+      const cardW = Math.round(CARD_W * cardScale)
+      const cardH = Math.round(CARD_H * cardScale)
+      const positions = calcCardPositions(
+        targetCards,
+        r.x, r.y + TITLE_H,
+        r.w, r.h - TITLE_H,
+        cardW, cardH,
+        !!targetZone.two_row,
+      )
+      for (const pos of positions) {
+        if (pos.instanceId === instanceId) continue
+        if (dropX >= pos.x && dropX <= pos.x + pos.cardW &&
+            dropY >= pos.y && dropY <= pos.y + pos.cardH) {
+          stackCard(fromZoneId, instanceId, targetZoneId, pos.instanceId)
+          addLog(`進化スタック → ${targetZone.name}`)
+          return
+        }
+      }
     }
-  }, [zoneDefs, winDef, size, moveCard, addLog])
+
+    // Regular zone move
+    if (targetZoneId !== fromZoneId) {
+      moveCard(fromZoneId, instanceId, targetZoneId)
+      addLog(`カード移動 → ${targetZone?.name}`)
+    }
+  }, [zoneDefs, winDef, size, zones, moveCard, stackCard, addLog])
 
   useEffect(() => {
     window.addEventListener('card-drop', handleCardDrop)

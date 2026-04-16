@@ -14,6 +14,7 @@ interface Props {
   selected?: boolean
   onTap?: (gc: GameCard) => void
   onContextMenu?: (gc: GameCard, x: number, y: number) => void
+  onBadgeClick?: (gc: GameCard) => void
   draggable?: boolean
   onDragStart?: (gc: GameCard) => void
   onDragEnd?: (gc: GameCard, x: number, y: number) => void
@@ -37,6 +38,7 @@ export function CardShape({
   selected = false,
   onTap,
   onContextMenu,
+  onBadgeClick,
   draggable = false,
   onDragStart,
   onDragEnd,
@@ -155,7 +157,7 @@ export function CardShape({
         />
       )}
 
-      {/* Stack count badge */}
+      {/* Stack count badge — clickable to open StackDialog */}
       {gc.under_cards.length > 0 && (
         <Rect
           x={-cardW / 2 + 2}
@@ -164,6 +166,10 @@ export function CardShape({
           height={16}
           fill="#e07020"
           cornerRadius={3}
+          onClick={(e) => {
+            e.cancelBubble = true
+            onBadgeClick?.(gc)
+          }}
         />
       )}
       {gc.under_cards.length > 0 && (
@@ -176,6 +182,7 @@ export function CardShape({
           fill="#fff"
           align="center"
           fontFamily="monospace"
+          listening={false}
         />
       )}
     </Group>

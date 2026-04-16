@@ -105,6 +105,57 @@ export function initializeField(
   return next
 }
 
+/** ドラッグしたカードを別カードの上に重ねて進化スタックを形成する */
+export function stackCard(
+  zones: Record<string, Zone>,
+  fromZoneId: string,
+  instanceId: string,
+  toZoneId: string,
+  targetInstanceId: string,
+): Record<string, Zone> {
+  const next = cloneZones(zones)
+  const fromZone = next[fromZoneId]
+  const toZone = next[toZoneId]
+  if (!fromZone || !toZone) return zones
+
+  const fromIdx = fromZone.cards.findIndex(c => c.instanceId === instanceId)
+  if (fromIdx === -1) return zones
+  const [card] = fromZone.cards.splice(fromIdx, 1)
+
+  const targetIdx = toZone.cards.findIndex(c => c.instanceId === targetInstanceId)
+  if (targetIdx === -1) return zones
+  const target = toZone.cards[targetIdx]
+
+  // 新しいトップカードの under_cards = [旧トップ, ...旧トップの under_cards]
+  toZone.cards[targetIdx] = { ...card, under_cards: [{ ...target, under_cards: [] }, ...target.under_cards] }
+  return next
+}
+
+/** スタック内の指定カードを切り離してゾーンに戻す */
+export function unstackCard(
+  zones: Record<string, Zone>,
+  zoneId: string,
+  topInstanceId: string,
+  detachInstanceId: string,
+): Record<string, Zone> {
+  const next = cloneZones(zones)
+  const zone = next[zoneId]
+  if (!zone) return zones
+
+  const topIdx = zone.cards.findIndex(c => c.instanceId === topInstanceId)
+  if (topIdx === -1) return zones
+  const top = { ...zone.cards[topIdx] }
+
+  const detachIdx = top.under_cards.findIndex(c => c.instanceId === detachInstanceId)
+  if (detachIdx === -1) return zones
+
+  const detached = top.under_cards[detachIdx]
+  top.under_cards = top.under_cards.filter(c => c.instanceId !== detachInstanceId)
+  zone.cards[topIdx] = top
+  zone.cards.push({ ...detached })
+  return next
+}
+
 export function buildDeckFromLibrary(
   cards: Card[],
   deckList: { cardId: string; count: number }[],
