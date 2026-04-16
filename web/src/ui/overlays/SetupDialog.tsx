@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
-import { pickAndLoadLibrary, restoreLibrary } from '../../lib/imageCache'
+import { pickAndLoadLibrary, restoreLibrary, initNewLibrary } from '../../lib/imageCache'
 
 export function SetupDialog() {
   const { activeDialog, closeDialog } = useUIStore(s => ({
@@ -25,6 +25,19 @@ export function SetupDialog() {
       loadLibrary(result.cardsJson, result.fileMap, result.dirHandle)
       if (result.cardBackUrl) setCardBack(result.cardBackUrl)
       setStatus(`✓ ${result.cardsJson.length}枚のカードを読み込みました`)
+    } else {
+      setStatus('キャンセルされました')
+    }
+    setLoading(false)
+  }
+
+  async function handleInit() {
+    setLoading(true)
+    setStatus('新規フォルダを初期化中...')
+    const result = await initNewLibrary()
+    if (result) {
+      loadLibrary(result.cardsJson, result.fileMap, result.dirHandle)
+      setStatus('✓ 空のライブラリを初期化しました（cards/ decks/ フォルダを作成）')
     } else {
       setStatus('キャンセルされました')
     }
@@ -92,10 +105,8 @@ export function SetupDialog() {
         </h2>
 
         <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 24, lineHeight: 1.7 }}>
-          カードの画像フォルダを選択してください。<br />
-          フォルダ内に <code style={{ color: '#A78BFA' }}>cards.json</code>、
-          <code style={{ color: '#A78BFA' }}>cards/</code>（画像）、
-          <code style={{ color: '#A78BFA' }}>back.jpg</code> が必要です。
+          既存のカードフォルダを選択するか、<br />
+          空のフォルダで新規セットアップしてください。
         </p>
 
         <button
@@ -122,6 +133,19 @@ export function SetupDialog() {
           onClick={handleRestore}
         >
           前回のフォルダを復元
+        </button>
+
+        <button
+          style={{
+            ...btnStyle,
+            background: 'transparent',
+            color: '#44bbaa',
+            border: '1px solid #227766',
+          }}
+          disabled={loading}
+          onClick={handleInit}
+        >
+          新規セットアップ（空フォルダ）
         </button>
 
         {status && (

@@ -1,4 +1,5 @@
 // File System Access API + IndexedDB for card image persistence
+type WritableHandle = FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }
 
 const IDB_NAME = 'tcg-simulator'
 const IDB_STORE = 'handles'
@@ -91,6 +92,26 @@ export async function pickAndLoadLibrary(): Promise<LoadedLibrary | null> {
     const dirHandle: FileSystemDirectoryHandle = await win.showDirectoryPicker({ mode: 'readwrite' })
     await saveDirectoryHandle(dirHandle)
     return loadLibraryFromDirectory(dirHandle)
+  } catch {
+    return null
+  }
+}
+
+export async function initNewLibrary(): Promise<LoadedLibrary | null> {
+  try {
+    if (!win.showDirectoryPicker) throw new Error('File System Access API not supported')
+    const dirHandle: FileSystemDirectoryHandle = await win.showDirectoryPicker({ mode: 'readwrite' })
+    // cards.json を空配列で作成
+    const cardsFileHandle = await dirHandle.getFileHandle('cards.json', { create: true })
+    const w1 = await (cardsFileHandle as WritableHandle).createWritable()
+    await w1.write(JSON.stringify([]))
+    await w1.close()
+    await Promise.all([
+      dirHandle.getDirectoryHandle('cards', { create: true }),
+      dirHandle.getDirectoryHandle('decks', { create: true }),
+    ])
+    await saveDirectoryHandle(dirHandle)
+    return { cardsJson: [], fileMap: new Map(), cardBackUrl: '', dirHandle }
   } catch {
     return null
   }

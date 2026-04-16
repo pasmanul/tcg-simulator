@@ -3,9 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 
 export function BoardHud() {
   const undo = useGameStore(s => s.undo)
-  const { openDialog, addLog } = useUIStore(s => ({
+  const { openDialog, addLog, openDeckPanel } = useUIStore(s => ({
     openDialog: s.openDialog,
     addLog: s.addLog,
+    openDeckPanel: s.openDeckPanel,
   }))
 
   const btn: React.CSSProperties = {
@@ -58,22 +59,23 @@ export function BoardHud() {
         UNDO
       </button>
 
-      <a
-        href="/deck.html"
-        style={{
-          ...btn,
-          background: '#0c0c28',
-          color: '#aa88dd',
-          border: '1px solid #404080',
-          textDecoration: 'none',
-          display: 'inline-block',
-          marginLeft: 'auto',
-        }}
+      <button
+        style={{ ...btn, background: '#0c1c14', color: '#66ddaa', border: '1px solid #225040', marginLeft: 'auto' }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#102618')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#0c1c14')}
+        onClick={() => window.open('/hand.html', 'hand', 'width=540,height=720')}
+      >
+        HAND
+      </button>
+
+      <button
+        style={{ ...btn, background: '#0c0c28', color: '#aa88dd', border: '1px solid #404080' }}
         onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
         onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+        onClick={openDeckPanel}
       >
         DECK
-      </a>
+      </button>
 
       <button
         style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060' }}

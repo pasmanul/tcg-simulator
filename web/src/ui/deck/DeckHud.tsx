@@ -1,5 +1,7 @@
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
+import { useGameStore } from '../../store/gameStore'
+import { buildDeckFromLibrary } from '../../domain/gameLogic'
 
 export function DeckHud() {
   const {
@@ -11,6 +13,9 @@ export function DeckHud() {
     saveDeckFile,
     loadDeck,
     newDeck,
+    exportDeckJson,
+    exportPoolJson,
+    cards,
   } = useLibraryStore(s => ({
     deckFiles: s.deckFiles,
     currentDeck: s.currentDeck,
@@ -20,11 +25,20 @@ export function DeckHud() {
     saveDeckFile: s.saveDeckFile,
     loadDeck: s.loadDeck,
     newDeck: s.newDeck,
+    exportDeckJson: s.exportDeckJson,
+    exportPoolJson: s.exportPoolJson,
+    cards: s.cards,
   }))
-  const openDialog = useUIStore(s => s.openDialog)
+  const loadToDeck = useGameStore(s => s.loadToDeck)
+  const { openDialog, deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
+    openDialog: s.openDialog,
+    deckPanelOpen: s.deckPanelOpen,
+    closeDeckPanel: s.closeDeckPanel,
+  }))
 
   const totalCount = currentDeck.reduce((s, e) => s + e.count, 0)
   const overLimit = totalCount > 40
+  const hasPool = cards.length > 0
 
   const btn: React.CSSProperties = {
     fontFamily: "'Press Start 2P', monospace",
@@ -54,6 +68,9 @@ export function DeckHud() {
       return
     }
     await loadDeckFile(filename)
+    const { cards, currentDeck } = useLibraryStore.getState()
+    const deckCards = buildDeckFromLibrary(cards, currentDeck)
+    if (deckCards.length > 0) loadToDeck(deckCards)
   }
 
   return (
@@ -141,6 +158,38 @@ export function DeckHud() {
         SAVE
       </button>
 
+      {/* EXPORT DECK */}
+      <button
+        style={{
+          ...btn,
+          background: '#0c1c14',
+          color: '#66ddaa',
+          border: '1px solid #225040',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#102618')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#0c1c14')}
+        onClick={exportDeckJson}
+      >
+        EXPORT
+      </button>
+
+      {/* EXPORT POOL */}
+      <button
+        disabled={!hasPool}
+        style={{
+          ...btn,
+          background: hasPool ? '#0c1c14' : '#111',
+          color: hasPool ? '#44bbdd' : '#333',
+          border: `1px solid ${hasPool ? '#205060' : '#222'}`,
+          cursor: hasPool ? 'pointer' : 'not-allowed',
+        }}
+        onMouseEnter={e => { if (hasPool) e.currentTarget.style.background = '#102030' }}
+        onMouseLeave={e => { if (hasPool) e.currentTarget.style.background = '#0c1c14' }}
+        onClick={exportPoolJson}
+      >
+        POOL
+      </button>
+
       {/* LOAD CARDS */}
       <button
         style={{
@@ -156,23 +205,40 @@ export function DeckHud() {
         LOAD CARDS
       </button>
 
-      {/* BOARD リンク */}
-      <a
-        href="/index.html"
-        style={{
-          ...btn,
-          background: '#0c0c28',
-          color: '#aa88dd',
-          border: '1px solid #404080',
-          textDecoration: 'none',
-          display: 'inline-block',
-          marginLeft: 'auto',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
-      >
-        ▶ BOARD
-      </a>
+      {/* BOARD リンク / 閉じるボタン */}
+      {deckPanelOpen ? (
+        <button
+          style={{
+            ...btn,
+            background: '#0c0c28',
+            color: '#aa88dd',
+            border: '1px solid #404080',
+            marginLeft: 'auto',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+          onClick={closeDeckPanel}
+        >
+          ✕ 閉じる
+        </button>
+      ) : (
+        <a
+          href="/index.html"
+          style={{
+            ...btn,
+            background: '#0c0c28',
+            color: '#aa88dd',
+            border: '1px solid #404080',
+            textDecoration: 'none',
+            display: 'inline-block',
+            marginLeft: 'auto',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+        >
+          ▶ BOARD
+        </a>
+      )}
     </div>
   )
 }

@@ -1,6 +1,15 @@
 import { create } from 'zustand'
+
+function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 100)
+}
 import type { Card } from '../domain/types'
 import { listDeckFiles, readDeckFile, writeDeckFile, type DeckJson } from '../lib/deckStorage'
+import { writeCardsJson, saveImageToCards } from '../lib/cardStorage'
 
 interface DeckEntry {
   cardId: string
@@ -25,6 +34,10 @@ interface LibraryStore {
   loadDeckFile: (filename: string) => Promise<void>
   saveDeckFile: () => Promise<void>
   newDeck: () => void
+
+  addCard: (data: Omit<Card, 'id' | 'count' | 'image_path'>, imageFile?: File) => Promise<void>
+  exportDeckJson: () => void
+  exportPoolJson: () => void
 }
 
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
@@ -85,4 +98,29 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   newDeck: () => set({ currentDeck: [], deckName: '' }),
+
+  addCard: async (data, imageFile?) => {
+    const { dirHandle, cards, imageUrls } = get()
+    if (!dirHandle) throw new Error('No dirHandle')
+    let image_path = ''
+    const newUrls = { ...imageUrls }
+    if (imageFile) {
+      image_path = await saveImageToCards(dirHandle, imageFile)
+      newUrls[image_path] = URL.createObjectURL(imageFile)
+    }
+    const newCard: Card = { ...data, id: crypto.randomUUID(), image_path, count: 1 }
+    const updated = [...cards, newCard]
+    await writeCardsJson(dirHandle, updated)
+    set({ cards: updated, imageUrls: newUrls })
+  },
+
+  exportDeckJson: () => {
+    const { currentDeck, deckName } = get()
+    const name = deckName.trim() || '無題デッキ'
+    downloadJson({ name, cards: currentDeck }, `${name}.json`)
+  },
+
+  exportPoolJson: () => {
+    downloadJson(get().cards, 'cards.json')
+  },
 }))

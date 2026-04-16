@@ -56,6 +56,7 @@ interface Props {
   cards: Card[]
   filter: FilterState
   onChange: (f: FilterState) => void
+  onAddCard?: () => void
 }
 
 const sel: React.CSSProperties = {
@@ -69,7 +70,7 @@ const sel: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-export function FilterBar({ cards, filter, onChange }: Props) {
+export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
   const { civs, types } = collectOptions(cards)
   const set = (partial: Partial<FilterState>) => onChange({ ...filter, ...partial })
 
@@ -123,6 +124,20 @@ export function FilterBar({ cards, filter, onChange }: Props) {
       >
         リセット
       </button>
+
+      {onAddCard && (
+        <button
+          onClick={onAddCard}
+          style={{
+            ...sel,
+            color: '#44ddbb',
+            border: '1px solid rgba(0,200,150,0.5)',
+            marginLeft: 'auto',
+          }}
+        >
+          + ADD
+        </button>
+      )}
     </div>
   )
 }

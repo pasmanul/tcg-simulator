@@ -4,6 +4,7 @@ import { FilterBar, DEFAULT_FILTER, type FilterState } from '../deck/FilterBar'
 import { LibraryGrid } from '../deck/LibraryGrid'
 import { DeckGrid } from '../deck/DeckGrid'
 import { SetupDialog } from '../overlays/SetupDialog'
+import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { useLibraryStore } from '../../store/libraryStore'
 
 const CRT_STYLE: React.CSSProperties = {
@@ -17,6 +18,7 @@ const CRT_STYLE: React.CSSProperties = {
 export function DeckPage() {
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER)
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [cardEditorOpen, setCardEditorOpen] = useState(false)
   const listDeckFiles = useLibraryStore(s => s.listDeckFiles)
   const allCards = useLibraryStore(s => s.cards)
 
@@ -47,7 +49,7 @@ export function DeckPage() {
           borderRight: '1px solid rgba(124,58,237,0.2)',
           overflow: 'hidden',
         }}>
-          <FilterBar cards={allCards} filter={filter} onChange={setFilter} />
+          <FilterBar cards={allCards} filter={filter} onChange={setFilter} onAddCard={() => setCardEditorOpen(true)} />
           <LibraryGrid filter={filter} />
         </div>
 
@@ -69,6 +71,7 @@ export function DeckPage() {
       </div>
 
       <SetupDialog />
+      {cardEditorOpen && <CardEditorDialog onClose={() => setCardEditorOpen(false)} />}
     </div>
   )
 }

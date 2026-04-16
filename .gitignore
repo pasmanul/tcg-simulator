@@ -42,3 +42,6 @@ data/decks/*.json
 data/saves/*
 !data/saves/.gitkeep
 data/config.json
+
+# UI/UX PRO MAX
+.claude/skills/ui-ux-pro-max/
