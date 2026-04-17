@@ -8,6 +8,7 @@ import { calcCardPositions } from '../hooks/useCardLayout'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
 import { TOKENS, CARD_W, CARD_H } from '../../theme'
+import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
 export function BoardStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -22,36 +23,18 @@ export function BoardStage() {
   const setDeckDropInfo = useUIStore(s => s.setDeckDropInfo)
   const closeContextMenu = useUIStore(s => s.closeContextMenu)
 
-  // Handle card-drop events from ZoneGroup dragging
   const handleCardDrop = useCallback((e: Event) => {
-    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent).detail
-
+    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent<CardDropDetail>).detail
     if (!winDef || size.width === 0) return
 
-    const cellW = size.width / winDef.grid_cols
-    const cellH = size.height / winDef.grid_rows
-
-    // Find which zone contains the drop point
-    let targetZoneId: string | null = null
-    for (const zd of zoneDefs) {
-      if (zd.source_zone_id || zd.ui_widget) continue
-      const r = {
-        x: zd.grid_pos.col * cellW,
-        y: zd.grid_pos.row * cellH,
-        w: zd.grid_pos.col_span * cellW,
-        h: zd.grid_pos.row_span * cellH,
-      }
-      if (dropX >= r.x && dropX <= r.x + r.w && dropY >= r.y && dropY <= r.y + r.h) {
-        targetZoneId = zd.id
-        break
-      }
-    }
-
+    const targetZoneId = findDropZone(dropX, dropY, zoneDefs, winDef, size.width, size.height)
     if (!targetZoneId) return
 
     const TITLE_H = 22
     const targetZone = zoneDefs.find(z => z.id === targetZoneId)
     const targetCards = zones[targetZoneId]?.cards ?? []
+    const cellW = size.width / winDef.grid_cols
+    const cellH = size.height / winDef.grid_rows
 
     // Check if the drop point lands on a specific card → stack/evolve
     if (targetZone && !targetZone.pile_mode && targetCards.length > 0) {

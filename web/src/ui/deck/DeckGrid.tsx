@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
 
 function useToast() {
@@ -27,7 +27,7 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
   const { msg: toastMsg, show: showToast } = useToast()
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const cardMap = new Map(cards.map(c => [c.id, c]))
+  const cardMap = useMemo(() => new Map(cards.map(c => [c.id, c])), [cards])
   const totalCount = currentDeck.reduce((s, e) => s + e.count, 0)
 
   function addCard(cardId: string) {

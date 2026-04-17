@@ -17,6 +17,7 @@ import { StackDialog } from '../overlays/StackDialog'
 import { SaveLoadDialog } from '../overlays/SaveLoadDialog'
 import { DeckDropDialog } from '../overlays/DeckDropDialog'
 import { DeckPage } from './DeckPage'
+import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
 function makeDummyCard(index: number): GameCard {
   const card: Card = {
@@ -38,15 +39,6 @@ function makeDummyCard(index: number): GameCard {
     marker: null,
     under_cards: [],
   }
-}
-
-// CRT scanline overlay style
-const CRT_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
-  pointerEvents: 'none',
-  zIndex: 9999,
 }
 
 export function BoardPage() {
@@ -82,15 +74,7 @@ export function BoardPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      width: '100vw',
-      background: '#0F0F23',
-      overflow: 'hidden',
-    }}>
-      {/* CRT overlay */}
+    <div style={PAGE_STYLE}>
       <div style={CRT_STYLE} />
 
       {/* HUD bar */}

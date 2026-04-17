@@ -7,6 +7,7 @@ import { useUIStore } from '../../store/uiStore'
 import { zoneColors, CARD_W, CARD_H } from '../../theme'
 import { calcCardPositions } from '../hooks/useCardLayout'
 import { CardShape } from '../cards/CardShape'
+import { logCardName } from '../../domain/gameLogic'
 
 interface Props {
   zoneDef: ZoneDefinition
@@ -80,10 +81,10 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   function handleDragEnd(gc: import('../../domain/types').GameCard, dropX: number, dropY: number) {
     // The stage will call findDropTarget — we use a global event
     const event = new CustomEvent('card-drop', {
-      detail: { fromZoneId: zoneDef.id, instanceId: gc.instanceId, dropX, dropY },
+      detail: { fromZoneId: effectiveZoneId, instanceId: gc.instanceId, dropX, dropY },
     })
     window.dispatchEvent(event)
-    addLog(`${zoneDef.name}から移動: ${gc.card.name}`)
+    addLog(`${zoneDef.name}から移動: ${logCardName(gc, zoneDef)}`)
   }
 
   function handleTap(gc: import('../../domain/types').GameCard) {

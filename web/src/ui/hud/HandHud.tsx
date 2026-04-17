@@ -1,7 +1,7 @@
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
-import { newGameCard } from '../../domain/gameLogic'
+import { buildDeckFromLibrary } from '../../domain/gameLogic'
 import type { GameCard } from '../../domain/types'
 
 export function HandHud() {
@@ -31,12 +31,7 @@ export function HandHud() {
       // ライブラリ未ロード（ダミーモード）: 全ゾーンのカードを集めて使う
       deckCards = Object.values(zones).flatMap(zone => flattenCards(zone.cards))
     } else {
-      const cardMap = new Map(cards.map(c => [c.id, c]))
-      deckCards = currentDeck.flatMap(entry => {
-        const card = cardMap.get(entry.cardId)
-        if (!card) return []
-        return Array.from({ length: entry.count }, () => newGameCard(card))
-      })
+      deckCards = buildDeckFromLibrary(cards, currentDeck)
     }
 
     if (deckCards.length === 0) {

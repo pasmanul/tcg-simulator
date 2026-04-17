@@ -1,7 +1,8 @@
+import { useMemo } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
-import { newGameCard } from '../../domain/gameLogic'
+import { buildDeckFromLibrary } from '../../domain/gameLogic'
 
 interface Props {
   style?: React.CSSProperties
@@ -17,14 +18,10 @@ export function DeckListPanel({ style }: Props) {
   const initializeField = useGameStore(s => s.initializeField)
   const addLog = useUIStore(s => s.addLog)
 
-  const cardMap = new Map(cards.map(c => [c.id, c]))
+  const cardMap = useMemo(() => new Map(cards.map(c => [c.id, c])), [cards])
 
   function handleInitField() {
-    const deckCards = currentDeck.flatMap(entry => {
-      const card = cardMap.get(entry.cardId)
-      if (!card) return []
-      return Array.from({ length: entry.count }, () => newGameCard(card))
-    })
+    const deckCards = buildDeckFromLibrary(cards, currentDeck)
     if (deckCards.length === 0) return
     initializeField(deckCards)
     addLog(`フィールド初期化 (${deckCards.length}枚)`)
