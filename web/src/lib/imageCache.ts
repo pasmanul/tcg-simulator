@@ -123,9 +123,9 @@ export async function restoreLibrary(): Promise<LoadedLibrary | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const h = handle as any
-    const perm = await h.queryPermission({ mode: 'read' })
+    const perm = await h.queryPermission({ mode: 'readwrite' })
     if (perm === 'granted') return loadLibraryFromDirectory(handle)
-    const req = await h.requestPermission({ mode: 'read' })
+    const req = await h.requestPermission({ mode: 'readwrite' })
     if (req === 'granted') return loadLibraryFromDirectory(handle)
   } catch {
     // permission denied

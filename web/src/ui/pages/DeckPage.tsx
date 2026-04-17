@@ -6,14 +6,7 @@ import { DeckGrid } from '../deck/DeckGrid'
 import { SetupDialog } from '../overlays/SetupDialog'
 import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { useLibraryStore } from '../../store/libraryStore'
-
-const CRT_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
-  pointerEvents: 'none',
-  zIndex: 9999,
-}
+import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
 export function DeckPage() {
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER)
@@ -28,14 +21,7 @@ export function DeckPage() {
   }, [allCards]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      width: '100vw',
-      background: '#0F0F23',
-      overflow: 'hidden',
-    }}>
+    <div style={PAGE_STYLE}>
       <div style={CRT_STYLE} />
 
       <DeckHud />

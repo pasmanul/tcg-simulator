@@ -9,15 +9,7 @@ import { ActionLog } from '../overlays/ActionLog'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { SetupDialog } from '../overlays/SetupDialog'
 import { DeckPage } from './DeckPage'
-
-// CRT scanline overlay style
-const CRT_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
-  pointerEvents: 'none',
-  zIndex: 9999,
-}
+import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
 export function BoardPage() {
   useTabSync('board')
@@ -38,15 +30,7 @@ export function BoardPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      width: '100vw',
-      background: '#0F0F23',
-      overflow: 'hidden',
-    }}>
-      {/* CRT overlay */}
+    <div style={PAGE_STYLE}>
       <div style={CRT_STYLE} />
 
       {/* HUD bar */}

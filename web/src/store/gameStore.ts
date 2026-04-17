@@ -92,14 +92,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setRow: (zoneId, instanceId, row) =>
     set((s) => {
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({ ...gc, row }))
-      return { zones }
+      return { zones, undoStack }
     }),
 
   setMarker: (zoneId, instanceId, marker) =>
     set((s) => {
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({ ...gc, marker }))
-      return { zones }
+      return { zones, undoStack }
     }),
 
   tapAllInZone: (zoneId) =>

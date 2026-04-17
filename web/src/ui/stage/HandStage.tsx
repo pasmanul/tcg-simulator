@@ -7,6 +7,7 @@ import { useStageSize, gridToPixel } from '../hooks/useStageSize'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { DeckListPanel } from '../zones/DeckListPanel'
 import { TOKENS } from '../../theme'
+import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
 export function HandStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -22,29 +23,10 @@ export function HandStage() {
   const deckListZone = zoneDefs.find(zd => zd.ui_widget === 'deck_list')
 
   const handleCardDrop = useCallback((e: Event) => {
-    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent).detail
+    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent<CardDropDetail>).detail
     if (!winDef || size.width === 0) return
 
-    const cellW = size.width / winDef.grid_cols
-    const cellH = size.height / winDef.grid_rows
-
-    let targetZoneId: string | null = null
-    for (const zd of konvaZones) {
-      const rect = {
-        x: zd.grid_pos.col * cellW,
-        y: zd.grid_pos.row * cellH,
-        w: zd.grid_pos.col_span * cellW,
-        h: zd.grid_pos.row_span * cellH,
-      }
-      if (
-        dropX >= rect.x && dropX <= rect.x + rect.w &&
-        dropY >= rect.y && dropY <= rect.y + rect.h
-      ) {
-        targetZoneId = zd.id
-        break
-      }
-    }
-
+    const targetZoneId = findDropZone(dropX, dropY, konvaZones, winDef, size.width, size.height)
     if (targetZoneId && targetZoneId !== fromZoneId) {
       moveCard(fromZoneId, instanceId, targetZoneId)
       addLog(`カード移動 → ${zoneDefs.find(z => z.id === targetZoneId)?.name}`)

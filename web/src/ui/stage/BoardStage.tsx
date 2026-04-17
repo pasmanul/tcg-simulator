@@ -7,6 +7,7 @@ import { useStageSize, gridToPixel } from '../hooks/useStageSize'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
 import { TOKENS } from '../../theme'
+import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
 export function BoardStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -18,34 +19,11 @@ export function BoardStage() {
   const addLog = useUIStore(s => s.addLog)
   const closeContextMenu = useUIStore(s => s.closeContextMenu)
 
-  // Handle card-drop events from ZoneGroup dragging
   const handleCardDrop = useCallback((e: Event) => {
-    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent).detail
-
+    const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent<CardDropDetail>).detail
     if (!winDef || size.width === 0) return
 
-    // Find which zone the drop target is
-    const cellW = size.width / winDef.grid_cols
-    const cellH = size.height / winDef.grid_rows
-
-    let targetZoneId: string | null = null
-    for (const zd of zoneDefs) {
-      if (zd.source_zone_id || zd.ui_widget) continue
-      const rect = {
-        x: zd.grid_pos.col * cellW,
-        y: zd.grid_pos.row * cellH,
-        w: zd.grid_pos.col_span * cellW,
-        h: zd.grid_pos.row_span * cellH,
-      }
-      if (
-        dropX >= rect.x && dropX <= rect.x + rect.w &&
-        dropY >= rect.y && dropY <= rect.y + rect.h
-      ) {
-        targetZoneId = zd.id
-        break
-      }
-    }
-
+    const targetZoneId = findDropZone(dropX, dropY, zoneDefs, winDef, size.width, size.height)
     if (targetZoneId && targetZoneId !== fromZoneId) {
       moveCard(fromZoneId, instanceId, targetZoneId)
       addLog(`カード移動 → ${zoneDefs.find(z => z.id === targetZoneId)?.name}`)

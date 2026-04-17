@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
+import { useLayoutStore } from '../../store/layoutStore'
+import { logCardName } from '../../domain/gameLogic'
 
 const ZONES = [
   { id: 'battle', label: 'バトルゾーン' },
@@ -32,6 +34,7 @@ export function ContextMenu() {
     setMarker: s.setMarker,
     moveCard: s.moveCard,
   }))
+  const zoneDefs = useLayoutStore.getState().zones
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -47,6 +50,12 @@ export function ContextMenu() {
   if (!contextMenu) return null
 
   const { x, y, zoneId, cardInstanceId, card } = contextMenu
+
+  const srcZoneDef = zoneDefs.find(z => z.id === zoneId)
+  function cardName(destZoneId?: string) {
+    const destZoneDef = destZoneId ? zoneDefs.find(z => z.id === destZoneId) : undefined
+    return logCardName(card, srcZoneDef, destZoneDef)
+  }
 
   function action(fn: () => void) {
     fn()
@@ -104,7 +113,7 @@ export function ContextMenu() {
         onMouseLeave={e => (e.currentTarget.style.background = '')}
         onClick={() => action(() => {
           tapCard(zoneId, cardInstanceId)
-          addLog(`${card.card.name} タップ/アンタップ`)
+          addLog(`${cardName()} タップ/アンタップ`)
         })}
       >
         {card.tapped ? 'アンタップ' : 'タップ'}
@@ -116,7 +125,7 @@ export function ContextMenu() {
         onMouseLeave={e => (e.currentTarget.style.background = '')}
         onClick={() => action(() => {
           flipCard(zoneId, cardInstanceId)
-          addLog(`${card.card.name} 裏返し`)
+          addLog(`${cardName()} 裏返し`)
         })}
       >
         {card.face_down ? '表向きにする' : '裏向きにする'}
@@ -152,7 +161,7 @@ export function ContextMenu() {
           onClick={() => action(() => {
             const toIndex = z.id === 'deck' ? 0 : undefined  // deck top
             moveCard(zoneId, cardInstanceId, z.id, toIndex)
-            addLog(`${card.card.name} → ${z.label}`)
+            addLog(`${cardName(z.id)} → ${z.label}`)
           })}
         >
           → {z.label}

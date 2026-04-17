@@ -32,6 +32,13 @@ export function useTabSync(role: TabRole) {
   const channelRef = useRef<BroadcastChannel | null>(null)
   const applySnapshot = useGameStore(s => s._applySnapshot)
   const zonesRef = useRef(useGameStore.getState().zones)
+  const isApplyingRemoteRef = useRef(false)
+
+  function applyRemoteSnapshot(snapshot: GameStateSnapshot) {
+    isApplyingRemoteRef.current = true
+    applySnapshot(snapshot)
+    isApplyingRemoteRef.current = false
+  }
 
   // Keep zonesRef up to date
   useEffect(() => {
@@ -49,7 +56,7 @@ export function useTabSync(role: TabRole) {
       if (msg.from === role) return  // ignore own messages
 
       if (msg.type === 'STATE_UPDATE') {
-        applySnapshot(msg.snapshot)
+        applyRemoteSnapshot(msg.snapshot)
       }
 
       if (msg.type === 'PING') {
@@ -64,7 +71,7 @@ export function useTabSync(role: TabRole) {
       }
 
       if (msg.type === 'PONG') {
-        applySnapshot(msg.snapshot)
+        applyRemoteSnapshot(msg.snapshot)
       }
     }
 
@@ -75,10 +82,11 @@ export function useTabSync(role: TabRole) {
     return () => channel.close()
   }, [role, applySnapshot])
 
-  // Broadcast state changes to other tab
+  // Broadcast state changes to other tab (skip remote-applied snapshots to prevent echo loop)
   useEffect(() => {
     return useGameStore.subscribe((s) => {
       if (!channelRef.current) return
+      if (isApplyingRemoteRef.current) return
       const msg: StateUpdateMsg = {
         type: 'STATE_UPDATE',
         from: role,

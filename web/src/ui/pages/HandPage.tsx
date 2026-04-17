@@ -6,14 +6,7 @@ import { HandStage } from '../stage/HandStage'
 import { HandHud } from '../hud/HandHud'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { SetupDialog } from '../overlays/SetupDialog'
-
-const CRT_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
-  pointerEvents: 'none',
-  zIndex: 9999,
-}
+import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
 export function HandPage() {
   useTabSync('hand')
@@ -22,7 +15,8 @@ export function HandPage() {
   const zones = useLayoutStore(s => s.zones)
 
   useEffect(() => {
-    // Initialize all real zones (state is shared via BroadcastChannel with board tab)
+    // Only initialize if zones are not yet set up (board tab may have already populated state)
+    if (Object.keys(useGameStore.getState().zones).length > 0) return
     const realZoneIds = zones
       .filter(z => !z.source_zone_id && !z.ui_widget)
       .map(z => z.id)
@@ -30,14 +24,7 @@ export function HandPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      width: '100vw',
-      background: '#0F0F23',
-      overflow: 'hidden',
-    }}>
+    <div style={PAGE_STYLE}>
       <div style={CRT_STYLE} />
       <HandHud />
       <HandStage />

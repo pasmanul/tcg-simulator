@@ -12,10 +12,7 @@ const CIV_COLOR: Record<string, string> = {
 }
 
 function LibraryCardTile({ card }: { card: Card }) {
-  const { resolveImageUrl, cardBackUrl } = useLibraryStore(s => ({
-    resolveImageUrl: s.resolveImageUrl,
-    cardBackUrl: s.cardBackUrl,
-  }))
+  const { resolveImageUrl, cardBackUrl } = useLibraryStore.getState()
   const imgUrl = resolveImageUrl(card.image_path) || cardBackUrl
 
   function onDragStart(e: React.DragEvent) {

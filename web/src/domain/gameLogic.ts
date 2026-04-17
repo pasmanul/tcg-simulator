@@ -1,4 +1,16 @@
-import type { Card, GameCard, Zone, GameStateSnapshot } from './types'
+import type { Card, GameCard, Zone, GameStateSnapshot, ZoneDefinition } from './types'
+
+export const HIDDEN_CARD_NAME = '???'
+
+export function logCardName(
+  gc: GameCard,
+  srcZone: Pick<ZoneDefinition, 'visibility'> | undefined,
+  destZone?: Pick<ZoneDefinition, 'visibility'>,
+): string {
+  if (gc.face_down || srcZone?.visibility === 'private') return HIDDEN_CARD_NAME
+  if (destZone?.visibility === 'private') return HIDDEN_CARD_NAME
+  return gc.card.name
+}
 
 export function newGameCard(card: Card): GameCard {
   return {

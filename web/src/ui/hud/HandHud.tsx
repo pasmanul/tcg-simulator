@@ -1,7 +1,7 @@
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
-import { newGameCard } from '../../domain/gameLogic'
+import { buildDeckFromLibrary } from '../../domain/gameLogic'
 
 export function HandHud() {
   const { initializeField, undo } = useGameStore(s => ({
@@ -19,12 +19,7 @@ export function HandHud() {
   }))
 
   function handleInit() {
-    const cardMap = new Map(cards.map(c => [c.id, c]))
-    const deckCards = currentDeck.flatMap(entry => {
-      const card = cardMap.get(entry.cardId)
-      if (!card) return []
-      return Array.from({ length: entry.count }, () => newGameCard(card))
-    })
+    const deckCards = buildDeckFromLibrary(cards, currentDeck)
     if (deckCards.length === 0) {
       addLog('デッキが空です')
       return
