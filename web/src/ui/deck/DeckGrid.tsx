@@ -16,16 +16,17 @@ interface Props {
 }
 
 export function DeckGrid({ selectedCardId, onSelect }: Props) {
-  const { currentDeck, cards, resolveImageUrl, cardBackUrl, loadDeck } = useLibraryStore(s => ({
-    currentDeck: s.currentDeck,
+  const { currentDeckFn, cards, resolveImageUrl, cardBackUrl, loadDeck } = useLibraryStore(s => ({
+    currentDeckFn: s.currentDeck,
     cards: s.cards,
     resolveImageUrl: s.resolveImageUrl,
     cardBackUrl: s.cardBackUrl,
     loadDeck: s.loadDeck,
   }))
-  const deckName = useLibraryStore(s => s.deckName)
+  const currentDeck = currentDeckFn()
   const { msg: toastMsg, show: showToast } = useToast()
   const [isDragOver, setIsDragOver] = useState(false)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const cardMap = useMemo(() => new Map(cards.map(c => [c.id, c])), [cards])
   const totalCount = currentDeck.reduce((s, e) => s + e.count, 0)
@@ -43,7 +44,7 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
     const next = existing
       ? currentDeck.map(e => e.cardId === cardId ? { ...e, count: e.count + 1 } : e)
       : [...currentDeck, { cardId, count: 1 }]
-    loadDeck({ cards: next, name: deckName })
+    loadDeck(next)
   }
 
   function decCard(cardId: string) {
@@ -53,13 +54,13 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
       ? currentDeck.map(e => e.cardId === cardId ? { ...e, count: e.count - 1 } : e)
       : currentDeck.filter(e => e.cardId !== cardId)
     if (entry.count === 1) onSelect(null)
-    loadDeck({ cards: next, name: deckName })
+    loadDeck(next)
   }
 
   function removeCard(cardId: string) {
     const next = currentDeck.filter(e => e.cardId !== cardId)
     onSelect(null)
-    loadDeck({ cards: next, name: deckName })
+    loadDeck(next)
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -69,6 +70,7 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
     if (!raw) return
     try {
       const parsed = JSON.parse(raw)
+      if (parsed.source === 'deck') return  // デッキ→デッキは無視
       if (parsed.cardId) addCard(parsed.cardId)
     } catch {
       // ignore
@@ -96,7 +98,7 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
           overflowY: 'auto',
           padding: 8,
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, 80px)',
+          gridTemplateColumns: 'repeat(auto-fill, 152px)',
           gap: 8,
           alignContent: 'start',
           background: isDragOver ? 'rgba(0,255,255,0.04)' : 'transparent',
@@ -121,24 +123,31 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
         {currentDeck.map(entry => {
           const card = cardMap.get(entry.cardId)
           if (!card) return null
-          const imgUrl = resolveImageUrl(card.image_path) || cardBackUrl
+          const imgUrl = resolveImageUrl(card) || cardBackUrl
           const isSelected = entry.cardId === selectedCardId
           return (
             <div
               key={entry.cardId}
+              draggable
+              onDragStart={e => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'deck', cardId: entry.cardId }))
+                e.dataTransfer.effectAllowed = 'move'
+              }}
+              onMouseEnter={() => setHoveredId(entry.cardId)}
+              onMouseLeave={() => setHoveredId(null)}
               onClick={() => onSelect(isSelected ? null : entry.cardId)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 3,
-                cursor: 'pointer',
+                cursor: 'grab',
                 userSelect: 'none',
               }}
             >
               <div style={{
                 position: 'relative',
-                width: 72,
+                width: 140,
                 aspectRatio: '150/210',
                 borderRadius: 4,
                 overflow: 'visible',
@@ -154,6 +163,7 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
                     <div style={{ width: '100%', height: '100%', background: '#1a1a2e' }} />
                   )}
                 </div>
+                {/* 枚数バッジ */}
                 <div style={{
                   position: 'absolute',
                   bottom: -6,
@@ -169,6 +179,31 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
                 }}>
                   ×{entry.count}
                 </div>
+                {/* ホバー一括削除ボタン */}
+                {hoveredId === entry.cardId && (
+                  <button
+                    onClick={e => { e.stopPropagation(); removeCard(entry.cardId) }}
+                    onMouseDown={e => e.preventDefault()}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      background: 'rgba(20,8,8,0.88)',
+                      border: '1px solid rgba(255,80,80,0.5)',
+                      color: '#ff6666',
+                      borderRadius: 4,
+                      width: 22,
+                      height: 22,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                    }}
+                    title="デッキから全削除"
+                  >✕</button>
+                )}
               </div>
             </div>
           )

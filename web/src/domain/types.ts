@@ -1,11 +1,27 @@
 export interface Card {
   id: string
   name: string
-  image_path: string
+  image_path: string    // 旧形式後方互換用（新カードは ""）
+  image_data?: string   // base64 data URL（新形式）
   mana: number
   civilizations: string[]
   card_type: string
   count: number
+}
+
+export interface DeckEntry {
+  cardId: string
+  count: number
+}
+
+export interface DeckRecord {
+  name: string
+  cards: DeckEntry[]
+}
+
+export interface DeckPoolJson {
+  pool: Card[]
+  decks: DeckRecord[]
 }
 
 export interface GameCard {

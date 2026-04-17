@@ -1,4 +1,6 @@
 // File System Access API + IndexedDB for card image persistence
+import type { Card, DeckRecord } from '../domain/types'
+
 type WritableHandle = FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }
 
 const IDB_NAME = 'tcg-simulator'
@@ -39,8 +41,9 @@ export async function loadDirectoryHandle(): Promise<FileSystemDirectoryHandle |
 }
 
 export interface LoadedLibrary {
-  cardsJson: import('../domain/types').Card[]
-  fileMap: Map<string, string>  // image_path -> objectURL
+  cardsJson: Card[]
+  decksJson: DeckRecord[]
+  fileMap: Map<string, string>  // image_path -> objectURL（旧形式用）
   cardBackUrl: string
   dirHandle: FileSystemDirectoryHandle
 }
@@ -48,39 +51,68 @@ export interface LoadedLibrary {
 export async function loadLibraryFromDirectory(
   dirHandle: FileSystemDirectoryHandle,
 ): Promise<LoadedLibrary> {
-  // Read cards.json
-  const cardsFileHandle = await dirHandle.getFileHandle('cards.json')
-  const cardsFile = await cardsFileHandle.getFile()
-  const cardsJson = JSON.parse(await cardsFile.text())
+  let pool: Card[] = []
+  let decks: DeckRecord[] = []
+  const fileMap = new Map<string, string>()
 
-  // Read back.jpg
+  try {
+    // 新形式: deck.json を読む
+    const fh = await dirHandle.getFileHandle('deck.json')
+    const raw = JSON.parse(await (await fh.getFile()).text())
+    pool = raw.pool ?? []
+    // decks 配列 or 旧 deck フィールドの後方互換
+    if (Array.isArray(raw.decks)) {
+      decks = raw.decks
+    } else if (Array.isArray(raw.deck)) {
+      decks = [{ name: '無題', cards: raw.deck }]
+    }
+  } catch {
+    // 旧形式フォールバック: cards.json + decks/ + cards/
+    try {
+      const fh = await dirHandle.getFileHandle('cards.json')
+      pool = JSON.parse(await (await fh.getFile()).text())
+    } catch { /* cards.json もなし */ }
+
+    try {
+      const decksDir = await dirHandle.getDirectoryHandle('decks')
+      for await (const [name, entry] of (decksDir as FileSystemDirectoryHandle & {
+        entries(): AsyncIterable<[string, FileSystemHandle]>
+      }).entries()) {
+        if (typeof name === 'string' && name.endsWith('.json') && entry.kind === 'file') {
+          const file = await (entry as FileSystemFileHandle).getFile()
+          const raw = JSON.parse(await file.text())
+          const cards = (raw.cards ?? []).map((e: Record<string, unknown>) => ({
+            cardId: (e.cardId ?? e.id) as string,
+            count: (e.count ?? 1) as number,
+          }))
+          decks.push({ name: raw.name ?? name.replace('.json', ''), cards })
+        }
+      }
+    } catch { /* decks/ なし */ }
+
+    // 旧形式: cards/ フォルダの画像を fileMap に追加
+    try {
+      const cardsDir = await dirHandle.getDirectoryHandle('cards')
+      for await (const [name, entry] of (cardsDir as FileSystemDirectoryHandle & {
+        entries(): AsyncIterable<[string, FileSystemHandle]>
+      }).entries()) {
+        if (entry.kind === 'file' && /\.(jpg|jpeg|png|webp)$/i.test(name)) {
+          const file = await (entry as FileSystemFileHandle).getFile()
+          fileMap.set(`cards/${name}`, URL.createObjectURL(file))
+        }
+      }
+    } catch { /* cards/ なし */ }
+  }
+
+  // back.jpg
   let cardBackUrl = ''
   try {
     const backHandle = await dirHandle.getFileHandle('back.jpg')
     const backFile = await backHandle.getFile()
     cardBackUrl = URL.createObjectURL(backFile)
-  } catch {
-    // back.jpg not found, use empty
-  }
+  } catch { /* back.jpg not found */ }
 
-  // Read cards/ directory
-  const fileMap = new Map<string, string>()
-  try {
-    const cardsDir = await dirHandle.getDirectoryHandle('cards')
-    for await (const [name, entry] of (cardsDir as FileSystemDirectoryHandle & {
-      entries(): AsyncIterable<[string, FileSystemHandle]>
-    }).entries()) {
-      if (entry.kind === 'file' && /\.(jpg|jpeg|png|webp)$/i.test(name)) {
-        const fileHandle = entry as FileSystemFileHandle
-        const file = await fileHandle.getFile()
-        fileMap.set(`cards/${name}`, URL.createObjectURL(file))
-      }
-    }
-  } catch {
-    // cards/ not found
-  }
-
-  return { cardsJson, fileMap, cardBackUrl, dirHandle }
+  return { cardsJson: pool, decksJson: decks, fileMap, cardBackUrl, dirHandle }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,17 +133,13 @@ export async function initNewLibrary(): Promise<LoadedLibrary | null> {
   try {
     if (!win.showDirectoryPicker) throw new Error('File System Access API not supported')
     const dirHandle: FileSystemDirectoryHandle = await win.showDirectoryPicker({ mode: 'readwrite' })
-    // cards.json を空配列で作成
-    const cardsFileHandle = await dirHandle.getFileHandle('cards.json', { create: true })
-    const w1 = await (cardsFileHandle as WritableHandle).createWritable()
-    await w1.write(JSON.stringify([]))
-    await w1.close()
-    await Promise.all([
-      dirHandle.getDirectoryHandle('cards', { create: true }),
-      dirHandle.getDirectoryHandle('decks', { create: true }),
-    ])
+    // deck.json を空の状態で作成
+    const fh = await dirHandle.getFileHandle('deck.json', { create: true })
+    const w = await (fh as WritableHandle).createWritable()
+    await w.write(JSON.stringify({ pool: [], deck: [] }, null, 2))
+    await w.close()
     await saveDirectoryHandle(dirHandle)
-    return { cardsJson: [], fileMap: new Map(), cardBackUrl: '', dirHandle }
+    return { cardsJson: [], decksJson: [], fileMap: new Map(), cardBackUrl: '', dirHandle }
   } catch {
     return null
   }
