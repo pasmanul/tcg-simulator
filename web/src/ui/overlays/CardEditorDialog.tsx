@@ -22,7 +22,7 @@ export function CardEditorDialog({ onClose, card }: Props) {
 
   const [name, setName] = useState(card?.name ?? '')
   const [mana, setMana] = useState(card?.mana ?? 1)
-  const [civs, setCivs] = useState<string[]>(card?.civilizations ?? ['光'])
+  const [civs, setCivs] = useState<string[]>(card?.civilizations ?? [])
   const [cardType, setCardType] = useState(card?.card_type ?? 'クリーチャー')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(card?.image_data ?? null)
