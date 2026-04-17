@@ -14,11 +14,11 @@ export function HandHud() {
     openDialog: s.openDialog,
     addLog: s.addLog,
   }))
-  const { cards, currentDeck, deckName } = useLibraryStore(s => ({
+  const { cards, currentDeckFn } = useLibraryStore(s => ({
     cards: s.cards,
-    currentDeck: s.currentDeck,
-    deckName: s.deckName,
+    currentDeckFn: s.currentDeck,
   }))
+  const currentDeck = currentDeckFn()
 
   function flattenCards(gcs: GameCard[]): GameCard[] {
     return gcs.flatMap(gc => [gc, ...flattenCards(gc.under_cards)])
@@ -68,7 +68,7 @@ export function HandHud() {
         textShadow: '0 0 10px rgba(0,255,255,0.4)',
         marginRight: 4,
       }}>
-        手札 {deckName && `— ${deckName}`}
+        手札
       </span>
 
       <button

@@ -22,7 +22,7 @@ export function SetupDialog() {
     setStatus('フォルダを選択中...')
     const result = await pickAndLoadLibrary()
     if (result) {
-      loadLibrary(result.cardsJson, result.fileMap, result.dirHandle)
+      loadLibrary(result.cardsJson, result.decksJson, result.fileMap, result.dirHandle)
       if (result.cardBackUrl) setCardBack(result.cardBackUrl)
       setStatus(`✓ ${result.cardsJson.length}枚のカードを読み込みました`)
     } else {
@@ -36,8 +36,8 @@ export function SetupDialog() {
     setStatus('新規フォルダを初期化中...')
     const result = await initNewLibrary()
     if (result) {
-      loadLibrary(result.cardsJson, result.fileMap, result.dirHandle)
-      setStatus('✓ 空のライブラリを初期化しました（cards/ decks/ フォルダを作成）')
+      loadLibrary(result.cardsJson, result.decksJson, result.fileMap, result.dirHandle)
+      setStatus('✓ 空のライブラリを初期化しました（deck.json を作成）')
     } else {
       setStatus('キャンセルされました')
     }
@@ -49,7 +49,7 @@ export function SetupDialog() {
     setStatus('前回のフォルダを復元中...')
     const result = await restoreLibrary()
     if (result) {
-      loadLibrary(result.cardsJson, result.fileMap, result.dirHandle)
+      loadLibrary(result.cardsJson, result.decksJson, result.fileMap, result.dirHandle)
       if (result.cardBackUrl) setCardBack(result.cardBackUrl)
       setStatus(`✓ ${result.cardsJson.length}枚のカードを復元しました`)
     } else {

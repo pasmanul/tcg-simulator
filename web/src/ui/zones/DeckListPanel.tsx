@@ -9,12 +9,13 @@ interface Props {
 }
 
 export function DeckListPanel({ style }: Props) {
-  const { cards, currentDeck, resolveImageUrl, cardBackUrl } = useLibraryStore(s => ({
+  const { cards, currentDeckFn, resolveImageUrl, cardBackUrl } = useLibraryStore(s => ({
     cards: s.cards,
-    currentDeck: s.currentDeck,
+    currentDeckFn: s.currentDeck,
     resolveImageUrl: s.resolveImageUrl,
     cardBackUrl: s.cardBackUrl,
   }))
+  const currentDeck = currentDeckFn()
   const initializeField = useGameStore(s => s.initializeField)
   const addLog = useUIStore(s => s.addLog)
 
@@ -83,7 +84,7 @@ export function DeckListPanel({ style }: Props) {
         {currentDeck.map(entry => {
           const card = cardMap.get(entry.cardId)
           if (!card) return null
-          const imgUrl = resolveImageUrl(card.image_path) || cardBackUrl
+          const imgUrl = resolveImageUrl(card) || cardBackUrl
           return (
             <div
               key={entry.cardId}

@@ -5,29 +5,21 @@ import { buildDeckFromLibrary } from '../../domain/gameLogic'
 
 export function DeckHud() {
   const {
-    deckFiles,
-    currentDeck,
-    deckName,
+    decks,
+    activeDeckIndex,
     dirHandle,
-    loadDeckFile,
-    saveDeckFile,
-    loadDeck,
-    newDeck,
-    exportDeckJson,
-    exportPoolJson,
     cards,
+    currentDeck,
+    selectDeck,
+    save,
   } = useLibraryStore(s => ({
-    deckFiles: s.deckFiles,
-    currentDeck: s.currentDeck,
-    deckName: s.deckName,
+    decks: s.decks,
+    activeDeckIndex: s.activeDeckIndex,
     dirHandle: s.dirHandle,
-    loadDeckFile: s.loadDeckFile,
-    saveDeckFile: s.saveDeckFile,
-    loadDeck: s.loadDeck,
-    newDeck: s.newDeck,
-    exportDeckJson: s.exportDeckJson,
-    exportPoolJson: s.exportPoolJson,
     cards: s.cards,
+    currentDeck: s.currentDeck,
+    selectDeck: s.selectDeck,
+    save: s.save,
   }))
   const loadToDeck = useGameStore(s => s.loadToDeck)
   const { openDialog, deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
@@ -36,9 +28,10 @@ export function DeckHud() {
     closeDeckPanel: s.closeDeckPanel,
   }))
 
-  const totalCount = currentDeck.reduce((s, e) => s + e.count, 0)
+  const deck = currentDeck()
+  const totalCount = deck.reduce((s, e) => s + e.count, 0)
   const overLimit = totalCount > 40
-  const hasPool = cards.length > 0
+  const hasDeck = activeDeckIndex >= 0
 
   const btn: React.CSSProperties = {
     fontFamily: "'Press Start 2P', monospace",
@@ -50,195 +43,129 @@ export function DeckHud() {
     whiteSpace: 'nowrap',
   }
 
-  async function handleSave() {
-    if (!dirHandle) {
-      alert('先にカードライブラリを読み込んでください')
-      return
-    }
-    if (!deckName.trim()) {
-      alert('デッキ名を入力してください')
-      return
-    }
-    await saveDeckFile()
+  const label: React.CSSProperties = {
+    fontFamily: "'Press Start 2P', monospace",
+    fontSize: 9,
+    textShadow: '0 0 12px rgba(0,255,255,0.6)',
+    marginRight: 2,
+    whiteSpace: 'nowrap',
   }
 
-  async function handleSelectDeck(filename: string) {
-    if (!filename) {
-      newDeck()
-      return
-    }
-    await loadDeckFile(filename)
-    const { cards, currentDeck } = useLibraryStore.getState()
-    const deckCards = buildDeckFromLibrary(cards, currentDeck)
+  async function handleSave() {
+    if (!dirHandle) { alert('先にカードライブラリを読み込んでください'); return }
+    await save()
+  }
+
+  function handleLoadToDeck() {
+    const deckCards = buildDeckFromLibrary(cards, deck)
     if (deckCards.length > 0) loadToDeck(deckCards)
   }
 
   return (
     <div style={{
       display: 'flex',
-      gap: 8,
-      padding: '6px 12px',
       background: '#08091a',
       borderBottom: '1px solid rgba(124,58,237,0.2)',
-      alignItems: 'center',
+      alignItems: 'stretch',
       flexShrink: 0,
     }}>
-      <span style={{
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: 9,
-        color: '#00FFFF',
-        textShadow: '0 0 12px rgba(0,255,255,0.6)',
-        marginRight: 4,
+      {/* 左半分: POOL */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 12px',
+        borderRight: '1px solid rgba(124,58,237,0.25)',
       }}>
-        DECK
-      </span>
+        <span style={{ ...label, color: '#00FFFF' }}>POOL</span>
 
-      {/* デッキ選択 */}
-      <select
-        value={deckName}
-        onChange={e => handleSelectDeck(e.target.value)}
-        style={{
-          background: '#0e1228',
-          color: '#A78BFA',
-          border: '1px solid rgba(124,58,237,0.5)',
-          borderRadius: 4,
-          padding: '4px 8px',
-          fontFamily: "'Chakra Petch', sans-serif",
-          fontSize: 11,
-          cursor: 'pointer',
-          maxWidth: 160,
-        }}
-      >
-        <option value="">— 新規 —</option>
-        {deckFiles.map(f => (
-          <option key={f} value={f}>{f}</option>
-        ))}
-      </select>
-
-      {/* デッキ名入力 */}
-      <input
-        type="text"
-        placeholder="デッキ名"
-        value={deckName}
-        onChange={e => loadDeck({ cards: currentDeck, name: e.target.value })}
-        style={{
-          background: '#0e1228',
-          color: '#E2E8F0',
-          border: '1px solid rgba(124,58,237,0.4)',
-          borderRadius: 4,
-          padding: '4px 8px',
-          fontFamily: "'Chakra Petch', sans-serif",
-          fontSize: 12,
-          width: 160,
-        }}
-      />
-
-      {/* 枚数 */}
-      <span style={{
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: 9,
-        color: overLimit ? '#ff4444' : '#94A3B8',
-        minWidth: 52,
-      }}>
-        {totalCount}/40
-      </span>
-
-      {/* SAVE */}
-      <button
-        style={{
-          ...btn,
-          background: '#0c280c',
-          color: '#88dd88',
-          border: '1px solid #285028',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#103810')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c280c')}
-        onClick={handleSave}
-      >
-        SAVE
-      </button>
-
-      {/* EXPORT DECK */}
-      <button
-        style={{
-          ...btn,
-          background: '#0c1c14',
-          color: '#66ddaa',
-          border: '1px solid #225040',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102618')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1c14')}
-        onClick={exportDeckJson}
-      >
-        EXPORT
-      </button>
-
-      {/* EXPORT POOL */}
-      <button
-        disabled={!hasPool}
-        style={{
-          ...btn,
-          background: hasPool ? '#0c1c14' : '#111',
-          color: hasPool ? '#44bbdd' : '#333',
-          border: `1px solid ${hasPool ? '#205060' : '#222'}`,
-          cursor: hasPool ? 'pointer' : 'not-allowed',
-        }}
-        onMouseEnter={e => { if (hasPool) e.currentTarget.style.background = '#102030' }}
-        onMouseLeave={e => { if (hasPool) e.currentTarget.style.background = '#0c1c14' }}
-        onClick={exportPoolJson}
-      >
-        POOL
-      </button>
-
-      {/* LOAD CARDS */}
-      <button
-        style={{
-          ...btn,
-          background: '#0c1828',
-          color: '#88aade',
-          border: '1px solid #284060',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
-        onClick={() => openDialog('setup')}
-      >
-        LOAD CARDS
-      </button>
-
-      {/* BOARD リンク / 閉じるボタン */}
-      {deckPanelOpen ? (
         <button
+          style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
+          onClick={() => openDialog('setup')}
+        >LOAD POOL</button>
+
+        <button
+          style={{ ...btn, background: '#0c280c', color: '#88dd88', border: '1px solid #285028' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#103810')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#0c280c')}
+          onClick={handleSave}
+        >SAVE</button>
+      </div>
+
+      {/* 右半分: DECK */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 12px',
+      }}>
+        <span style={{ ...label, color: '#A78BFA' }}>DECK</span>
+
+        <select
+          value={activeDeckIndex}
+          onChange={e => selectDeck(Number(e.target.value))}
+          style={{
+            background: '#0e1228',
+            color: '#A78BFA',
+            border: '1px solid rgba(124,58,237,0.5)',
+            borderRadius: 4,
+            padding: '4px 8px',
+            fontFamily: "'Chakra Petch', sans-serif",
+            fontSize: 11,
+            cursor: 'pointer',
+            maxWidth: 160,
+          }}
+        >
+          {decks.length === 0 && <option value={-1}>— デッキなし —</option>}
+          {decks.map((d, i) => (
+            <option key={i} value={i}>{d.name}</option>
+          ))}
+        </select>
+
+        <span style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: 9,
+          color: overLimit ? '#ff4444' : '#94A3B8',
+          minWidth: 52,
+        }}>
+          {totalCount}/40
+        </span>
+
+        <button
+          disabled={!hasDeck || deck.length === 0}
           style={{
             ...btn,
-            background: '#0c0c28',
-            color: '#aa88dd',
-            border: '1px solid #404080',
-            marginLeft: 'auto',
+            background: hasDeck && deck.length > 0 ? '#0c1c28' : '#111',
+            color: hasDeck && deck.length > 0 ? '#88aadd' : '#333',
+            border: `1px solid ${hasDeck && deck.length > 0 ? '#284060' : '#222'}`,
+            cursor: hasDeck && deck.length > 0 ? 'pointer' : 'not-allowed',
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
-          onClick={closeDeckPanel}
-        >
-          ✕ 閉じる
-        </button>
-      ) : (
-        <a
-          href="/index.html"
-          style={{
-            ...btn,
-            background: '#0c0c28',
-            color: '#aa88dd',
-            border: '1px solid #404080',
-            textDecoration: 'none',
-            display: 'inline-block',
-            marginLeft: 'auto',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
-        >
-          ▶ BOARD
-        </a>
-      )}
+          onMouseEnter={e => { if (hasDeck && deck.length > 0) e.currentTarget.style.background = '#102030' }}
+          onMouseLeave={e => { if (hasDeck && deck.length > 0) e.currentTarget.style.background = '#0c1c28' }}
+          onClick={handleLoadToDeck}
+        >TO BOARD</button>
+
+        {/* BOARD / 閉じる */}
+        {deckPanelOpen ? (
+          <button
+            style={{ ...btn, background: '#0c0c28', color: '#aa88dd', border: '1px solid #404080', marginLeft: 'auto' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+            onClick={closeDeckPanel}
+          >✕ 閉じる</button>
+        ) : (
+          <a
+            href="/index.html"
+            style={{ ...btn, background: '#0c0c28', color: '#aa88dd', border: '1px solid #404080', textDecoration: 'none', display: 'inline-block', marginLeft: 'auto' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+          >▶ BOARD</a>
+        )}
+      </div>
     </div>
   )
 }

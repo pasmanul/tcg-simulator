@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import type { Card, DeckEntry, DeckRecord } from '../domain/types'
+import { writeDeckPoolJson } from '../lib/cardStorage'
 
 function downloadJson(data: unknown, filename: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -7,35 +9,48 @@ function downloadJson(data: unknown, filename: string) {
   a.href = url; a.download = filename; a.click()
   setTimeout(() => URL.revokeObjectURL(url), 100)
 }
-import type { Card } from '../domain/types'
-import { listDeckFiles, readDeckFile, writeDeckFile, type DeckJson } from '../lib/deckStorage'
-import { writeCardsJson, saveImageToCards } from '../lib/cardStorage'
 
-interface DeckEntry {
-  cardId: string
-  count: number
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 interface LibraryStore {
   cards: Card[]
-  imageUrls: Record<string, string>   // image_path -> objectURL
+  imageUrls: Record<string, string>   // image_path -> objectURL（旧形式用）
   cardBackUrl: string
-  currentDeck: DeckEntry[]            // {cardId, count}[]
-  deckName: string
+  decks: DeckRecord[]
+  activeDeckIndex: number             // -1 = デッキ未選択
   dirHandle: FileSystemDirectoryHandle | null
-  deckFiles: string[]
 
-  loadLibrary: (cardsJson: Card[], fileMap: Map<string, string>, dirHandle?: FileSystemDirectoryHandle) => void
-  loadDeck: (deckJson: { cards: DeckEntry[]; name?: string }) => void
-  resolveImageUrl: (imagePath: string) => string
+  // 現在のデッキ（activeDeckIndex から導出）
+  currentDeck: () => DeckEntry[]
+  currentDeckName: () => string
+
+  loadLibrary: (
+    cardsJson: Card[],
+    decksJson: DeckRecord[],
+    fileMap: Map<string, string>,
+    dirHandle?: FileSystemDirectoryHandle,
+  ) => void
+  loadDeck: (cards: DeckEntry[]) => void  // 現在デッキのカードを更新
+  resolveImageUrl: (card: Card) => string
   setCardBack: (url: string) => void
 
-  listDeckFiles: () => Promise<void>
-  loadDeckFile: (filename: string) => Promise<void>
-  saveDeckFile: () => Promise<void>
-  newDeck: () => void
+  // デッキ管理
+  newDeck: (name: string) => void
+  selectDeck: (index: number) => void
+  renameDeck: (name: string) => void
+  deleteDeck: () => void
 
-  addCard: (data: Omit<Card, 'id' | 'count' | 'image_path'>, imageFile?: File) => Promise<void>
+  save: () => Promise<void>
+  addCard: (data: Omit<Card, 'id' | 'count' | 'image_path' | 'image_data'>, imageFile?: File) => Promise<void>
+  updateCard: (id: string, data: Omit<Card, 'id' | 'count' | 'image_path' | 'image_data'>, imageFile?: File) => Promise<void>
+  deleteCard: (id: string) => Promise<void>
   exportDeckJson: () => void
   exportPoolJson: () => void
 }
@@ -44,83 +59,144 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   cards: [],
   imageUrls: {},
   cardBackUrl: '',
-  currentDeck: [],
-  deckName: '',
+  decks: [],
+  activeDeckIndex: -1,
   dirHandle: null,
-  deckFiles: [],
 
-  loadLibrary: (cardsJson, fileMap, dirHandle?) => {
+  currentDeck: () => {
+    const { decks, activeDeckIndex } = get()
+    return decks[activeDeckIndex]?.cards ?? []
+  },
+
+  currentDeckName: () => {
+    const { decks, activeDeckIndex } = get()
+    return decks[activeDeckIndex]?.name ?? ''
+  },
+
+  loadLibrary: (cardsJson, decksJson, fileMap, dirHandle?) => {
     const urls: Record<string, string> = {}
     for (const card of cardsJson) {
-      const url = fileMap.get(card.image_path)
-      if (url) urls[card.image_path] = url
+      if (card.image_path) {
+        const url = fileMap.get(card.image_path)
+        if (url) urls[card.image_path] = url
+      }
     }
-    set({ cards: cardsJson, imageUrls: urls, ...(dirHandle ? { dirHandle } : {}) })
+    set({
+      cards: cardsJson,
+      decks: decksJson,
+      activeDeckIndex: decksJson.length > 0 ? 0 : -1,
+      imageUrls: urls,
+      ...(dirHandle ? { dirHandle } : {}),
+    })
   },
 
-  loadDeck: (deckJson) => {
-    set({ currentDeck: deckJson.cards, deckName: deckJson.name ?? '' })
+  loadDeck: (cards) => {
+    const { decks, activeDeckIndex } = get()
+    if (activeDeckIndex < 0) return
+    set({
+      decks: decks.map((d, i) => i === activeDeckIndex ? { ...d, cards } : d),
+    })
   },
 
-  resolveImageUrl: (imagePath) => {
+  resolveImageUrl: (card) => {
+    if (card.image_data) return card.image_data
     const { imageUrls, cardBackUrl } = get()
-    return imageUrls[imagePath] ?? cardBackUrl ?? ''
+    return imageUrls[card.image_path] ?? cardBackUrl ?? ''
   },
 
   setCardBack: (url) => set({ cardBackUrl: url }),
 
-  listDeckFiles: async () => {
-    const { dirHandle } = get()
-    if (!dirHandle) return
-    try {
-      const files = await listDeckFiles(dirHandle)
-      set({ deckFiles: files })
-    } catch {
-      // decks/ フォルダがまだ存在しないケースは無視
-    }
+  newDeck: (name) => {
+    const { decks } = get()
+    const newDecks = [...decks, { name, cards: [] }]
+    set({ decks: newDecks, activeDeckIndex: newDecks.length - 1 })
   },
 
-  loadDeckFile: async (filename) => {
-    const { dirHandle } = get()
-    if (!dirHandle) return
-    const deck = await readDeckFile(dirHandle, filename)
-    set({ currentDeck: deck.cards, deckName: deck.name })
+  selectDeck: (index) => {
+    const { decks } = get()
+    if (index < 0 || index >= decks.length) return
+    set({ activeDeckIndex: index })
   },
 
-  saveDeckFile: async () => {
-    const { dirHandle, currentDeck, deckName } = get()
-    if (!dirHandle) return
-    const filename = deckName.trim() || '無題デッキ'
-    const deck: DeckJson = { name: filename, cards: currentDeck }
-    await writeDeckFile(dirHandle, filename, deck)
-    const files = await listDeckFiles(dirHandle)
-    set({ deckFiles: files, deckName: filename })
+  renameDeck: (name) => {
+    const { decks, activeDeckIndex } = get()
+    if (activeDeckIndex < 0) return
+    set({
+      decks: decks.map((d, i) => i === activeDeckIndex ? { ...d, name } : d),
+    })
   },
 
-  newDeck: () => set({ currentDeck: [], deckName: '' }),
+  deleteDeck: () => {
+    const { decks, activeDeckIndex } = get()
+    if (activeDeckIndex < 0) return
+    const newDecks = decks.filter((_, i) => i !== activeDeckIndex)
+    set({
+      decks: newDecks,
+      activeDeckIndex: newDecks.length === 0 ? -1 : Math.min(activeDeckIndex, newDecks.length - 1),
+    })
+  },
+
+  save: async () => {
+    const { dirHandle, cards, decks } = get()
+    if (!dirHandle) return
+    await writeDeckPoolJson(dirHandle, { pool: cards, decks })
+  },
 
   addCard: async (data, imageFile?) => {
-    const { dirHandle, cards, imageUrls } = get()
+    const { dirHandle, cards, decks } = get()
     if (!dirHandle) throw new Error('No dirHandle')
-    let image_path = ''
-    const newUrls = { ...imageUrls }
+    let image_data: string | undefined
     if (imageFile) {
-      image_path = await saveImageToCards(dirHandle, imageFile)
-      newUrls[image_path] = URL.createObjectURL(imageFile)
+      image_data = await fileToBase64(imageFile)
     }
-    const newCard: Card = { ...data, id: crypto.randomUUID(), image_path, count: 1 }
+    const newCard: Card = {
+      ...data,
+      id: crypto.randomUUID(),
+      image_path: '',
+      image_data,
+      count: 1,
+    }
     const updated = [...cards, newCard]
-    await writeCardsJson(dirHandle, updated)
-    set({ cards: updated, imageUrls: newUrls })
+    await writeDeckPoolJson(dirHandle, { pool: updated, decks })
+    set({ cards: updated })
+  },
+
+  updateCard: async (id, data, imageFile?) => {
+    const { dirHandle, cards, decks } = get()
+    if (!dirHandle) throw new Error('No dirHandle')
+    let image_data: string | undefined
+    if (imageFile) {
+      image_data = await fileToBase64(imageFile)
+    }
+    const updated = cards.map(c =>
+      c.id === id
+        ? { ...c, ...data, ...(image_data !== undefined ? { image_data } : {}) }
+        : c
+    )
+    await writeDeckPoolJson(dirHandle, { pool: updated, decks })
+    set({ cards: updated })
+  },
+
+  deleteCard: async (id) => {
+    const { dirHandle, cards, decks } = get()
+    if (!dirHandle) throw new Error('No dirHandle')
+    const updated = cards.filter(c => c.id !== id)
+    const updatedDecks = decks.map(d => ({
+      ...d,
+      cards: d.cards.filter(e => e.cardId !== id),
+    }))
+    await writeDeckPoolJson(dirHandle, { pool: updated, decks: updatedDecks })
+    set({ cards: updated, decks: updatedDecks })
   },
 
   exportDeckJson: () => {
-    const { currentDeck, deckName } = get()
-    const name = deckName.trim() || '無題デッキ'
-    downloadJson({ name, cards: currentDeck }, `${name}.json`)
+    const { decks, activeDeckIndex } = get()
+    const deck = decks[activeDeckIndex]
+    if (!deck) return
+    downloadJson(deck, `${deck.name}.json`)
   },
 
   exportPoolJson: () => {
-    downloadJson(get().cards, 'cards.json')
+    downloadJson(get().cards, 'pool.json')
   },
 }))

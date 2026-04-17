@@ -1,26 +1,33 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
+import type { Card } from '../../domain/types'
 
 const CIVILIZATIONS = ['光', '水', '闇', '火', '自然', '無色']
 const CARD_TYPES = ['クリーチャー', '呪文', 'タマシード', '進化クリーチャー', 'フィールド', 'その他']
 
 interface Props {
   onClose: () => void
+  card?: Card  // 編集モード時に渡す
 }
 
-export function CardEditorDialog({ onClose }: Props) {
-  const { dirHandle, addCard } = useLibraryStore(s => ({
+export function CardEditorDialog({ onClose, card }: Props) {
+  const { dirHandle, addCard, updateCard, deleteCard } = useLibraryStore(s => ({
     dirHandle: s.dirHandle,
     addCard: s.addCard,
+    updateCard: s.updateCard,
+    deleteCard: s.deleteCard,
   }))
 
-  const [name, setName] = useState('')
-  const [mana, setMana] = useState(1)
-  const [civs, setCivs] = useState<string[]>(['光'])
-  const [cardType, setCardType] = useState('クリーチャー')
+  const isEdit = !!card
+
+  const [name, setName] = useState(card?.name ?? '')
+  const [mana, setMana] = useState(card?.mana ?? 1)
+  const [civs, setCivs] = useState<string[]>(card?.civilizations ?? [])
+  const [cardType, setCardType] = useState(card?.card_type ?? 'クリーチャー')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(card?.image_data ?? null)
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -31,13 +38,17 @@ export function CardEditorDialog({ onClose }: Props) {
   }
 
   useEffect(() => {
-    return () => { if (preview) URL.revokeObjectURL(preview) }
+    // image_data以外のblobURLのみrevoke
+    return () => {
+      if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview)
+    }
   }, [preview])
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     setImageFile(file)
-    setPreview(file ? URL.createObjectURL(file) : null)
+    if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview)
+    setPreview(file ? URL.createObjectURL(file) : (card?.image_data ?? null))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -48,10 +59,27 @@ export function CardEditorDialog({ onClose }: Props) {
     setSaving(true)
     setError('')
     try {
-      await addCard({ name: name.trim(), mana, civilizations: civs, card_type: cardType }, imageFile ?? undefined)
+      if (isEdit && card) {
+        await updateCard(card.id, { name: name.trim(), mana, civilizations: civs, card_type: cardType }, imageFile ?? undefined)
+      } else {
+        await addCard({ name: name.trim(), mana, civilizations: civs, card_type: cardType }, imageFile ?? undefined)
+      }
       onClose()
     } catch {
       setError('保存に失敗しました')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!card) return
+    setSaving(true)
+    try {
+      await deleteCard(card.id)
+      onClose()
+    } catch {
+      setError('削除に失敗しました')
     } finally {
       setSaving(false)
     }
@@ -101,15 +129,58 @@ export function CardEditorDialog({ onClose }: Props) {
   return (
     <div style={overlay} onClick={onClose}>
       <div style={dialog} onClick={e => e.stopPropagation()}>
-        <h2 style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 11,
-          color: '#00FFD0',
-          textShadow: '0 0 16px rgba(0,255,200,0.6)',
-          marginBottom: 4,
-        }}>
-          ADD CARD
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h2 style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 11,
+            color: '#00FFD0',
+            textShadow: '0 0 16px rgba(0,255,200,0.6)',
+          }}>
+            {isEdit ? 'EDIT CARD' : 'ADD CARD'}
+          </h2>
+          {isEdit && !confirmDelete && (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 7,
+                padding: '5px 10px',
+                borderRadius: 5,
+                cursor: 'pointer',
+                background: '#200c0c',
+                color: '#dd6666',
+                border: '1px solid #502828',
+              }}
+            >削除</button>
+          )}
+        </div>
+
+        {confirmDelete && (
+          <div style={{
+            background: '#1a0a0a',
+            border: '1px solid #602020',
+            borderRadius: 8,
+            padding: '10px 14px',
+            marginBottom: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, color: '#ff8888', flex: 1 }}>
+              「{card?.name}」を削除しますか？
+            </span>
+            <button
+              onClick={handleDelete}
+              disabled={saving}
+              style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: '#2a0a0a', color: '#ff6666', border: '1px solid #602020' }}
+            >はい</button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: '#111', color: '#888', border: '1px solid #333' }}
+            >いいえ</button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <label style={label}>カード名 *</label>
@@ -192,7 +263,7 @@ export function CardEditorDialog({ onClose }: Props) {
               ファイルを選択
             </button>
             <span style={{ color: '#505c78', fontSize: 11, lineHeight: '28px' }}>
-              {imageFile ? imageFile.name : '未選択'}
+              {imageFile ? imageFile.name : (isEdit && card?.image_data ? '登録済み' : '未選択')}
             </span>
             {preview && (
               <img
@@ -229,7 +300,7 @@ export function CardEditorDialog({ onClose }: Props) {
                 border: 'none',
               }}
             >
-              {saving ? '保存中...' : '追加'}
+              {saving ? '保存中...' : (isEdit ? '更新' : '追加')}
             </button>
             <button
               type="button"

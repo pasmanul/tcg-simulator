@@ -1,18 +1,30 @@
-import type { Card } from '../domain/types'
+import type { DeckPoolJson } from '../domain/types'
 
 type WritableHandle = FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }
 
-export async function writeCardsJson(
+export async function writeDeckPoolJson(
   dirHandle: FileSystemDirectoryHandle,
-  cards: Card[],
+  data: DeckPoolJson,
 ): Promise<void> {
-  const fh = await dirHandle.getFileHandle('cards.json', { create: true })
+  const fh = await dirHandle.getFileHandle('deck.json', { create: true })
   const writable = await (fh as WritableHandle).createWritable()
-  await writable.write(JSON.stringify(cards, null, 2))
+  await writable.write(JSON.stringify(data, null, 2))
   await writable.close()
 }
 
-/** 画像を cards/ サブフォルダにコピーして 'cards/filename.ext' を返す */
+export async function readDeckPoolJson(
+  dirHandle: FileSystemDirectoryHandle,
+): Promise<DeckPoolJson> {
+  const fh = await dirHandle.getFileHandle('deck.json')
+  const file = await fh.getFile()
+  const raw = JSON.parse(await file.text())
+  return {
+    pool: raw.pool ?? [],
+    decks: raw.decks ?? (raw.deck ? [{ name: '無題', cards: raw.deck }] : []),
+  }
+}
+
+/** 画像を cards/ サブフォルダにコピーして 'cards/filename.ext' を返す（旧形式移行用） */
 export async function saveImageToCards(
   dirHandle: FileSystemDirectoryHandle,
   file: File,

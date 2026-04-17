@@ -15,10 +15,11 @@ export function BoardHud() {
     openDeckPanel: s.openDeckPanel,
     addLog: s.addLog,
   }))
-  const { cards, currentDeck } = useLibraryStore(s => ({
+  const { cards, currentDeckFn } = useLibraryStore(s => ({
     cards: s.cards,
-    currentDeck: s.currentDeck,
+    currentDeckFn: s.currentDeck,
   }))
+  const currentDeck = currentDeckFn()
 
   function flattenCards(gcs: GameCard[]): GameCard[] {
     return gcs.flatMap(gc => [gc, ...flattenCards(gc.under_cards)])

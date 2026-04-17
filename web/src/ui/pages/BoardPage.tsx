@@ -47,7 +47,10 @@ export function BoardPage() {
 
   const initZones = useGameStore(s => s.initZones)
   const zones = useLayoutStore(s => s.zones)
-  const deckPanelOpen = useUIStore(s => s.deckPanelOpen)
+  const { deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
+    deckPanelOpen: s.deckPanelOpen,
+    closeDeckPanel: s.closeDeckPanel,
+  }))
 
   useEffect(() => {
     const realZoneIds = zones
@@ -101,23 +104,29 @@ export function BoardPage() {
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 500,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(0,0,0,0.6)',
-        }}>
-          <div style={{
-            width: '88vw',
-            height: '88vh',
-            borderRadius: 10,
-            overflow: 'hidden',
-            boxShadow: '0 0 40px rgba(124,58,237,0.4)',
-            border: '1px solid rgba(124,58,237,0.5)',
-          }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)',
+          }}
+          onClick={closeDeckPanel}
+        >
+          <div
+            style={{
+              width: '88vw',
+              height: '88vh',
+              borderRadius: 10,
+              overflow: 'hidden',
+              boxShadow: '0 0 40px rgba(124,58,237,0.4)',
+              border: '1px solid rgba(124,58,237,0.5)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
             <DeckPage />
           </div>
         </div>

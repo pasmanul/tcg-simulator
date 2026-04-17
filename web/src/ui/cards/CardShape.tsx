@@ -49,7 +49,7 @@ export function CardShape({
   const backUrl = useLibraryStore(s => s.cardBackUrl)
 
   const showBack = masked || gc.face_down
-  const imgUrl = showBack ? backUrl : resolveUrl(gc.card.image_path)
+  const imgUrl = showBack ? backUrl : resolveUrl(gc.card)
   const [img] = useImage(imgUrl)
 
   const rotation = gc.tapped ? 90 : 0
