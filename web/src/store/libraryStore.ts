@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { Card, DeckEntry, DeckRecord } from '../domain/types'
-import { writeDeckPoolJson } from '../lib/cardStorage'
+import type { Card, DeckRecord, FieldDef, GameConfigJson, GameProfile } from '../domain/types'
+import defaultBoardConfig from '../assets/gameConfig.json'
 
 function effectiveCardBackUrl(decks: DeckRecord[], index: number, globalUrl: string): string {
   return decks[index]?.cardBack ?? globalUrl
@@ -23,6 +23,19 @@ async function fileToBase64(file: File): Promise<string> {
   })
 }
 
+type WritableHandle = FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }
+
+async function writeGameProfile(fileHandle: FileSystemFileHandle, profile: GameProfile): Promise<void> {
+  const writable = await (fileHandle as WritableHandle).createWritable()
+  await writable.write(JSON.stringify(profile, null, 2))
+  await writable.close()
+}
+
+export interface DeckEntry {
+  cardId: string
+  count: number
+}
+
 interface LibraryStore {
   cards: Card[]
   imageUrls: Record<string, string>   // image_path -> objectURL（旧形式用）
@@ -30,7 +43,12 @@ interface LibraryStore {
   _globalCardBackUrl: string           // back.jpg など全デッキ共通のフォールバック
   decks: DeckRecord[]
   activeDeckIndex: number             // -1 = デッキ未選択
-  dirHandle: FileSystemDirectoryHandle | null
+  fileHandle: FileSystemFileHandle | null
+
+  // GameProfile 拡張フィールド
+  fieldDefs: FieldDef[]
+  deckRules: { maxDeckSize?: number; maxCopies?: number }
+  boardConfig: GameConfigJson
 
   // 現在のデッキ（activeDeckIndex から導出）
   currentDeck: () => DeckEntry[]
@@ -40,8 +58,10 @@ interface LibraryStore {
     cardsJson: Card[],
     decksJson: DeckRecord[],
     fileMap: Map<string, string>,
-    dirHandle?: FileSystemDirectoryHandle,
+    fileHandle?: FileSystemFileHandle,
   ) => void
+  loadGameProfile: (fileHandle: FileSystemFileHandle) => Promise<void>
+  exportGameProfile: () => void
   loadDeck: (cards: DeckEntry[]) => void  // 現在デッキのカードを更新
   resolveImageUrl: (card: Card) => string
   setCardBack: (url: string) => void
@@ -54,12 +74,19 @@ interface LibraryStore {
   deleteDeck: () => void
 
   save: () => Promise<void>
-  addCard: (data: Omit<Card, 'id' | 'count' | 'image_path' | 'image_data'>, imageFile?: File) => Promise<void>
-  updateCard: (id: string, data: Omit<Card, 'id' | 'count' | 'image_path' | 'image_data'>, imageFile?: File) => Promise<void>
+  addCard: (name: string, fields: Record<string, any>, imageFile?: File) => Promise<void>
+  updateCard: (id: string, name: string, fields: Record<string, any>, imageFile?: File) => Promise<void>
   deleteCard: (id: string) => Promise<void>
   exportDeckJson: () => void
   exportPoolJson: () => void
-  applyLibrarySnapshot: (cards: Card[], decks: DeckRecord[], activeDeckIndex: number) => void
+  applyLibrarySnapshot: (
+    cards: Card[],
+    decks: DeckRecord[],
+    activeDeckIndex: number,
+    fieldDefs?: FieldDef[],
+    deckRules?: { maxDeckSize?: number; maxCopies?: number },
+    boardConfig?: GameConfigJson,
+  ) => void
 }
 
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
@@ -69,11 +96,16 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   _globalCardBackUrl: '',
   decks: [],
   activeDeckIndex: -1,
-  dirHandle: null,
+  fileHandle: null,
+
+  // GameProfile 拡張フィールド初期値
+  fieldDefs: [],
+  deckRules: {},
+  boardConfig: defaultBoardConfig as GameConfigJson,
 
   currentDeck: () => {
     const { decks, activeDeckIndex } = get()
-    return decks[activeDeckIndex]?.cards ?? []
+    return (decks[activeDeckIndex]?.cards ?? []) as DeckEntry[]
   },
 
   currentDeckName: () => {
@@ -81,7 +113,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     return decks[activeDeckIndex]?.name ?? ''
   },
 
-  loadLibrary: (cardsJson, decksJson, fileMap, dirHandle?) => {
+  loadLibrary: (cardsJson, decksJson, fileMap, fileHandle?) => {
     const urls: Record<string, string> = {}
     for (const card of cardsJson) {
       if (card.image_path) {
@@ -97,8 +129,45 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
       activeDeckIndex,
       imageUrls: urls,
       cardBackUrl: effectiveCardBackUrl(decksJson, activeDeckIndex, globalUrl),
-      ...(dirHandle ? { dirHandle } : {}),
+      ...(fileHandle ? { fileHandle } : {}),
     })
+  },
+
+  loadGameProfile: async (fileHandle) => {
+    const file = await fileHandle.getFile()
+    const raw = JSON.parse(await file.text()) as Partial<GameProfile>
+    const cardsJson: Card[] = raw.pool ?? []
+    const decksJson: DeckRecord[] = raw.decks ?? []
+    const fieldDefs: FieldDef[] = raw.fieldDefs ?? []
+    const deckRules = raw.deckRules ?? {}
+    const boardConfig: GameConfigJson = raw.boardConfig ?? (defaultBoardConfig as GameConfigJson)
+
+    const activeDeckIndex = decksJson.length > 0 ? 0 : -1
+    const globalUrl = get()._globalCardBackUrl
+    set({
+      cards: cardsJson,
+      decks: decksJson,
+      activeDeckIndex,
+      imageUrls: {},
+      cardBackUrl: effectiveCardBackUrl(decksJson, activeDeckIndex, globalUrl),
+      fileHandle,
+      fieldDefs,
+      deckRules,
+      boardConfig,
+    })
+  },
+
+  exportGameProfile: () => {
+    const { cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    const profile: GameProfile = {
+      meta: { name: 'exported-profile', version: '1' },
+      fieldDefs,
+      deckRules,
+      boardConfig,
+      pool: cards,
+      decks,
+    }
+    downloadJson(profile, 'game-profile.json')
   },
 
   loadDeck: (cards) => {
@@ -161,55 +230,88 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   save: async () => {
-    const { dirHandle, cards, decks } = get()
-    if (!dirHandle) return
-    await writeDeckPoolJson(dirHandle, { pool: cards, decks })
+    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    if (!fileHandle) return
+    const profile: GameProfile = {
+      meta: { name: 'game-profile', version: '1' },
+      fieldDefs,
+      deckRules,
+      boardConfig,
+      pool: cards,
+      decks,
+    }
+    await writeGameProfile(fileHandle, profile)
   },
 
-  addCard: async (data, imageFile?) => {
-    const { dirHandle, cards, decks } = get()
-    if (!dirHandle) throw new Error('No dirHandle')
+  addCard: async (name, fields, imageFile?) => {
+    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    if (!fileHandle) throw new Error('No fileHandle')
     let image_data: string | undefined
     if (imageFile) {
       image_data = await fileToBase64(imageFile)
     }
     const newCard: Card = {
-      ...data,
       id: crypto.randomUUID(),
+      name,
       image_path: '',
       image_data,
       count: 1,
+      fields,
     }
     const updated = [...cards, newCard]
-    await writeDeckPoolJson(dirHandle, { pool: updated, decks })
+    const profile: GameProfile = {
+      meta: { name: 'game-profile', version: '1' },
+      fieldDefs,
+      deckRules,
+      boardConfig,
+      pool: updated,
+      decks,
+    }
+    await writeGameProfile(fileHandle, profile)
     set({ cards: updated })
   },
 
-  updateCard: async (id, data, imageFile?) => {
-    const { dirHandle, cards, decks } = get()
-    if (!dirHandle) throw new Error('No dirHandle')
+  updateCard: async (id, name, fields, imageFile?) => {
+    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    if (!fileHandle) throw new Error('No fileHandle')
     let image_data: string | undefined
     if (imageFile) {
       image_data = await fileToBase64(imageFile)
     }
     const updated = cards.map(c =>
       c.id === id
-        ? { ...c, ...data, ...(image_data !== undefined ? { image_data } : {}) }
+        ? { ...c, name, fields, ...(image_data !== undefined ? { image_data } : {}) }
         : c
     )
-    await writeDeckPoolJson(dirHandle, { pool: updated, decks })
+    const profile: GameProfile = {
+      meta: { name: 'game-profile', version: '1' },
+      fieldDefs,
+      deckRules,
+      boardConfig,
+      pool: updated,
+      decks,
+    }
+    await writeGameProfile(fileHandle, profile)
     set({ cards: updated })
   },
 
   deleteCard: async (id) => {
-    const { dirHandle, cards, decks } = get()
-    if (!dirHandle) throw new Error('No dirHandle')
+    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    if (!fileHandle) throw new Error('No fileHandle')
     const updated = cards.filter(c => c.id !== id)
     const updatedDecks = decks.map(d => ({
       ...d,
       cards: d.cards.filter(e => e.cardId !== id),
     }))
-    await writeDeckPoolJson(dirHandle, { pool: updated, decks: updatedDecks })
+    const profile: GameProfile = {
+      meta: { name: 'game-profile', version: '1' },
+      fieldDefs,
+      deckRules,
+      boardConfig,
+      pool: updated,
+      decks: updatedDecks,
+    }
+    await writeGameProfile(fileHandle, profile)
     set({ cards: updated, decks: updatedDecks })
   },
 
@@ -224,8 +326,16 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     downloadJson(get().cards, 'pool.json')
   },
 
-  applyLibrarySnapshot: (cards, decks, activeDeckIndex) => {
+  applyLibrarySnapshot: (cards, decks, activeDeckIndex, fieldDefs?, deckRules?, boardConfig?) => {
     const { _globalCardBackUrl } = get()
-    set({ cards, decks, activeDeckIndex, cardBackUrl: effectiveCardBackUrl(decks, activeDeckIndex, _globalCardBackUrl) })
+    set({
+      cards,
+      decks,
+      activeDeckIndex,
+      cardBackUrl: effectiveCardBackUrl(decks, activeDeckIndex, _globalCardBackUrl),
+      ...(fieldDefs !== undefined ? { fieldDefs } : {}),
+      ...(deckRules !== undefined ? { deckRules } : {}),
+      ...(boardConfig !== undefined ? { boardConfig } : {}),
+    })
   },
 }))
