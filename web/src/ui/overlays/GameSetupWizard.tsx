@@ -4,6 +4,7 @@ import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
 import type { FieldDef, GameProfile, GameConfigJson } from '../../domain/types'
 import defaultBoardConfig from '../../assets/gameConfig.json'
+import { BoardEditorDialog } from './BoardEditorDialog'
 
 // ──────────────────────────────────────────────
 // スタイル定数
@@ -263,6 +264,10 @@ export function GameSetupWizard() {
   // ステップ②: フィールド定義
   const [fieldDefs, setFieldDefs] = useState<FieldDef[]>([])
 
+  // ステップ③: ボード設定
+  const [boardConfig, setBoardConfig] = useState<GameConfigJson>(defaultBoardConfig as GameConfigJson)
+  const [showBoardEditor, setShowBoardEditor] = useState(false)
+
   // 現在のステップ
   const [step, setStep] = useState(0)
   const [nameError, setNameError] = useState('')
@@ -312,7 +317,7 @@ export function GameSetupWizard() {
   // ──────────────────────────────────────────────
   // 完了処理
   // ──────────────────────────────────────────────
-  function handleComplete() {
+  function handleComplete(config: GameConfigJson = boardConfig) {
     const profile: GameProfile = {
       meta: { name: gameName.trim() },
       fieldDefs,
@@ -320,7 +325,7 @@ export function GameSetupWizard() {
         ...(maxDeckSize ? { maxDeckSize: Number(maxDeckSize) } : {}),
         ...(maxCopies ? { maxCopies: Number(maxCopies) } : {}),
       },
-      boardConfig: defaultBoardConfig as GameConfigJson,
+      boardConfig: config,
       pool: [],
       decks: [],
     }
@@ -329,22 +334,29 @@ export function GameSetupWizard() {
     closeDialog()
   }
 
-  // ──────────────────────────────────────────────
-  // ボード配置ステップのプレースホルダー
-  // ──────────────────────────────────────────────
-  function handleLaterConfig() {
-    handleComplete()
+  function handleOpenBoardEditor() {
+    setShowBoardEditor(true)
   }
 
-  function handleOpenBoardEditor() {
-    // Step9 で BoardEditorDialog を実装するためのプレースホルダー
-    handleComplete()
-    // TODO: openDialog('board-editor') を Step9 で追加
+  function handleBoardEditorSave(config: GameConfigJson) {
+    setBoardConfig(config)
+    setShowBoardEditor(false)
+    handleComplete(config)
   }
 
   // ──────────────────────────────────────────────
   // レンダリング
   // ──────────────────────────────────────────────
+  if (showBoardEditor) {
+    return (
+      <BoardEditorDialog
+        initialConfig={boardConfig}
+        onSave={handleBoardEditorSave}
+        onClose={() => setShowBoardEditor(false)}
+      />
+    )
+  }
+
   return (
     <div style={overlay}>
       <div style={dialog} onClick={e => e.stopPropagation()}>
@@ -482,16 +494,22 @@ export function GameSetupWizard() {
               background: '#090c1c',
               border: '1px solid rgba(124,58,237,0.2)',
               borderRadius: 8,
-              padding: '20px 16px',
+              padding: '16px',
               marginBottom: 16,
-              textAlign: 'center',
             }}>
-              <p style={{ color: '#505c78', fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, marginBottom: 12 }}>
-                ボードエディター（Step 9 で実装予定）
-              </p>
-              <p style={{ color: '#334', fontFamily: "'Chakra Petch', sans-serif", fontSize: 11, marginBottom: 0 }}>
-                デフォルト設定（デュエルマスターズ用 2ウィンドウ構成）が適用されます。
-              </p>
+              <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 10, fontFamily: "'Chakra Petch', sans-serif" }}>
+                現在の設定: {boardConfig.windows.length} ウィンドウ / {boardConfig.zones.length} ゾーン
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                {boardConfig.zones.slice(0, 6).map(z => (
+                  <span key={z.id} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: z.visibility === 'public' ? 'rgba(59,130,246,0.15)' : 'rgba(124,58,237,0.15)', color: z.visibility === 'public' ? '#60a5fa' : '#A78BFA', border: `1px solid ${z.visibility === 'public' ? 'rgba(59,130,246,0.3)' : 'rgba(124,58,237,0.3)'}` }}>
+                    {z.visibility === 'public' ? '●' : '◆'} {z.name}
+                  </span>
+                ))}
+                {boardConfig.zones.length > 6 && (
+                  <span style={{ fontSize: 10, color: '#505c78' }}>+{boardConfig.zones.length - 6}...</span>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -512,15 +530,18 @@ export function GameSetupWizard() {
 
           {step === 2 && (
             <>
-              <button style={secondaryBtn} onClick={handleLaterConfig}>
+              <button style={secondaryBtn} onClick={() => handleComplete()}>
                 後で設定する
               </button>
               <button
-                style={{
-                  ...primaryBtn,
-                  background: 'linear-gradient(135deg, #7c3aed, #4c1d95)',
-                }}
+                style={{ ...primaryBtn, background: 'linear-gradient(135deg, #3b82f6, #1e40af)' }}
                 onClick={handleOpenBoardEditor}
+              >
+                ボード編集
+              </button>
+              <button
+                style={{ ...primaryBtn, background: 'linear-gradient(135deg, #7c3aed, #4c1d95)' }}
+                onClick={() => handleComplete()}
               >
                 完了
               </button>
