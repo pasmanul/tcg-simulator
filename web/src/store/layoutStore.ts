@@ -7,14 +7,16 @@ interface LayoutStore {
   zones: ZoneDefinition[]
   getWindowZones: (windowId: string) => ZoneDefinition[]
   getWindow: (windowId: string) => WindowDefinition | undefined
+  setConfig: (config: GameConfigJson) => void
 }
 
-export const useLayoutStore = create<LayoutStore>(() => {
+export const useLayoutStore = create<LayoutStore>((set, get) => {
   const config = defaultConfig as GameConfigJson
   return {
     windows: config.windows,
     zones: config.zones,
-    getWindowZones: (windowId) => config.zones.filter(z => z.window_id === windowId),
-    getWindow: (windowId) => config.windows.find(w => w.id === windowId),
+    getWindowZones: (windowId) => get().zones.filter(z => z.window_id === windowId),
+    getWindow: (windowId) => get().windows.find(w => w.id === windowId),
+    setConfig: (config) => set({ windows: config.windows, zones: config.zones }),
   }
 })

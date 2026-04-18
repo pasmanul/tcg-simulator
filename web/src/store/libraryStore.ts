@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Card, DeckEntry, DeckRecord, FieldDef, GameConfigJson, GameProfile } from '../domain/types'
 import defaultBoardConfig from '../assets/gameConfig.json'
+import { useLayoutStore } from './layoutStore'
 
 function effectiveCardBackUrl(decks: DeckRecord[], index: number, globalUrl: string): string {
   return decks[index]?.cardBack ?? globalUrl
@@ -150,6 +151,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
       deckRules,
       boardConfig,
     })
+    useLayoutStore.getState().setConfig(boardConfig)
   },
 
   exportGameProfile: () => {
