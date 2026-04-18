@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Card, DeckRecord, FieldDef, GameConfigJson, GameProfile } from '../domain/types'
+import type { Card, DeckEntry, DeckRecord, FieldDef, GameConfigJson, GameProfile } from '../domain/types'
 import defaultBoardConfig from '../assets/gameConfig.json'
 
 function effectiveCardBackUrl(decks: DeckRecord[], index: number, globalUrl: string): string {
@@ -29,11 +29,6 @@ async function writeGameProfile(fileHandle: FileSystemFileHandle, profile: GameP
   const writable = await (fileHandle as WritableHandle).createWritable()
   await writable.write(JSON.stringify(profile, null, 2))
   await writable.close()
-}
-
-export interface DeckEntry {
-  cardId: string
-  count: number
 }
 
 interface LibraryStore {
