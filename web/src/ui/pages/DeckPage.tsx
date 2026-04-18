@@ -238,14 +238,6 @@ function DeckPanelHeader() {
         </label>
       )}
 
-      <span style={{
-        fontFamily: "'Chakra Petch', sans-serif",
-        fontSize: 11,
-        color: '#334',
-        marginLeft: hasDeck ? 8 : 'auto',
-      }}>
-        ← ドロップ
-      </span>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 import { useRef } from 'react'
-import { Group, Rect, Text } from 'react-konva'
+import { Group, Rect, Text, Image as KImage } from 'react-konva'
+import useImage from 'use-image'
 import type Konva from 'konva'
 import type { ZoneDefinition } from '../../domain/types'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
+import { useLibraryStore } from '../../store/libraryStore'
 import { zoneColors, CARD_W, CARD_H } from '../../theme'
 import { calcCardPositions } from '../hooks/useCardLayout'
 import { CardShape } from '../cards/CardShape'
@@ -42,6 +44,9 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
     addLog: s.addLog,
     setHoveredCard: s.setHoveredCard,
   }))
+
+  const cardBackUrl = useLibraryStore(s => s.cardBackUrl)
+  const [backImg] = useImage(cardBackUrl)
 
   const colors = zoneColors(zoneDef.id)
   const cardScale = zoneDef.card_scale ?? 1.0
@@ -164,28 +169,55 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
         id={`droptarget-${zoneDef.id}`}
       />
 
-      {/* Pile mode: show count only */}
-      {zoneDef.pile_mode && cards.length > 0 && (
-        <>
-          <Rect
-            x={x + width / 2 - cardW / 2}
-            y={contentY + contentH / 2 - cardH / 2}
-            width={cardW} height={cardH}
-            fill="#061420"
-            stroke={colors.border}
-            strokeWidth={2}
-            cornerRadius={6}
-          />
-          <Text
-            x={x + width / 2 - 24}
-            y={contentY + contentH / 2 - 14}
-            text={String(cards.length)}
-            fontSize={28}
-            fill={colors.titleFg}
-            fontFamily="'Press Start 2P', monospace"
-          />
-        </>
-      )}
+      {/* Pile mode: card back filling zone + count at bottom of card */}
+      {zoneDef.pile_mode && cards.length > 0 && (() => {
+        const PILE_BTN_H = 28
+        const pileMaxH = contentH - PILE_BTN_H - 12
+        const pileMaxW = width - 16
+        const pileCardW = Math.min(pileMaxW, Math.round(pileMaxH * CARD_W / CARD_H))
+        const pileCardH = Math.round(pileCardW * CARD_H / CARD_W)
+        const pileX = x + width / 2 - pileCardW / 2
+        const pileY = contentY + 4
+        return (
+          <>
+            {backImg ? (
+              <KImage
+                x={pileX} y={pileY}
+                width={pileCardW} height={pileCardH}
+                image={backImg}
+                cornerRadius={6}
+                stroke={colors.border}
+                strokeWidth={2}
+              />
+            ) : (
+              <Rect
+                x={pileX} y={pileY}
+                width={pileCardW} height={pileCardH}
+                fill="#061420"
+                stroke={colors.border}
+                strokeWidth={2}
+                cornerRadius={6}
+              />
+            )}
+            {(() => {
+              const bt = `×${cards.length}`
+              const bw = bt.length * 7 + 8
+              const bh = 15
+              const bx = pileX + pileCardW - bw + 6
+              const by = pileY + pileCardH - bh + 6
+              return (
+                <>
+                  <Rect x={bx} y={by} width={bw} height={bh}
+                    fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} />
+                  <Text x={bx} y={by + 2} width={bw} align="center"
+                    text={bt} fontSize={9} fill="#ffdd66"
+                    fontFamily="'Press Start 2P', monospace" />
+                </>
+              )
+            })()}
+          </>
+        )
+      })()}
 
       {/* Cards */}
       {!zoneDef.pile_mode && positions.map((pos) => {
@@ -211,6 +243,24 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
           />
         )
       })}
+
+      {/* Card count badge (non-pile zones) */}
+      {!zoneDef.pile_mode && cards.length > 0 && (() => {
+        const bt = `×${cards.length}`
+        const bw = bt.length * 7 + 8
+        const bh = 15
+        const bx = x + width - bw - 4
+        const by = y + height - bh - 4
+        return (
+          <>
+            <Rect x={bx} y={by} width={bw} height={bh}
+              fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} listening={false} />
+            <Text x={bx} y={by + 2} width={bw} align="center"
+              text={bt} fontSize={9} fill="#ffdd66"
+              fontFamily="'Press Start 2P', monospace" listening={false} />
+          </>
+        )
+      })()}
 
       {/* Neon glow border on hover (simulated with shadow) */}
       <Rect

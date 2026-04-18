@@ -24,7 +24,7 @@ const BTN: React.CSSProperties = {
   whiteSpace: 'nowrap' as const,
 }
 
-export function ZoneOverlayButtons({ zoneDef, x, y, width }: Props) {
+export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
   const { tapAllInZone, untapAllInZone, drawCard, shuffleZone, sortZone } = useGameStore(s => ({
     tapAllInZone: s.tapAllInZone,
     untapAllInZone: s.untapAllInZone,
@@ -34,18 +34,41 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width }: Props) {
   }))
   const addLog = useUIStore(s => s.addLog)
 
-  const TITLE_H = 22  // same as ZoneGroup
-  const btnY = y + TITLE_H + 2
+  const TITLE_H = 22
   const btnRight = x + width - 4
 
-  const buttons: { label: string; onClick: () => void }[] = []
-
+  // deck zone: DRAW + SHUFFLE at bottom of zone
   if (zoneDef.id === 'deck') {
-    buttons.push(
-      { label: 'DRAW', onClick: () => { drawCard(); addLog('ドロー') } },
-      { label: 'SHUFFLE', onClick: () => { shuffleZone('deck'); addLog('山札シャッフル') } },
+    const btnY = y + height - 26
+    return (
+      <div style={{
+        position: 'absolute',
+        top: btnY,
+        left: x + 4,
+        right: `calc(100% - ${btnRight}px)`,
+        display: 'flex',
+        gap: 4,
+        pointerEvents: 'all',
+        zIndex: 10,
+      }}>
+        {[
+          { label: 'DRAW', onClick: () => { drawCard(); addLog('ドロー') } },
+          { label: 'SHUFFLE', onClick: () => { shuffleZone('deck'); addLog('山札シャッフル') } },
+        ].map(b => (
+          <button
+            key={b.label}
+            style={{ ...BTN, flex: 1, textAlign: 'center' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
+            onClick={b.onClick}
+          >{b.label}</button>
+        ))}
+      </div>
     )
   }
+
+  const btnY = y + TITLE_H + 2
+  const buttons: { label: string; onClick: () => void }[] = []
 
   if (zoneDef.visibility === 'public' || zoneDef.id === 'hand') {
     buttons.push({
@@ -81,14 +104,8 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width }: Props) {
         <button
           key={b.label}
           style={BTN}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(30,50,100,0.9)'
-            e.currentTarget.style.color = '#cce0ff'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(10,14,32,0.85)'
-            e.currentTarget.style.color = '#99bbdd'
-          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
           onClick={b.onClick}
         >
           {b.label}
