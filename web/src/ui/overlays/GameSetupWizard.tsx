@@ -329,7 +329,7 @@ export function GameSetupWizard() {
       pool: [],
       decks: [],
     }
-    useLibraryStore.getState().applyLibrarySnapshot([], [], -1, profile.fieldDefs, profile.deckRules, profile.boardConfig)
+    useLibraryStore.getState().applyLibrarySnapshot([], [], -1, profile.fieldDefs, profile.deckRules, profile.boardConfig, gameName.trim())
     useLayoutStore.getState().setConfig(profile.boardConfig)
     closeDialog()
   }

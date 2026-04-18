@@ -42,6 +42,7 @@ interface LibraryStore {
   fileHandle: FileSystemFileHandle | null
 
   // GameProfile 拡張フィールド
+  profileName: string
   fieldDefs: FieldDef[]
   deckRules: { maxDeckSize?: number; maxCopies?: number }
   boardConfig: GameConfigJson
@@ -82,6 +83,7 @@ interface LibraryStore {
     fieldDefs?: FieldDef[],
     deckRules?: { maxDeckSize?: number; maxCopies?: number },
     boardConfig?: GameConfigJson,
+    profileName?: string,
   ) => void
 }
 
@@ -95,6 +97,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   fileHandle: null,
 
   // GameProfile 拡張フィールド初期値
+  profileName: '',
   fieldDefs: [],
   deckRules: {},
   boardConfig: defaultBoardConfig as GameConfigJson,
@@ -137,6 +140,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     const fieldDefs: FieldDef[] = raw.fieldDefs ?? []
     const deckRules = raw.deckRules ?? {}
     const boardConfig: GameConfigJson = raw.boardConfig ?? (defaultBoardConfig as GameConfigJson)
+    const profileName = raw.meta?.name ?? ''
 
     const activeDeckIndex = decksJson.length > 0 ? 0 : -1
     const globalUrl = get()._globalCardBackUrl
@@ -147,6 +151,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
       imageUrls: {},
       cardBackUrl: effectiveCardBackUrl(decksJson, activeDeckIndex, globalUrl),
       fileHandle,
+      profileName,
       fieldDefs,
       deckRules,
       boardConfig,
@@ -155,16 +160,17 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   exportGameProfile: () => {
-    const { cards, decks, fieldDefs, deckRules, boardConfig } = get()
+    const { cards, decks, profileName, fieldDefs, deckRules, boardConfig } = get()
     const profile: GameProfile = {
-      meta: { name: 'exported-profile', version: '1' },
+      meta: { name: profileName || 'exported-profile', version: '1' },
       fieldDefs,
       deckRules,
       boardConfig,
       pool: cards,
       decks,
     }
-    downloadJson(profile, 'game-profile.json')
+    const filename = profileName ? `${profileName.replace(/[^a-zA-Z0-9_\-]/g, '_')}.json` : 'game-profile.json'
+    downloadJson(profile, filename)
   },
 
   loadDeck: (cards) => {
@@ -323,7 +329,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     downloadJson(get().cards, 'pool.json')
   },
 
-  applyLibrarySnapshot: (cards, decks, activeDeckIndex, fieldDefs?, deckRules?, boardConfig?) => {
+  applyLibrarySnapshot: (cards, decks, activeDeckIndex, fieldDefs?, deckRules?, boardConfig?, profileName?) => {
     const { _globalCardBackUrl } = get()
     set({
       cards,
@@ -333,6 +339,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
       ...(fieldDefs !== undefined ? { fieldDefs } : {}),
       ...(deckRules !== undefined ? { deckRules } : {}),
       ...(boardConfig !== undefined ? { boardConfig } : {}),
+      ...(profileName !== undefined ? { profileName } : {}),
     })
   },
 }))
