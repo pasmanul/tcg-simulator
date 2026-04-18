@@ -3,7 +3,7 @@ import { DeckHud } from '../deck/DeckHud'
 import { FilterBar, DEFAULT_FILTER, type FilterState } from '../deck/FilterBar'
 import { LibraryGrid } from '../deck/LibraryGrid'
 import { DeckGrid } from '../deck/DeckGrid'
-import { SetupDialog } from '../overlays/SetupDialog'
+import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { useLibraryStore } from '../../store/libraryStore'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
@@ -286,7 +286,7 @@ export function DeckPage() {
         </div>
       </div>
 
-      <SetupDialog />
+      <GameLoadDialog />
       {cardEditorOpen && <CardEditorDialog onClose={() => setCardEditorOpen(false)} />}
       {editingCard && <CardEditorDialog card={editingCard} onClose={() => setEditingCard(null)} />}
     </div>

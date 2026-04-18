@@ -10,7 +10,7 @@ import { BoardStage } from '../stage/BoardStage'
 import { BoardHud } from '../hud/BoardHud'
 import { ActionLog } from '../overlays/ActionLog'
 import { ContextMenu } from '../overlays/ContextMenu'
-import { SetupDialog } from '../overlays/SetupDialog'
+import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { SearchDialog } from '../overlays/SearchDialog'
 import { DiceDialog } from '../overlays/DiceDialog'
 import { StackDialog } from '../overlays/StackDialog'
@@ -94,7 +94,7 @@ export function BoardPage() {
 
       {/* Overlays */}
       <ContextMenu />
-      <SetupDialog />
+      <GameLoadDialog />
       <SearchDialog />
       <DiceDialog />
       <StackDialog />
