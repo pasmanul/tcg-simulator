@@ -105,9 +105,6 @@ export function StackDialog() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ color: '#aabbd0', fontSize: 13 }}>{gc.card.name}</div>
-                <div style={{ color: '#505c78', fontSize: 11 }}>
-                  {gc.card.civilizations.join('/')} • {gc.card.card_type}
-                </div>
               </div>
               {i > 0 && (
                 <button

@@ -25,10 +25,8 @@ function makeDummyCard(index: number): GameCard {
     id: `dummy-${index}`,
     name: `ダミー ${index + 1}`,
     image_path: '',
-    mana: (index % 10) + 1,
-    civilizations: ['light'],
-    card_type: 'creature',
     count: 1,
+    fields: {},
   }
   return {
     instanceId: crypto.randomUUID(),

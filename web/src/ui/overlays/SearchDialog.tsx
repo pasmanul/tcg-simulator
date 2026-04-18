@@ -26,12 +26,16 @@ export function SearchDialog() {
 
   const deckCards = zones['deck']?.cards ?? []
   const q = filter.toLowerCase()
-  const filtered = deckCards.filter(gc =>
-    !q ||
-    gc.card.name.toLowerCase().includes(q) ||
-    gc.card.civilizations.some(c => c.toLowerCase().includes(q)) ||
-    gc.card.card_type.toLowerCase().includes(q),
-  )
+  const filtered = deckCards.filter(gc => {
+    if (!q) return true
+    if (gc.card.name.toLowerCase().includes(q)) return true
+    // fields の文字列値・配列値も検索対象
+    return Object.values(gc.card.fields).some(v => {
+      if (typeof v === 'string') return v.toLowerCase().includes(q)
+      if (Array.isArray(v)) return v.some(item => typeof item === 'string' && item.toLowerCase().includes(q))
+      return false
+    })
+  })
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -141,7 +145,7 @@ export function SearchDialog() {
 
         <input
           style={input}
-          placeholder="カード名・文明・タイプで検索…"
+          placeholder="カード名・フィールド値で検索…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
           autoFocus
@@ -177,9 +181,6 @@ export function SearchDialog() {
                 flexShrink: 0,
               }} />
               <span style={{ flex: 1 }}>{gc.card.name}</span>
-              <span style={{ color: '#505c78', fontSize: 11 }}>
-                {gc.card.civilizations.join('/')} • {gc.card.card_type}
-              </span>
             </div>
           ))}
         </div>

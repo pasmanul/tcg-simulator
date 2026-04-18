@@ -1,21 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
-import type { Card } from '../../domain/types'
-
-const CIVILIZATIONS = ['光', '水', '闇', '火', '自然', '無色']
-const CARD_TYPES = [
-  'タマシード',
-  'クリーチャー',
-  '進化クリーチャー',
-  'NEOクリーチャー',
-  'G-NEOクリーチャー',
-  'スター進化',
-  'S-MAX進化',
-  'ツインパクト',
-  '呪文',
-  'クロスギア',
-  'D2フィールド',
-]
+import type { Card, FieldDef } from '../../domain/types'
 
 interface Props {
   onClose: () => void
@@ -23,8 +8,9 @@ interface Props {
 }
 
 export function CardEditorDialog({ onClose, card }: Props) {
-  const { dirHandle, addCard, updateCard, deleteCard } = useLibraryStore(s => ({
-    dirHandle: s.dirHandle,
+  const { fieldDefs, fileHandle, addCard, updateCard, deleteCard } = useLibraryStore(s => ({
+    fieldDefs: s.fieldDefs,
+    fileHandle: s.fileHandle,
     addCard: s.addCard,
     updateCard: s.updateCard,
     deleteCard: s.deleteCard,
@@ -32,10 +18,18 @@ export function CardEditorDialog({ onClose, card }: Props) {
 
   const isEdit = !!card
 
+  // 初期値: 編集時は card.fields、新規は fieldDefs の default 値
+  function buildInitialFields(): Record<string, any> {
+    if (isEdit && card) return { ...card.fields }
+    const init: Record<string, any> = {}
+    for (const def of fieldDefs) {
+      if (def.default !== undefined) init[def.id] = def.default
+    }
+    return init
+  }
+
   const [name, setName] = useState(card?.name ?? '')
-  const [mana, setMana] = useState(card?.mana ?? 1)
-  const [civs, setCivs] = useState<string[]>(card?.civilizations ?? [])
-  const [cardType, setCardType] = useState(card?.card_type ?? 'クリーチャー')
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>(buildInitialFields)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(card?.image_data ?? null)
   const [saving, setSaving] = useState(false)
@@ -43,14 +37,7 @@ export function CardEditorDialog({ onClose, card }: Props) {
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function toggleCiv(civ: string) {
-    setCivs(prev =>
-      prev.includes(civ) ? prev.filter(c => c !== civ) : [...prev, civ]
-    )
-  }
-
   useEffect(() => {
-    // image_data以外のblobURLのみrevoke
     return () => {
       if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview)
     }
@@ -66,15 +53,14 @@ export function CardEditorDialog({ onClose, card }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('カード名を入力してください'); return }
-    if (civs.length === 0) { setError('文明を1つ以上選択してください'); return }
-    if (!dirHandle) { setError('先にカードライブラリを読み込んでください'); return }
+    if (!fileHandle) { setError('先にゲームプロファイルを読み込んでください'); return }
     setSaving(true)
     setError('')
     try {
       if (isEdit && card) {
-        await updateCard(card.id, { name: name.trim(), mana, civilizations: civs, card_type: cardType }, imageFile ?? undefined)
+        await updateCard(card.id, name.trim(), fieldValues, imageFile ?? undefined)
       } else {
-        await addCard({ name: name.trim(), mana, civilizations: civs, card_type: cardType }, imageFile ?? undefined)
+        await addCard(name.trim(), fieldValues, imageFile ?? undefined)
       }
       onClose()
     } catch {
@@ -97,6 +83,81 @@ export function CardEditorDialog({ onClose, card }: Props) {
     }
   }
 
+  function setField(id: string, value: any) {
+    setFieldValues(prev => ({ ...prev, [id]: value }))
+  }
+
+  function renderField(def: FieldDef) {
+    switch (def.type) {
+      case 'number':
+        return (
+          <input
+            style={{ ...inp, width: 100 }}
+            type="number"
+            value={fieldValues[def.id] ?? ''}
+            onChange={e => setField(def.id, Number(e.target.value))}
+          />
+        )
+      case 'text':
+        return (
+          <input
+            style={inp}
+            type="text"
+            value={fieldValues[def.id] ?? ''}
+            onChange={e => setField(def.id, e.target.value)}
+          />
+        )
+      case 'select':
+        return (
+          <select
+            style={inp}
+            value={fieldValues[def.id] ?? ''}
+            onChange={e => setField(def.id, e.target.value)}
+          >
+            <option value="">（選択）</option>
+            {def.options?.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        )
+      case 'multi-select':
+        return (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {def.options?.map(o => {
+              const cur: string[] = Array.isArray(fieldValues[def.id]) ? fieldValues[def.id] : []
+              const active = cur.includes(o)
+              return (
+                <label
+                  key={o}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    cursor: 'pointer',
+                    color: active ? '#A78BFA' : '#555c78',
+                    fontSize: 12,
+                    userSelect: 'none',
+                    transition: 'color 100ms',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={active}
+                    onChange={e => {
+                      const next = e.target.checked ? [...cur, o] : cur.filter(x => x !== o)
+                      setField(def.id, next)
+                    }}
+                    style={{ accentColor: '#A78BFA' }}
+                  />
+                  {o}
+                </label>
+              )
+            })}
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   const overlay: React.CSSProperties = {
     position: 'fixed',
     inset: 0,
@@ -114,6 +175,8 @@ export function CardEditorDialog({ onClose, card }: Props) {
     borderRadius: 16,
     padding: 28,
     width: 420,
+    maxHeight: '85vh',
+    overflowY: 'auto',
     boxShadow: '0 0 60px rgba(0,200,150,0.15)',
     fontFamily: "'Chakra Petch', sans-serif",
   }
@@ -205,58 +268,12 @@ export function CardEditorDialog({ onClose, card }: Props) {
             autoFocus
           />
 
-          <label style={label}>マナコスト *</label>
-          <input
-            style={{ ...inp, width: 80 }}
-            type="number"
-            min={1}
-            max={15}
-            value={mana}
-            onChange={e => setMana(Number(e.target.value))}
-          />
-
-          <label style={label}>文明 *（1つ以上）</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {CIVILIZATIONS.map(civ => {
-              const active = civs.includes(civ)
-              const colors: Record<string, string> = {
-                '光': '#ffe44d', '水': '#44aaff', '闇': '#aa44ff',
-                '火': '#ff4444', '自然': '#44cc44', '無色': '#888888',
-              }
-              return (
-                <label
-                  key={civ}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    cursor: 'pointer',
-                    color: active ? colors[civ] : '#444',
-                    fontSize: 12,
-                    userSelect: 'none',
-                    transition: 'color 100ms',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    onChange={() => toggleCiv(civ)}
-                    style={{ accentColor: colors[civ] }}
-                  />
-                  {civ}
-                </label>
-              )
-            })}
-          </div>
-
-          <label style={label}>カードタイプ *</label>
-          <select
-            style={inp}
-            value={cardType}
-            onChange={e => setCardType(e.target.value)}
-          >
-            {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+          {fieldDefs.map(def => (
+            <div key={def.id}>
+              <label style={label}>{def.label}</label>
+              {renderField(def)}
+            </div>
+          ))}
 
           <label style={label}>画像（任意）</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
