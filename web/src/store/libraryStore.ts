@@ -53,6 +53,7 @@ interface LibraryStore {
   deleteCard: (id: string) => Promise<void>
   exportDeckJson: () => void
   exportPoolJson: () => void
+  applyLibrarySnapshot: (cards: Card[], decks: DeckRecord[], activeDeckIndex: number) => void
 }
 
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
@@ -198,5 +199,9 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
 
   exportPoolJson: () => {
     downloadJson(get().cards, 'pool.json')
+  },
+
+  applyLibrarySnapshot: (cards, decks, activeDeckIndex) => {
+    set({ cards, decks, activeDeckIndex })
   },
 }))

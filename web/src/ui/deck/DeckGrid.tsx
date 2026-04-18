@@ -96,9 +96,9 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: 8,
+          padding: '8px 168px 8px 8px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 152px)',
+          gridTemplateColumns: 'repeat(auto-fill, 152px)',
           gap: 8,
           alignContent: 'start',
           justifyContent: 'start',

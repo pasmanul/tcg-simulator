@@ -4,6 +4,7 @@ import { HandStage } from '../stage/HandStage'
 import { HandHud } from '../hud/HandHud'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { SetupDialog } from '../overlays/SetupDialog'
+import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
 export function HandPage() {
@@ -20,6 +21,7 @@ export function HandPage() {
       <HandStage />
       <ContextMenu />
       <SetupDialog />
+      <CardZoomOverlay />
     </div>
   )
 }

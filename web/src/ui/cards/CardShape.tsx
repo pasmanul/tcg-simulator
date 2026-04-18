@@ -1,8 +1,10 @@
+import { useRef } from 'react'
 import { Group, Rect, Image as KImage, Text, Circle } from 'react-konva'
 import useImage from 'use-image'
 import type { GameCard } from '../../domain/types'
 import { CARD_W, CARD_H } from '../../theme'
 import { useLibraryStore } from '../../store/libraryStore'
+import { useUIStore } from '../../store/uiStore'
 
 interface Props {
   gc: GameCard
@@ -47,6 +49,8 @@ export function CardShape({
 }: Props) {
   const resolveUrl = useLibraryStore(s => s.resolveImageUrl)
   const backUrl = useLibraryStore(s => s.cardBackUrl)
+  const setZoom = useUIStore(s => s.setZoom)
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const showBack = masked || gc.face_down
   const imgUrl = showBack ? backUrl : resolveUrl(gc.card)
@@ -75,9 +79,24 @@ export function CardShape({
         const pos = stage.getPointerPosition()
         if (pos) onContextMenu?.(gc, pos.x, pos.y)
       }}
-      onMouseEnter={() => onHover?.(gc)}
-      onMouseLeave={() => onHover?.(null)}
-      onDragStart={() => onDragStart?.(gc)}
+      onMouseEnter={(e) => {
+        onHover?.(gc)
+        if (masked || gc.face_down) return
+        const { clientX, clientY } = e.evt
+        zoomTimer.current = setTimeout(() => {
+          setZoom(gc, { x: clientX, y: clientY })
+        }, 500)
+      }}
+      onMouseLeave={() => {
+        onHover?.(null)
+        if (zoomTimer.current) { clearTimeout(zoomTimer.current); zoomTimer.current = null }
+        setZoom(null)
+      }}
+      onDragStart={() => {
+        if (zoomTimer.current) { clearTimeout(zoomTimer.current); zoomTimer.current = null }
+        setZoom(null)
+        onDragStart?.(gc)
+      }}
       onDragEnd={(e) => {
         const stage = e.target.getStage()
         if (!stage) return
