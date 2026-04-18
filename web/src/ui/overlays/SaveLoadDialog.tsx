@@ -17,7 +17,7 @@ export function SaveLoadDialog() {
     zones: s.zones,
     loadSnapshot: s.loadSnapshot,
   }))
-  const dirHandle = useLibraryStore(s => s.dirHandle)
+  const dirHandle = null  // GameProfile形式ではフォルダハンドル不要。セーブはダウンロード/アップロードで対応
 
   const [tab, setTab] = useState<'save' | 'load'>('save')
   const [saveName, setSaveName] = useState(() => {
