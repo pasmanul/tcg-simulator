@@ -5,6 +5,7 @@ import { LibraryGrid } from '../deck/LibraryGrid'
 import { DeckGrid } from '../deck/DeckGrid'
 import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { CardEditorDialog } from '../overlays/CardEditorDialog'
+import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { useLibraryStore } from '../../store/libraryStore'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 import type { Card } from '../../domain/types'
@@ -287,6 +288,7 @@ export function DeckPage() {
       </div>
 
       <GameLoadDialog />
+      <GameSetupWizard />
       {cardEditorOpen && <CardEditorDialog onClose={() => setCardEditorOpen(false)} />}
       {editingCard && <CardEditorDialog card={editingCard} onClose={() => setEditingCard(null)} />}
     </div>
