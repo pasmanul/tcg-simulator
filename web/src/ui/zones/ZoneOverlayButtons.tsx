@@ -25,11 +25,12 @@ const BTN: React.CSSProperties = {
 }
 
 export function ZoneOverlayButtons({ zoneDef, x, y, width }: Props) {
-  const { tapAllInZone, untapAllInZone, drawCard, shuffleZone } = useGameStore(s => ({
+  const { tapAllInZone, untapAllInZone, drawCard, shuffleZone, sortZone } = useGameStore(s => ({
     tapAllInZone: s.tapAllInZone,
     untapAllInZone: s.untapAllInZone,
     drawCard: s.drawCard,
     shuffleZone: s.shuffleZone,
+    sortZone: s.sortZone,
   }))
   const addLog = useUIStore(s => s.addLog)
 
@@ -44,6 +45,13 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width }: Props) {
       { label: 'DRAW', onClick: () => { drawCard(); addLog('ドロー') } },
       { label: 'SHUFFLE', onClick: () => { shuffleZone('deck'); addLog('山札シャッフル') } },
     )
+  }
+
+  if (zoneDef.visibility === 'public' || zoneDef.id === 'hand') {
+    buttons.push({
+      label: 'SORT',
+      onClick: () => { sortZone(zoneDef.id); addLog(`${zoneDef.name} ソート`) },
+    })
   }
 
   if (zoneDef.tappable) {

@@ -4,6 +4,7 @@ import {
   cloneZones,
   pushSnapshot,
   moveCard,
+  sortZone,
   shuffleZone,
   shuffleArray,
   initializeField,
@@ -26,6 +27,7 @@ interface GameStore {
   setMarker: (zoneId: string, instanceId: string, marker: string | null) => void
   tapAllInZone: (zoneId: string) => void
   untapAllInZone: (zoneId: string) => void
+  sortZone: (zoneId: string) => void
   shuffleZone: (zoneId: string) => void
   drawCard: () => void
   initializeField: (deckCards: GameCard[]) => void
@@ -129,6 +131,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const zone = next[zoneId]
       if (zone) zone.cards = zone.cards.map(gc => ({ ...gc, tapped: false }))
       return { zones: next, undoStack }
+    }),
+
+  sortZone: (zoneId) =>
+    set((s) => {
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      const zones = sortZone(s.zones, zoneId)
+      return { zones, undoStack }
     }),
 
   shuffleZone: (zoneId) =>

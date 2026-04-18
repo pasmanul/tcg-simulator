@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import type { Card, DeckEntry, DeckRecord } from '../domain/types'
 import { writeDeckPoolJson } from '../lib/cardStorage'
 
+function effectiveCardBackUrl(decks: DeckRecord[], index: number, globalUrl: string): string {
+  return decks[index]?.cardBack ?? globalUrl
+}
+
 function downloadJson(data: unknown, filename: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -22,7 +26,8 @@ async function fileToBase64(file: File): Promise<string> {
 interface LibraryStore {
   cards: Card[]
   imageUrls: Record<string, string>   // image_path -> objectURL（旧形式用）
-  cardBackUrl: string
+  cardBackUrl: string                  // 実効値: デッキ固有 ?? グローバル
+  _globalCardBackUrl: string           // back.jpg など全デッキ共通のフォールバック
   decks: DeckRecord[]
   activeDeckIndex: number             // -1 = デッキ未選択
   dirHandle: FileSystemDirectoryHandle | null
@@ -40,6 +45,7 @@ interface LibraryStore {
   loadDeck: (cards: DeckEntry[]) => void  // 現在デッキのカードを更新
   resolveImageUrl: (card: Card) => string
   setCardBack: (url: string) => void
+  setDeckCardBack: (dataUrl: string) => void
 
   // デッキ管理
   newDeck: (name: string) => void
@@ -60,6 +66,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   cards: [],
   imageUrls: {},
   cardBackUrl: '',
+  _globalCardBackUrl: '',
   decks: [],
   activeDeckIndex: -1,
   dirHandle: null,
@@ -82,11 +89,14 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
         if (url) urls[card.image_path] = url
       }
     }
+    const activeDeckIndex = decksJson.length > 0 ? 0 : -1
+    const globalUrl = get()._globalCardBackUrl
     set({
       cards: cardsJson,
       decks: decksJson,
-      activeDeckIndex: decksJson.length > 0 ? 0 : -1,
+      activeDeckIndex,
       imageUrls: urls,
+      cardBackUrl: effectiveCardBackUrl(decksJson, activeDeckIndex, globalUrl),
       ...(dirHandle ? { dirHandle } : {}),
     })
   },
@@ -105,18 +115,29 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     return imageUrls[card.image_path] ?? cardBackUrl ?? ''
   },
 
-  setCardBack: (url) => set({ cardBackUrl: url }),
+  setCardBack: (url) => {
+    const { decks, activeDeckIndex } = get()
+    set({ _globalCardBackUrl: url, cardBackUrl: effectiveCardBackUrl(decks, activeDeckIndex, url) })
+  },
+
+  setDeckCardBack: (dataUrl) => {
+    const { decks, activeDeckIndex, _globalCardBackUrl } = get()
+    if (activeDeckIndex < 0) return
+    const newDecks = decks.map((d, i) => i === activeDeckIndex ? { ...d, cardBack: dataUrl } : d)
+    set({ decks: newDecks, cardBackUrl: effectiveCardBackUrl(newDecks, activeDeckIndex, _globalCardBackUrl) })
+  },
 
   newDeck: (name) => {
-    const { decks } = get()
+    const { decks, _globalCardBackUrl } = get()
     const newDecks = [...decks, { name, cards: [] }]
-    set({ decks: newDecks, activeDeckIndex: newDecks.length - 1 })
+    const newIndex = newDecks.length - 1
+    set({ decks: newDecks, activeDeckIndex: newIndex, cardBackUrl: effectiveCardBackUrl(newDecks, newIndex, _globalCardBackUrl) })
   },
 
   selectDeck: (index) => {
-    const { decks } = get()
+    const { decks, _globalCardBackUrl } = get()
     if (index < 0 || index >= decks.length) return
-    set({ activeDeckIndex: index })
+    set({ activeDeckIndex: index, cardBackUrl: effectiveCardBackUrl(decks, index, _globalCardBackUrl) })
   },
 
   renameDeck: (name) => {
@@ -128,12 +149,14 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   deleteDeck: () => {
-    const { decks, activeDeckIndex } = get()
+    const { decks, activeDeckIndex, _globalCardBackUrl } = get()
     if (activeDeckIndex < 0) return
     const newDecks = decks.filter((_, i) => i !== activeDeckIndex)
+    const newIndex = newDecks.length === 0 ? -1 : Math.min(activeDeckIndex, newDecks.length - 1)
     set({
       decks: newDecks,
-      activeDeckIndex: newDecks.length === 0 ? -1 : Math.min(activeDeckIndex, newDecks.length - 1),
+      activeDeckIndex: newIndex,
+      cardBackUrl: effectiveCardBackUrl(newDecks, newIndex, _globalCardBackUrl),
     })
   },
 
@@ -202,6 +225,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   applyLibrarySnapshot: (cards, decks, activeDeckIndex) => {
-    set({ cards, decks, activeDeckIndex })
+    const { _globalCardBackUrl } = get()
+    set({ cards, decks, activeDeckIndex, cardBackUrl: effectiveCardBackUrl(decks, activeDeckIndex, _globalCardBackUrl) })
   },
 }))

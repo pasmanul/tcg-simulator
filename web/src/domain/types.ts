@@ -17,6 +17,7 @@ export interface DeckEntry {
 export interface DeckRecord {
   name: string
   cards: DeckEntry[]
+  cardBack?: string  // base64 data URL（デッキ固有の裏面画像）
 }
 
 export interface DeckPoolJson {

@@ -5,6 +5,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useStageSize, gridToPixel } from '../hooks/useStageSize'
 import { ZoneGroup } from '../zones/ZoneGroup'
+import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
 import { DeckListPanel } from '../zones/DeckListPanel'
 import { TOKENS } from '../../theme'
 import { findDropZone, type CardDropDetail } from './cardDropTarget'
@@ -69,6 +70,7 @@ export function HandStage() {
         }}
       >
         {size.width > 0 && (
+          <>
           <Stage width={size.width} height={size.height}>
             <Layer>
               {konvaZones.map(zd => {
@@ -95,6 +97,25 @@ export function HandStage() {
               })}
             </Layer>
           </Stage>
+
+          {/* Zone overlay buttons (DOM layer over canvas) */}
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            {konvaZones.map(zd => {
+              const konvaGridRows = deckListZone ? deckListZone.grid_pos.row : winDef.grid_rows
+              const rect = gridToPixel(zd.grid_pos, winDef.grid_cols, konvaGridRows, size.width, size.height)
+              return (
+                <ZoneOverlayButtons
+                  key={zd.id}
+                  zoneDef={zd}
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.width}
+                  height={rect.height}
+                />
+              )
+            })}
+          </div>
+          </>
         )}
       </div>
 

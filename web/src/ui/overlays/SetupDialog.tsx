@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
+import { useGameStore } from '../../store/gameStore'
+import { buildDeckFromLibrary } from '../../domain/gameLogic'
 import { pickAndLoadLibrary, restoreLibrary, initNewLibrary } from '../../lib/imageCache'
 
 export function SetupDialog() {
@@ -12,8 +14,19 @@ export function SetupDialog() {
     loadLibrary: s.loadLibrary,
     setCardBack: s.setCardBack,
   }))
+  const initializeField = useGameStore(s => s.initializeField)
+  const addLog = useUIStore(s => s.addLog)
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
+
+  function tryInitField() {
+    const s = useLibraryStore.getState()
+    const deckCards = buildDeckFromLibrary(s.cards, s.currentDeck())
+    if (deckCards.length > 0) {
+      initializeField(deckCards)
+      addLog(`フィールド初期化 — ${deckCards.length}枚`)
+    }
+  }
 
   if (activeDialog !== 'setup') return null
 
@@ -24,6 +37,7 @@ export function SetupDialog() {
     if (result) {
       loadLibrary(result.cardsJson, result.decksJson, result.fileMap, result.dirHandle)
       if (result.cardBackUrl) setCardBack(result.cardBackUrl)
+      tryInitField()
       setStatus(`✓ ${result.cardsJson.length}枚のカードを読み込みました`)
     } else {
       setStatus('キャンセルされました')
@@ -51,6 +65,7 @@ export function SetupDialog() {
     if (result) {
       loadLibrary(result.cardsJson, result.decksJson, result.fileMap, result.dirHandle)
       if (result.cardBackUrl) setCardBack(result.cardBackUrl)
+      tryInitField()
       setStatus(`✓ ${result.cardsJson.length}枚のカードを復元しました`)
     } else {
       setStatus('前回のフォルダが見つかりません')

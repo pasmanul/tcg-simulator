@@ -10,13 +10,14 @@ import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 import type { Card } from '../../domain/types'
 
 function DeckPanelHeader() {
-  const { activeDeckIndex, currentDeckName, newDeck, renameDeck, deleteDeck, decks } = useLibraryStore(s => ({
+  const { activeDeckIndex, currentDeckName, newDeck, renameDeck, deleteDeck, decks, setDeckCardBack } = useLibraryStore(s => ({
     activeDeckIndex: s.activeDeckIndex,
     currentDeckName: s.currentDeckName,
     newDeck: s.newDeck,
     renameDeck: s.renameDeck,
     deleteDeck: s.deleteDeck,
     decks: s.decks,
+    setDeckCardBack: s.setDeckCardBack,
   }))
 
   const [editingName, setEditingName] = useState(false)
@@ -190,11 +191,58 @@ function DeckPanelHeader() {
         </>
       )}
 
+      {/* カード裏面登録 */}
+      {hasDeck && (
+        <label
+          title="デッキ裏面画像を設定"
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            cursor: 'pointer',
+          }}
+        >
+          {decks[activeDeckIndex]?.cardBack && (
+            <img
+              src={decks[activeDeckIndex].cardBack}
+              alt="card back"
+              style={{ height: 22, aspectRatio: '150/210', objectFit: 'cover', borderRadius: 2, border: '1px solid rgba(124,58,237,0.4)' }}
+            />
+          )}
+          <span style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 7,
+            padding: '4px 8px',
+            background: 'rgba(124,58,237,0.15)',
+            border: '1px solid rgba(124,58,237,0.4)',
+            borderRadius: 4,
+            color: '#A78BFA',
+            whiteSpace: 'nowrap',
+          }}>
+            BACK IMG
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = () => setDeckCardBack(reader.result as string)
+              reader.readAsDataURL(file)
+              e.target.value = ''
+            }}
+          />
+        </label>
+      )}
+
       <span style={{
         fontFamily: "'Chakra Petch', sans-serif",
         fontSize: 11,
         color: '#334',
-        marginLeft: 'auto',
+        marginLeft: hasDeck ? 8 : 'auto',
       }}>
         ← ドロップ
       </span>
