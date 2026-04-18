@@ -11,8 +11,8 @@ export const CRT_STYLE: React.CSSProperties = {
 export const PAGE_STYLE: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  height: '100vh',
-  width: '100vw',
+  height: '100%',
+  width: '100%',
   background: '#0F0F23',
   overflow: 'hidden',
 }

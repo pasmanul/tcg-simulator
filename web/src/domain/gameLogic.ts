@@ -1,5 +1,28 @@
 import type { Card, GameCard, Zone, GameStateSnapshot, ZoneDefinition } from './types'
 
+const CIVILIZATIONS = ['無色', '光', '水', '闇', '火', '自然']
+const CARD_TYPES = [
+  'タマシード', 'クリーチャー', '進化クリーチャー', 'NEOクリーチャー',
+  'G-NEOクリーチャー', 'スター進化', 'S-MAX進化', 'ツインパクト',
+  '呪文', 'クロスギア', 'D2フィールド',
+]
+
+function cardSortKey(gc: GameCard): [number, number, number, string] {
+  const card = gc.card
+  const civs = card.civilizations ?? []
+  let civRank: number
+  if (civs.length === 0) {
+    civRank = 0
+  } else if (civs.length === 1) {
+    const idx = CIVILIZATIONS.indexOf(civs[0])
+    civRank = idx >= 0 ? idx + 1 : CIVILIZATIONS.length + 1
+  } else {
+    civRank = CIVILIZATIONS.length + civs.length
+  }
+  const typeRank = CARD_TYPES.indexOf(card.card_type)
+  return [card.mana, typeRank >= 0 ? typeRank : CARD_TYPES.length, civRank, card.name]
+}
+
 export const HIDDEN_CARD_NAME = '???'
 
 export function logCardName(
@@ -80,6 +103,22 @@ export function moveCard(
   } else {
     toZone.cards.push(card)
   }
+  return next
+}
+
+export function sortZone(zones: Record<string, Zone>, zoneId: string): Record<string, Zone> {
+  const next = cloneZones(zones)
+  const zone = next[zoneId]
+  if (!zone) return zones
+  zone.cards = [...zone.cards].sort((a, b) => {
+    const ka = cardSortKey(a)
+    const kb = cardSortKey(b)
+    for (let i = 0; i < ka.length; i++) {
+      if (ka[i] < kb[i]) return -1
+      if (ka[i] > kb[i]) return 1
+    }
+    return 0
+  })
   return next
 }
 
