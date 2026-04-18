@@ -16,6 +16,7 @@ import { DiceDialog } from '../overlays/DiceDialog'
 import { StackDialog } from '../overlays/StackDialog'
 import { SaveLoadDialog } from '../overlays/SaveLoadDialog'
 import { DeckDropDialog } from '../overlays/DeckDropDialog'
+import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
 import { DeckPage } from './DeckPage'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
@@ -101,6 +102,7 @@ export function BoardPage() {
       <StackDialog />
       <SaveLoadDialog />
       <DeckDropDialog />
+      <CardZoomOverlay />
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

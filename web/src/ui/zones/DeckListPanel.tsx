@@ -1,8 +1,5 @@
 import { useMemo } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
-import { useGameStore } from '../../store/gameStore'
-import { useUIStore } from '../../store/uiStore'
-import { buildDeckFromLibrary } from '../../domain/gameLogic'
 
 interface Props {
   style?: React.CSSProperties
@@ -16,17 +13,8 @@ export function DeckListPanel({ style }: Props) {
     cardBackUrl: s.cardBackUrl,
   }))
   const currentDeck = currentDeckFn()
-  const initializeField = useGameStore(s => s.initializeField)
-  const addLog = useUIStore(s => s.addLog)
 
   const cardMap = useMemo(() => new Map(cards.map(c => [c.id, c])), [cards])
-
-  function handleInitField() {
-    const deckCards = buildDeckFromLibrary(cards, currentDeck)
-    if (deckCards.length === 0) return
-    initializeField(deckCards)
-    addLog(`フィールド初期化 (${deckCards.length}枚)`)
-  }
 
   return (
     <div
@@ -37,6 +25,7 @@ export function DeckListPanel({ style }: Props) {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        minHeight: 0,
         ...style,
       }}
     >
@@ -49,32 +38,16 @@ export function DeckListPanel({ style }: Props) {
           color: '#8899bb',
           fontSize: 16,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
         }}
       >
         <span>デッキカード一覧 ({currentDeck.reduce((s, e) => s + e.count, 0)}枚)</span>
-        <button
-          onClick={handleInitField}
-          style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 8,
-            padding: '4px 10px',
-            background: 'rgba(124,58,237,0.2)',
-            border: '1px solid #7C3AED',
-            borderRadius: 4,
-            color: '#A78BFA',
-            cursor: 'pointer',
-          }}
-        >
-          INIT
-        </button>
       </div>
 
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
+          minHeight: 0,
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 4,

@@ -54,7 +54,7 @@ export function HandStage() {
 
   return (
     <div
-      style={{ flex: 1, background: TOKENS.bg, position: 'relative', display: 'flex', flexDirection: 'column' }}
+      style={{ flex: 1, background: TOKENS.bg, position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}
       onClick={() => closeContextMenu()}
     >
       {/* Konva stage for hand + temp zones */}
@@ -62,19 +62,23 @@ export function HandStage() {
         ref={containerRef}
         style={{
           flex: deckListZone
-            ? `0 0 ${(deckListZone.grid_pos.row / winDef.grid_rows) * 100}%`
+            ? `0 0 ${Math.round(winDef.height * deckListZone.grid_pos.row / winDef.grid_rows)}px`
             : '1',
           position: 'relative',
+          overflow: 'hidden',
         }}
       >
         {size.width > 0 && (
           <Stage width={size.width} height={size.height}>
             <Layer>
               {konvaZones.map(zd => {
+                // Konva キャンバスは rows 0 〜 (deckListZone.row-1) のみ担当するため
+                // grid_rows にはその行数を使う（全体の grid_rows ではなく）
+                const konvaGridRows = deckListZone ? deckListZone.grid_pos.row : winDef.grid_rows
                 const rect = gridToPixel(
                   zd.grid_pos,
                   winDef.grid_cols,
-                  winDef.grid_rows,
+                  konvaGridRows,
                   size.width,
                   size.height,
                 )
@@ -96,7 +100,7 @@ export function HandStage() {
 
       {/* DeckList panel as DOM overlay */}
       {deckListZone && (
-        <DeckListPanel style={{ flex: 1 }} />
+        <DeckListPanel style={{ flex: 1, minHeight: 0 }} />
       )}
     </div>
   )

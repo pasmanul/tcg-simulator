@@ -3,7 +3,19 @@ import { useLibraryStore } from '../../store/libraryStore'
 import type { Card } from '../../domain/types'
 
 const CIVILIZATIONS = ['光', '水', '闇', '火', '自然', '無色']
-const CARD_TYPES = ['クリーチャー', '呪文', 'タマシード', '進化クリーチャー', 'フィールド', 'その他']
+const CARD_TYPES = [
+  'タマシード',
+  'クリーチャー',
+  '進化クリーチャー',
+  'NEOクリーチャー',
+  'G-NEOクリーチャー',
+  'スター進化',
+  'S-MAX進化',
+  'ツインパクト',
+  '呪文',
+  'クロスギア',
+  'D2フィールド',
+]
 
 interface Props {
   onClose: () => void
