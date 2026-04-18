@@ -25,7 +25,11 @@ function collectFieldValues(cards: Card[], fieldId: string): string[] {
       set.add(String(v))
     }
   }
-  return [...set].sort()
+  return [...set].sort((a, b) => {
+    const na = Number(a), nb = Number(b)
+    if (!isNaN(na) && !isNaN(nb)) return na - nb
+    return a.localeCompare(b)
+  })
 }
 
 /** カード一覧をフィルタ＆ソートして返す純粋関数 */
@@ -35,10 +39,10 @@ export function applyFilters(cards: Card[], filter: FilterState, fieldDefs: Fiel
       if (filter.query && !card.name.toLowerCase().includes(filter.query.toLowerCase())) return false
       for (const [fieldId, value] of Object.entries(filter.filters)) {
         if (!value) continue
-        const fieldVal = card.fields[fieldId]
-        if (fieldVal === undefined || fieldVal === null) return false
         const def = fieldDefs.find(f => f.id === fieldId)
         if (!def) continue
+        const fieldVal = card.fields[fieldId]
+        if (fieldVal === undefined || fieldVal === null) return false
         if (def.type === 'multi-select') {
           if (!Array.isArray(fieldVal) || !fieldVal.includes(value)) return false
         } else {
