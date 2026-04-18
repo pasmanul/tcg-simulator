@@ -119,7 +119,8 @@ interface Props {
 
 export function LibraryGrid({ filter, onEditCard, onDeckCardDrop }: Props) {
   const cards = useLibraryStore(s => s.cards)
-  const filtered = applyFilters(cards, filter)
+  const fieldDefs = useLibraryStore(s => s.fieldDefs)
+  const filtered = applyFilters(cards, filter, fieldDefs)
   const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDrop(e: React.DragEvent) {
