@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { GameConfigJson, ZoneDefinition, WindowDefinition } from '../../domain/types'
 
 interface Props {
@@ -29,6 +29,16 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
   const [zones, setZones] = useState<ZoneDefinition[]>([...initialConfig.zones])
   const [selWindowId, setSelWindowId] = useState(initialConfig.windows[0]?.id ?? '')
   const [selZoneId, setSelZoneId] = useState<string | null>(null)
+  const [dragState, setDragState] = useState<{
+    zoneId: string
+    origCol: number
+    origRow: number
+    startX: number
+    startY: number
+    currentCol: number
+    currentRow: number
+  } | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const selWindow = windows.find(w => w.id === selWindowId)
   const windowZones = zones.filter(z => z.window_id === selWindowId)
@@ -62,13 +72,55 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
     if (selZoneId === id) setSelZoneId(null)
   }
 
+  function patchZoneById(id: string, patch: Partial<ZoneDefinition>) {
+    setZones(z => z.map(zone => zone.id === id ? { ...zone, ...patch } : zone))
+  }
+
   function patchZone(patch: Partial<ZoneDefinition>) {
     if (!selZoneId) return
     const oldId = selZoneId
-    setZones(z => z.map(zone => zone.id === oldId ? { ...zone, ...patch } : zone))
+    patchZoneById(oldId, patch)
     if ('id' in patch && patch.id !== undefined && patch.id !== oldId) {
       setSelZoneId(patch.id)
     }
+  }
+
+  function handleZonePointerDown(e: React.PointerEvent, zone: ZoneDefinition) {
+    e.stopPropagation()
+    setSelZoneId(zone.id)
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDragState({
+      zoneId: zone.id,
+      origCol: zone.grid_pos.col,
+      origRow: zone.grid_pos.row,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentCol: zone.grid_pos.col,
+      currentRow: zone.grid_pos.row,
+    })
+  }
+
+  function handleZonePointerMove(e: React.PointerEvent, zone: ZoneDefinition) {
+    if (!dragState || dragState.zoneId !== zone.id) return
+    const rect = previewRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cellW = rect.width / cols
+    const cellH = rect.height / rows
+    const newCol = Math.max(0, Math.min(cols - zone.grid_pos.col_span,
+      Math.round(dragState.origCol + (e.clientX - dragState.startX) / cellW)))
+    const newRow = Math.max(0, Math.min(rows - zone.grid_pos.row_span,
+      Math.round(dragState.origRow + (e.clientY - dragState.startY) / cellH)))
+    if (newCol !== dragState.currentCol || newRow !== dragState.currentRow) {
+      setDragState(s => s ? { ...s, currentCol: newCol, currentRow: newRow } : null)
+    }
+  }
+
+  function handleZonePointerUp(e: React.PointerEvent, zone: ZoneDefinition) {
+    if (!dragState || dragState.zoneId !== zone.id) return
+    patchZoneById(zone.id, {
+      grid_pos: { ...zone.grid_pos, col: dragState.currentCol, row: dragState.currentRow },
+    })
+    setDragState(null)
   }
 
   function patchGridPos(pos: Partial<ZoneDefinition['grid_pos']>) {
@@ -204,7 +256,10 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                 </span>
               </div>
 
-              <div style={{ position: 'relative', width: previewW, height: previewH, background: '#050710', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 4, overflow: 'hidden' }}>
+              <div
+                ref={previewRef}
+                style={{ position: 'relative', width: previewW, height: previewH, background: '#050710', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 4, overflow: 'hidden', userSelect: 'none' }}
+              >
                 {/* Grid lines */}
                 {Array.from({ length: cols - 1 }).map((_, i) => (
                   <div key={`vc${i}`} style={{ position: 'absolute', left: `${(i + 1) / cols * 100}%`, top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.04)' }} />
@@ -215,6 +270,9 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                 {/* Zones */}
                 {windowZones.map(zone => {
                   const isSel = zone.id === selZoneId
+                  const isDragging = dragState?.zoneId === zone.id
+                  const displayCol = isDragging ? dragState.currentCol : zone.grid_pos.col
+                  const displayRow = isDragging ? dragState.currentRow : zone.grid_pos.row
                   const isPublic = zone.visibility === 'public'
                   const bg = isPublic
                     ? (isSel ? 'rgba(59,130,246,0.6)' : 'rgba(59,130,246,0.28)')
@@ -223,25 +281,31 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                   return (
                     <div
                       key={zone.id}
-                      onClick={() => setSelZoneId(zone.id)}
+                      onPointerDown={e => handleZonePointerDown(e, zone)}
+                      onPointerMove={e => handleZonePointerMove(e, zone)}
+                      onPointerUp={e => handleZonePointerUp(e, zone)}
+                      onPointerCancel={() => setDragState(null)}
                       style={{
                         position: 'absolute',
-                        left: `${zone.grid_pos.col / cols * 100}%`,
-                        top: `${zone.grid_pos.row / rows * 100}%`,
+                        left: `${displayCol / cols * 100}%`,
+                        top: `${displayRow / rows * 100}%`,
                         width: `${zone.grid_pos.col_span / cols * 100}%`,
                         height: `${zone.grid_pos.row_span / rows * 100}%`,
                         background: bg,
                         border: `${isSel ? 2 : 1}px solid ${border}`,
                         borderRadius: 2,
-                        cursor: 'pointer',
+                        cursor: isDragging ? 'grabbing' : 'grab',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         overflow: 'hidden',
                         boxSizing: 'border-box',
+                        opacity: isDragging ? 0.85 : 1,
+                        transition: isDragging ? 'none' : 'left 80ms, top 80ms',
+                        zIndex: isDragging ? 10 : 1,
                       }}
                     >
-                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: "'Chakra Petch', sans-serif" }}>
+                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: "'Chakra Petch', sans-serif", pointerEvents: 'none' }}>
                         {zone.name}
                       </span>
                     </div>
