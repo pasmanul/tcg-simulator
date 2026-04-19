@@ -29,14 +29,16 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
   const [zones, setZones] = useState<ZoneDefinition[]>([...initialConfig.zones])
   const [selWindowId, setSelWindowId] = useState(initialConfig.windows[0]?.id ?? '')
   const [selZoneId, setSelZoneId] = useState<string | null>(null)
+  type DragMode = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+  type GridPos = ZoneDefinition['grid_pos']
+
   const [dragState, setDragState] = useState<{
     zoneId: string
-    origCol: number
-    origRow: number
+    mode: DragMode
+    origPos: GridPos
     startX: number
     startY: number
-    currentCol: number
-    currentRow: number
+    currentPos: GridPos
   } | null>(null)
   const previewRef = useRef<HTMLDivElement>(null)
 
@@ -85,43 +87,57 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
     }
   }
 
-  function handleZonePointerDown(e: React.PointerEvent, zone: ZoneDefinition) {
+  function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)) }
+
+  function computeNewPos(mode: DragMode, orig: GridPos, dCol: number, dRow: number): GridPos {
+    if (mode === 'move') return {
+      col: clamp(orig.col + dCol, 0, cols - orig.col_span),
+      row: clamp(orig.row + dRow, 0, rows - orig.row_span),
+      col_span: orig.col_span, row_span: orig.row_span,
+    }
+    let { col, row, col_span, row_span } = orig
+    if (mode.includes('e')) col_span = clamp(orig.col_span + dCol, 1, cols - orig.col)
+    if (mode.includes('w')) { col = clamp(orig.col + dCol, 0, orig.col + orig.col_span - 1); col_span = orig.col + orig.col_span - col }
+    if (mode.includes('s')) row_span = clamp(orig.row_span + dRow, 1, rows - orig.row)
+    if (mode.includes('n')) { row = clamp(orig.row + dRow, 0, orig.row + orig.row_span - 1); row_span = orig.row + orig.row_span - row }
+    return { col, row, col_span, row_span }
+  }
+
+  function startDrag(e: React.PointerEvent, zone: ZoneDefinition, mode: DragMode) {
     e.stopPropagation()
     setSelZoneId(zone.id)
     e.currentTarget.setPointerCapture(e.pointerId)
-    setDragState({
-      zoneId: zone.id,
-      origCol: zone.grid_pos.col,
-      origRow: zone.grid_pos.row,
-      startX: e.clientX,
-      startY: e.clientY,
-      currentCol: zone.grid_pos.col,
-      currentRow: zone.grid_pos.row,
-    })
+    setDragState({ zoneId: zone.id, mode, origPos: { ...zone.grid_pos }, startX: e.clientX, startY: e.clientY, currentPos: { ...zone.grid_pos } })
   }
 
-  function handleZonePointerMove(e: React.PointerEvent, zone: ZoneDefinition) {
+  function handlePointerMove(e: React.PointerEvent, zone: ZoneDefinition) {
     if (!dragState || dragState.zoneId !== zone.id) return
     const rect = previewRef.current?.getBoundingClientRect()
     if (!rect) return
-    const cellW = rect.width / cols
-    const cellH = rect.height / rows
-    const newCol = Math.max(0, Math.min(cols - zone.grid_pos.col_span,
-      Math.round(dragState.origCol + (e.clientX - dragState.startX) / cellW)))
-    const newRow = Math.max(0, Math.min(rows - zone.grid_pos.row_span,
-      Math.round(dragState.origRow + (e.clientY - dragState.startY) / cellH)))
-    if (newCol !== dragState.currentCol || newRow !== dragState.currentRow) {
-      setDragState(s => s ? { ...s, currentCol: newCol, currentRow: newRow } : null)
+    const dCol = Math.round((e.clientX - dragState.startX) / (rect.width / cols))
+    const dRow = Math.round((e.clientY - dragState.startY) / (rect.height / rows))
+    const newPos = computeNewPos(dragState.mode, dragState.origPos, dCol, dRow)
+    if (JSON.stringify(newPos) !== JSON.stringify(dragState.currentPos)) {
+      setDragState(s => s ? { ...s, currentPos: newPos } : null)
     }
   }
 
-  function handleZonePointerUp(e: React.PointerEvent, zone: ZoneDefinition) {
+  function handlePointerUp(e: React.PointerEvent, zone: ZoneDefinition) {
     if (!dragState || dragState.zoneId !== zone.id) return
-    patchZoneById(zone.id, {
-      grid_pos: { ...zone.grid_pos, col: dragState.currentCol, row: dragState.currentRow },
-    })
+    patchZoneById(zone.id, { grid_pos: dragState.currentPos })
     setDragState(null)
   }
+
+  const HANDLES: Array<{ mode: DragMode; style: React.CSSProperties }> = [
+    { mode: 'n',  style: { top: 0, left: '20%', right: '20%', height: 6, cursor: 'ns-resize' } },
+    { mode: 's',  style: { bottom: 0, left: '20%', right: '20%', height: 6, cursor: 'ns-resize' } },
+    { mode: 'e',  style: { right: 0, top: '20%', bottom: '20%', width: 6, cursor: 'ew-resize' } },
+    { mode: 'w',  style: { left: 0, top: '20%', bottom: '20%', width: 6, cursor: 'ew-resize' } },
+    { mode: 'ne', style: { top: 0, right: 0, width: 8, height: 8, cursor: 'nesw-resize' } },
+    { mode: 'nw', style: { top: 0, left: 0, width: 8, height: 8, cursor: 'nwse-resize' } },
+    { mode: 'se', style: { bottom: 0, right: 0, width: 8, height: 8, cursor: 'nwse-resize' } },
+    { mode: 'sw', style: { bottom: 0, left: 0, width: 8, height: 8, cursor: 'nesw-resize' } },
+  ]
 
   function patchGridPos(pos: Partial<ZoneDefinition['grid_pos']>) {
     if (!selZone) return
@@ -271,8 +287,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                 {windowZones.map(zone => {
                   const isSel = zone.id === selZoneId
                   const isDragging = dragState?.zoneId === zone.id
-                  const displayCol = isDragging ? dragState.currentCol : zone.grid_pos.col
-                  const displayRow = isDragging ? dragState.currentRow : zone.grid_pos.row
+                  const pos = isDragging ? dragState.currentPos : zone.grid_pos
                   const isPublic = zone.visibility === 'public'
                   const bg = isPublic
                     ? (isSel ? 'rgba(59,130,246,0.6)' : 'rgba(59,130,246,0.28)')
@@ -281,33 +296,51 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                   return (
                     <div
                       key={zone.id}
-                      onPointerDown={e => handleZonePointerDown(e, zone)}
-                      onPointerMove={e => handleZonePointerMove(e, zone)}
-                      onPointerUp={e => handleZonePointerUp(e, zone)}
+                      onPointerDown={e => startDrag(e, zone, 'move')}
+                      onPointerMove={e => handlePointerMove(e, zone)}
+                      onPointerUp={e => handlePointerUp(e, zone)}
                       onPointerCancel={() => setDragState(null)}
                       style={{
                         position: 'absolute',
-                        left: `${displayCol / cols * 100}%`,
-                        top: `${displayRow / rows * 100}%`,
-                        width: `${zone.grid_pos.col_span / cols * 100}%`,
-                        height: `${zone.grid_pos.row_span / rows * 100}%`,
+                        left: `${pos.col / cols * 100}%`,
+                        top: `${pos.row / rows * 100}%`,
+                        width: `${pos.col_span / cols * 100}%`,
+                        height: `${pos.row_span / rows * 100}%`,
                         background: bg,
                         border: `${isSel ? 2 : 1}px solid ${border}`,
                         borderRadius: 2,
-                        cursor: isDragging ? 'grabbing' : 'grab',
+                        cursor: isDragging && dragState?.mode === 'move' ? 'grabbing' : 'grab',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        overflow: 'hidden',
+                        overflow: 'visible',
                         boxSizing: 'border-box',
                         opacity: isDragging ? 0.85 : 1,
-                        transition: isDragging ? 'none' : 'left 80ms, top 80ms',
+                        transition: isDragging ? 'none' : 'left 80ms, top 80ms, width 80ms, height 80ms',
                         zIndex: isDragging ? 10 : 1,
                       }}
                     >
-                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: "'Chakra Petch', sans-serif", pointerEvents: 'none' }}>
+                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: "'Chakra Petch', sans-serif", pointerEvents: 'none', position: 'relative', zIndex: 1 }}>
                         {zone.name}
                       </span>
+                      {/* Resize handles (selected zone only) */}
+                      {isSel && HANDLES.map(h => (
+                        <div
+                          key={h.mode}
+                          style={{
+                            position: 'absolute',
+                            ...h.style,
+                            background: 'rgba(255,255,255,0.18)',
+                            zIndex: 4,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.5)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
+                          onPointerDown={e => startDrag(e, zone, h.mode)}
+                          onPointerMove={e => handlePointerMove(e, zone)}
+                          onPointerUp={e => handlePointerUp(e, zone)}
+                          onPointerCancel={() => setDragState(null)}
+                        />
+                      ))}
                     </div>
                   )
                 })}
