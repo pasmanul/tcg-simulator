@@ -13,6 +13,7 @@ interface Props {
   cardW?: number
   cardH?: number
   masked?: boolean
+  forceUp?: boolean
   selected?: boolean
   onTap?: (gc: GameCard) => void
   onContextMenu?: (gc: GameCard, x: number, y: number) => void
@@ -38,6 +39,7 @@ export function CardShape({
   cardW = CARD_W,
   cardH = CARD_H,
   masked = false,
+  forceUp = false,
   selected = false,
   onTap,
   onContextMenu,
@@ -52,7 +54,7 @@ export function CardShape({
   const setZoom = useUIStore(s => s.setZoom)
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const showBack = masked || gc.face_down
+  const showBack = forceUp ? false : (masked || gc.face_down)
   const imgUrl = showBack ? backUrl : resolveUrl(gc.card)
   const [img] = useImage(imgUrl)
 
@@ -81,7 +83,7 @@ export function CardShape({
       }}
       onMouseEnter={(e) => {
         onHover?.(gc)
-        if (masked || gc.face_down) return
+        if (!forceUp && (masked || gc.face_down)) return
         const { clientX, clientY } = e.evt
         zoomTimer.current = setTimeout(() => {
           setZoom(gc, { x: clientX, y: clientY })

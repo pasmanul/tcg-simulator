@@ -71,6 +71,7 @@ export interface ZoneDefinition {
   card_scale: number
   two_row: boolean
   masked: boolean
+  show_face_up?: boolean   // 強制表面表示（masked より優先、手札ゾーン等）
   source_zone_id?: string
   ui_widget?: string
 }

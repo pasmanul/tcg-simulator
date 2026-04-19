@@ -136,7 +136,8 @@
       "tappable": false,
       "card_scale": 1.0,
       "two_row": false,
-      "masked": false
+      "masked": false,
+      "show_face_up": true
     },
     {
       "id": "temp",

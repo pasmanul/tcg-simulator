@@ -153,6 +153,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
     ['tappable', 'タップ可能'],
     ['two_row', '2段レイアウト'],
     ['masked', '常に裏面表示'],
+    ['show_face_up', '強制表面表示（手札等）'],
   ]
 
   return (

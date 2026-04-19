@@ -232,6 +232,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
             cardW={pos.cardW}
             cardH={pos.cardH}
             masked={zoneDef.masked}
+            forceUp={zoneDef.show_face_up ?? false}
             selected={selectedCardIds.has(gc.instanceId)}
             draggable={!zoneDef.masked}
             onTap={handleTap}
