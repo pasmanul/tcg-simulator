@@ -10,10 +10,11 @@ export function BoardHud() {
     initializeField: s.initializeField,
     zones: s.zones,
   }))
-  const { openDialog, openDeckPanel, addLog } = useUIStore(s => ({
+  const { openDialog, openDeckPanel, addLog, toggleSidebar } = useUIStore(s => ({
     openDialog: s.openDialog,
     openDeckPanel: s.openDeckPanel,
     addLog: s.addLog,
+    toggleSidebar: s.toggleSidebar,
   }))
   const { cards, currentDeckFn } = useLibraryStore(s => ({
     cards: s.cards,
@@ -67,6 +68,32 @@ export function BoardHud() {
       borderBottom: '1px solid rgba(124,58,237,0.2)',
       alignItems: 'center',
     }}>
+      {/* ハンバーガーメニュー */}
+      <button
+        onClick={toggleSidebar}
+        style={{
+          background: 'transparent',
+          border: '1px solid rgba(124,58,237,0.3)',
+          borderRadius: 5,
+          color: '#A78BFA',
+          fontSize: 16,
+          lineHeight: 1,
+          width: 30,
+          height: 30,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          transition: 'all 150ms',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        aria-label="メニュー"
+      >
+        ☰
+      </button>
+
       <span style={{
         fontFamily: "'Press Start 2P', monospace",
         fontSize: 10,

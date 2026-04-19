@@ -1,11 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useTabSync } from '../../sync/useTabSync'
 import { useCardHotkeys } from '../hooks/useCardHotkeys'
-import type { GameCard, Card } from '../../domain/types'
+import type { GameCard, Card, GameConfigJson } from '../../domain/types'
 import { BoardStage } from '../stage/BoardStage'
 import { BoardHud } from '../hud/BoardHud'
 import { ActionLog } from '../overlays/ActionLog'
@@ -18,6 +18,8 @@ import { SaveLoadDialog } from '../overlays/SaveLoadDialog'
 import { DeckDropDialog } from '../overlays/DeckDropDialog'
 import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
 import { GameSetupWizard } from '../overlays/GameSetupWizard'
+import { BoardSidebar, type SidebarItem } from '../overlays/BoardSidebar'
+import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
 import { DeckPage } from './DeckPage'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
@@ -45,19 +47,43 @@ export function BoardPage() {
   useTabSync('board')
   useCardHotkeys()
 
+  const [boardEditorOpen, setBoardEditorOpen] = useState(false)
+
   const initZones = useGameStore(s => s.initZones)
-  const zones = useLayoutStore(s => s.zones)
+  const { zones: layoutZones, windows: layoutWindows } = useLayoutStore(s => ({
+    zones: s.zones,
+    windows: s.windows,
+  }))
   const { deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
     deckPanelOpen: s.deckPanelOpen,
     closeDeckPanel: s.closeDeckPanel,
   }))
 
+  const sidebarItems: SidebarItem[] = [
+    {
+      icon: '⚙',
+      label: 'BOARD EDIT',
+      description: 'ゾーン配置編集',
+      onClick: () => setBoardEditorOpen(true),
+    },
+  ]
+
+  function handleBoardEditorSave(config: GameConfigJson) {
+    useLayoutStore.getState().setConfig(config)
+    useLibraryStore.getState().applyLibrarySnapshot(
+      useLibraryStore.getState().cards,
+      useLibraryStore.getState().decks,
+      useLibraryStore.getState().activeDeckIndex,
+      undefined, undefined, config,
+    )
+    setBoardEditorOpen(false)
+  }
+
   useEffect(() => {
-    const realZoneIds = zones
+    const realZoneIds = layoutZones
       .filter(z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget)
       .map(z => z.id)
-    // Also include zones from hand window that need state
-    const handZoneIds = zones
+    const handZoneIds = layoutZones
       .filter(z => !z.source_zone_id && !z.ui_widget)
       .map(z => z.id)
     initZones([...new Set([...realZoneIds, ...handZoneIds])])
@@ -103,6 +129,14 @@ export function BoardPage() {
       <DeckDropDialog />
       <CardZoomOverlay />
       <GameSetupWizard />
+      <BoardSidebar items={sidebarItems} />
+      {boardEditorOpen && (
+        <BoardEditorDialog
+          initialConfig={{ windows: layoutWindows, zones: layoutZones }}
+          onSave={handleBoardEditorSave}
+          onClose={() => setBoardEditorOpen(false)}
+        />
+      )}
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

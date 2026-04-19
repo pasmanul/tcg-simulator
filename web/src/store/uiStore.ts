@@ -53,6 +53,9 @@ interface UIStore {
   openDeckPanel: () => void
   closeDeckPanel: () => void
   setHoveredCard: (info: HoveredCardInfo | null) => void
+  sidebarOpen: boolean
+  toggleSidebar: () => void
+  closeSidebar: () => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -66,6 +69,7 @@ export const useUIStore = create<UIStore>((set) => ({
   actionLog: [],
   deckPanelOpen: false,
   hoveredCard: null,
+  sidebarOpen: false,
 
   selectCard: (instanceId, multi) =>
     set((s) => {
@@ -97,6 +101,9 @@ export const useUIStore = create<UIStore>((set) => ({
 
   openDeckPanel: () => set({ deckPanelOpen: true }),
   closeDeckPanel: () => set({ deckPanelOpen: false }),
+
+  toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
+  closeSidebar: () => set({ sidebarOpen: false }),
 
   setHoveredCard: (info) => set({ hoveredCard: info }),
 
