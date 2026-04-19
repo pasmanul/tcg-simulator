@@ -192,27 +192,28 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
           {/* Left: Zone List */}
           <div style={{ width: 190, borderRight: '1px solid rgba(124,58,237,0.2)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
-            {/* Window tabs */}
-            <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(124,58,237,0.15)', flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {windows.map(w => (
-                <button
-                  key={w.id}
-                  onClick={() => { setSelWindowId(w.id); setSelZoneId(null) }}
-                  style={{
-                    fontFamily: "'Press Start 2P', monospace",
-                    fontSize: 6,
-                    padding: '3px 6px',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    border: `1px solid ${w.id === selWindowId ? '#7c3aed' : 'rgba(124,58,237,0.2)'}`,
-                    background: w.id === selWindowId ? '#3b0764' : '#0a0d1c',
-                    color: w.id === selWindowId ? '#c4b5fd' : '#505c78',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {w.title}
-                </button>
-              ))}
+            {/* Window selector */}
+            <div style={{ padding: '8px 8px 6px', borderBottom: '1px solid rgba(124,58,237,0.15)', flexShrink: 0 }}>
+              <div style={{ fontSize: 9, color: '#505c78', fontFamily: "'Press Start 2P', monospace", marginBottom: 5 }}>WINDOW</div>
+              <select
+                value={selWindowId}
+                onChange={e => { setSelWindowId(e.target.value); setSelZoneId(null) }}
+                style={{
+                  width: '100%',
+                  background: '#0a0e1a',
+                  color: '#c4b5fd',
+                  border: '1px solid rgba(124,58,237,0.4)',
+                  borderRadius: 4,
+                  padding: '5px 6px',
+                  fontFamily: "'Chakra Petch', sans-serif",
+                  fontSize: 11,
+                  cursor: 'pointer',
+                }}
+              >
+                {windows.map(w => (
+                  <option key={w.id} value={w.id}>{w.title}</option>
+                ))}
+              </select>
             </div>
 
             {/* Zone items */}
