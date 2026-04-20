@@ -48,8 +48,11 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
 
   const cols = selWindow?.grid_cols ?? 12
   const rows = selWindow?.grid_rows ?? 10
-  const previewW = 360
-  const previewH = Math.round(previewW * rows / cols)
+  const MAX_W = 800
+  const MAX_H = 480
+  const cellSize = Math.min(MAX_W / cols, MAX_H / rows)
+  const previewW = Math.round(cellSize * cols)
+  const previewH = Math.round(cellSize * rows)
 
   function addZone() {
     const id = `zone_${Date.now()}`
@@ -151,7 +154,6 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
   const CHECKS: Array<[keyof ZoneDefinition, string]> = [
     ['pile_mode', 'パイルモード（山札）'],
     ['tappable', 'タップ可能'],
-    ['two_row', '2段レイアウト'],
     ['masked', '常に裏面表示'],
     ['show_face_up', '強制表面表示（手札等）'],
   ]
@@ -162,7 +164,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        style={{ background: '#0a0d1c', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 14, width: 760, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 0 60px rgba(0,0,0,0.8)', fontFamily: "'Chakra Petch', sans-serif", overflow: 'hidden' }}
+        style={{ background: '#0a0d1c', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 14, width: '95vw', height: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 0 60px rgba(0,0,0,0.8)', fontFamily: "'Chakra Petch', sans-serif", overflow: 'hidden' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -190,7 +192,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
 
           {/* Left: Zone List */}
-          <div style={{ width: 190, borderRight: '1px solid rgba(124,58,237,0.2)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          <div style={{ width: 220, borderRight: '1px solid rgba(124,58,237,0.2)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
             {/* Window selector */}
             <div style={{ padding: '8px 8px 6px', borderBottom: '1px solid rgba(124,58,237,0.15)', flexShrink: 0 }}>
@@ -452,6 +454,17 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                         </button>
                       </div>
                     </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>段数 (row_count)</label>
+                      <input
+                        type="number" min={1} max={8}
+                        value={selZone.row_count ?? (selZone.two_row ? 2 : 1)}
+                        onChange={e => patchZone({ row_count: Math.max(1, Number(e.target.value)), two_row: Number(e.target.value) >= 2 })}
+                        style={numStyle}
+                      />
+                    </div>
+                    <div />
 
                     <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
                       {CHECKS.map(([key, label]) => (

@@ -43,7 +43,7 @@ export interface GameCard {
   tapped: boolean
   face_down: boolean
   revealed: boolean
-  row: 0 | 1
+  row: number
   marker: string | null
   under_cards: GameCard[]
 }
@@ -70,6 +70,7 @@ export interface ZoneDefinition {
   tappable: boolean
   card_scale: number
   two_row: boolean
+  row_count?: number
   masked: boolean
   show_face_up?: boolean   // 強制表面表示（masked より優先、手札ゾーン等）
   source_zone_id?: string

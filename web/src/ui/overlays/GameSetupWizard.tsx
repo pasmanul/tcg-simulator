@@ -113,6 +113,39 @@ const addBtn: React.CSSProperties = {
 }
 
 // ──────────────────────────────────────────────
+// ユーティリティ
+// ──────────────────────────────────────────────
+function labelToId(label: string): string {
+  const ascii = label
+    .normalize('NFKC')
+    .replace(/[\u3000-\u9fff\uff00-\uffef]/g, '_')
+    .replace(/[^a-zA-Z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .toLowerCase()
+  return ascii || 'field'
+}
+
+function ensureUniqueId(base: string, existingIds: string[]): string {
+  if (!existingIds.includes(base)) return base
+  let n = 2
+  while (existingIds.includes(`${base}_${n}`)) n++
+  return `${base}_${n}`
+}
+
+// ──────────────────────────────────────────────
+// プリセット
+// ──────────────────────────────────────────────
+const FIELD_PRESETS: FieldDef[] = [
+  { id: 'cost',      label: 'コスト',     type: 'number',       sortable: true,  filterable: false },
+  { id: 'power',     label: 'パワー',     type: 'number',       sortable: true,  filterable: false },
+  { id: 'card_type', label: 'カード種類', type: 'select',       options: ['クリーチャー', '呪文', 'フィールド'], filterable: true },
+  { id: 'attribute', label: '属性',       type: 'multi-select', options: ['火', '水', '自然', '光', '闇'], filterable: true },
+  { id: 'rarity',    label: 'レアリティ', type: 'select',       options: ['C', 'U', 'R', 'VR', 'SR'], filterable: true },
+  { id: 'set',       label: 'セット',     type: 'text',         filterable: true },
+]
+
+// ──────────────────────────────────────────────
 // ステップインジケーター
 // ──────────────────────────────────────────────
 const STEPS = ['基本情報', 'カード属性', 'ボード配置']
@@ -157,92 +190,183 @@ function StepIndicator({ current }: { current: number }) {
 }
 
 // ──────────────────────────────────────────────
-// FieldDef 編集行
+// FieldDef カードコンポーネント
 // ──────────────────────────────────────────────
-interface FieldRowProps {
+const TYPE_OPTIONS: { value: FieldDef['type']; label: string }[] = [
+  { value: 'text',         label: 'テキスト' },
+  { value: 'number',       label: '数値' },
+  { value: 'select',       label: '選択肢（一つ）' },
+  { value: 'multi-select', label: '複数選択' },
+]
+
+interface FieldCardProps {
   field: FieldDef
   onChange: (field: FieldDef) => void
   onDelete: () => void
+  allIds: string[]
 }
 
-function FieldRow({ field, onChange, onDelete }: FieldRowProps) {
+function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [optionInput, setOptionInput] = useState('')
   const needsOptions = field.type === 'select' || field.type === 'multi-select'
-  const tdStyle: React.CSSProperties = { padding: '4px 4px', verticalAlign: 'middle' }
+
   const cellInput: React.CSSProperties = {
-    width: '100%',
     background: '#0a0e1a',
     color: '#E2E8F0',
     border: '1px solid rgba(124,58,237,0.3)',
-    borderRadius: 3,
-    padding: '4px 6px',
+    borderRadius: 4,
+    padding: '6px 9px',
     fontFamily: "'Chakra Petch', sans-serif",
-    fontSize: 11,
-    boxSizing: 'border-box',
+    fontSize: 12,
+    boxSizing: 'border-box' as const,
+    width: '100%',
   }
-  const checkStyle: React.CSSProperties = { accentColor: '#A78BFA', cursor: 'pointer' }
+
+  function handleLabelChange(newLabel: string) {
+    const base = labelToId(newLabel) || 'field'
+    const newId = ensureUniqueId(base, allIds)
+    onChange({ ...field, label: newLabel, id: newId })
+  }
+
+  function addOption(raw: string) {
+    const val = raw.trim()
+    if (!val) return
+    const opts = field.options ?? []
+    if (!opts.includes(val)) onChange({ ...field, options: [...opts, val] })
+    setOptionInput('')
+  }
+
+  function removeOption(opt: string) {
+    onChange({ ...field, options: (field.options ?? []).filter(o => o !== opt) })
+  }
 
   return (
-    <tr style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}>
-      <td style={tdStyle}>
+    <div style={{
+      background: '#0a0e1a',
+      border: '1px solid rgba(124,58,237,0.25)',
+      borderRadius: 8,
+      padding: '12px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    }}>
+      {/* 上段: 表示名 + 削除 */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input
-          style={cellInput}
-          value={field.id}
-          onChange={e => onChange({ ...field, id: e.target.value })}
-          placeholder="id"
-        />
-      </td>
-      <td style={tdStyle}>
-        <input
-          style={cellInput}
+          style={{ ...cellInput, flex: 1, fontSize: 13 }}
           value={field.label}
-          onChange={e => onChange({ ...field, label: e.target.value })}
-          placeholder="表示名"
+          onChange={e => handleLabelChange(e.target.value)}
+          placeholder="表示名（例: マナコスト）"
         />
-      </td>
-      <td style={tdStyle}>
-        <select
-          style={{ ...cellInput, cursor: 'pointer' }}
-          value={field.type}
-          onChange={e => onChange({ ...field, type: e.target.value as FieldDef['type'] })}
-        >
-          <option value="text">text</option>
-          <option value="number">number</option>
-          <option value="select">select</option>
-          <option value="multi-select">multi-select</option>
-        </select>
-      </td>
-      <td style={tdStyle}>
-        {needsOptions ? (
+        <button style={dangerBtn} onClick={onDelete}>×</button>
+      </div>
+
+      {/* 種類ボタン */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {TYPE_OPTIONS.map(opt => {
+          const active = field.type === opt.value
+          return (
+            <button
+              key={opt.value}
+              onClick={() => onChange({ ...field, type: opt.value, options: opt.value === 'text' || opt.value === 'number' ? undefined : field.options })}
+              style={{
+                fontFamily: "'Chakra Petch', sans-serif",
+                fontSize: 11,
+                padding: '4px 10px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                border: `1px solid ${active ? '#7c3aed' : '#1e2540'}`,
+                background: active ? 'rgba(124,58,237,0.2)' : 'transparent',
+                color: active ? '#A78BFA' : '#505c78',
+              }}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* タグ入力（select/multi-select） */}
+      {needsOptions && (
+        <div>
+          <div style={{ fontSize: 10, color: '#505c78', marginBottom: 5, fontFamily: "'Chakra Petch', sans-serif" }}>選択肢</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+            {(field.options ?? []).map(opt => (
+              <span key={opt} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'rgba(124,58,237,0.12)',
+                border: '1px solid rgba(124,58,237,0.3)',
+                borderRadius: 4,
+                padding: '2px 7px',
+                fontSize: 11,
+                color: '#c4b5fd',
+                fontFamily: "'Chakra Petch', sans-serif",
+              }}>
+                {opt}
+                <span
+                  onClick={() => removeOption(opt)}
+                  style={{ cursor: 'pointer', color: '#7c3aed', fontSize: 12, lineHeight: 1 }}
+                >×</span>
+              </span>
+            ))}
+          </div>
           <input
-            style={cellInput}
-            value={field.options?.join(',') ?? ''}
-            onChange={e => onChange({ ...field, options: e.target.value ? e.target.value.split(',').map(s => s.trim()).filter(Boolean) : [] })}
-            placeholder="A,B,C"
+            style={{ ...cellInput, width: 180 }}
+            value={optionInput}
+            onChange={e => setOptionInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault()
+                addOption(optionInput)
+              }
+            }}
+            onBlur={() => addOption(optionInput)}
+            placeholder="Enterで追加"
           />
-        ) : (
-          <span style={{ color: '#334', fontSize: 10, fontFamily: "'Chakra Petch', sans-serif" }}>—</span>
+        </div>
+      )}
+
+      {/* 詳細設定（折りたたみ） */}
+      <div>
+        <button
+          onClick={() => setShowAdvanced(s => !s)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#505c78',
+            cursor: 'pointer',
+            fontSize: 10,
+            fontFamily: "'Chakra Petch', sans-serif",
+            padding: 0,
+          }}
+        >
+          {showAdvanced ? '▼' : '▶'} 詳細設定
+        </button>
+        {showAdvanced && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, paddingLeft: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: '#94A3B8', fontFamily: "'Chakra Petch', sans-serif" }}>
+              <input
+                type="checkbox"
+                style={{ accentColor: '#A78BFA', cursor: 'pointer' }}
+                checked={!!field.sortable}
+                onChange={e => onChange({ ...field, sortable: e.target.checked })}
+              />
+              並び替えを有効にする（デッキのソート選択肢に表示）
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: '#94A3B8', fontFamily: "'Chakra Petch', sans-serif" }}>
+              <input
+                type="checkbox"
+                style={{ accentColor: '#A78BFA', cursor: 'pointer' }}
+                checked={!!field.filterable}
+                onChange={e => onChange({ ...field, filterable: e.target.checked })}
+              />
+              絞り込みを有効にする（デッキのフィルター欄に表示）
+            </label>
+          </div>
         )}
-      </td>
-      <td style={{ ...tdStyle, textAlign: 'center' }}>
-        <input
-          type="checkbox"
-          style={checkStyle}
-          checked={!!field.sortable}
-          onChange={e => onChange({ ...field, sortable: e.target.checked })}
-        />
-      </td>
-      <td style={{ ...tdStyle, textAlign: 'center' }}>
-        <input
-          type="checkbox"
-          style={checkStyle}
-          checked={!!field.filterable}
-          onChange={e => onChange({ ...field, filterable: e.target.checked })}
-        />
-      </td>
-      <td style={{ ...tdStyle, textAlign: 'center' }}>
-        <button style={dangerBtn} onClick={onDelete}>削除</button>
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }
 
@@ -297,13 +421,18 @@ export function GameSetupWizard() {
   // ──────────────────────────────────────────────
   function addField() {
     const newField: FieldDef = {
-      id: `field${fieldDefs.length + 1}`,
-      label: `フィールド${fieldDefs.length + 1}`,
+      id: ensureUniqueId('field', fieldDefs.map(f => f.id)),
+      label: '',
       type: 'text',
       sortable: false,
       filterable: false,
     }
     setFieldDefs(prev => [...prev, newField])
+  }
+
+  function addPreset(preset: FieldDef) {
+    if (fieldDefs.some(f => f.id === preset.id)) return
+    setFieldDefs(prev => [...prev, { ...preset }])
   }
 
   function updateField(index: number, field: FieldDef) {
@@ -331,6 +460,7 @@ export function GameSetupWizard() {
     }
     useLibraryStore.getState().applyLibrarySnapshot([], [], -1, profile.fieldDefs, profile.deckRules, profile.boardConfig, gameName.trim())
     useLayoutStore.getState().setConfig(profile.boardConfig)
+    useLibraryStore.getState().exportGameProfile()
     closeDialog()
   }
 
@@ -426,59 +556,63 @@ export function GameSetupWizard() {
         {/* ──────── Step 1: カード属性定義 ──────── */}
         {step === 1 && (
           <div>
-            <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
-              カードが持つ属性フィールドを定義します。（後から変更可能）
+            <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+              カードが持つ属性を定義します。（後から変更可能）
             </p>
 
+            {/* プリセット */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: '#505c78', fontFamily: "'Chakra Petch', sans-serif", marginBottom: 6 }}>
+                よく使うフィールド:
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {FIELD_PRESETS.map(preset => {
+                  const used = fieldDefs.some(f => f.id === preset.id)
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => addPreset(preset)}
+                      disabled={used}
+                      style={{
+                        fontFamily: "'Chakra Petch', sans-serif",
+                        fontSize: 11,
+                        padding: '4px 10px',
+                        borderRadius: 4,
+                        cursor: used ? 'default' : 'pointer',
+                        border: '1px solid rgba(124,58,237,0.3)',
+                        background: used ? 'transparent' : 'rgba(124,58,237,0.1)',
+                        color: used ? '#334' : '#A78BFA',
+                        opacity: used ? 0.4 : 1,
+                      }}
+                    >
+                      {used ? '✓ ' : '+ '}{preset.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* フィールドカード一覧 */}
             {fieldDefs.length > 0 ? (
-              <div style={{ overflowX: 'auto', marginBottom: 12 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(124,58,237,0.3)' }}>
-                      {(['id', 'label', 'type', 'options', 'sort', 'filter', ''] as const).map((h, i) => (
-                        <th
-                          key={i}
-                          style={{
-                            padding: '4px 4px 8px',
-                            color: '#505c78',
-                            fontWeight: 'normal',
-                            fontFamily: "'Chakra Petch', sans-serif",
-                            textAlign: 'left',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fieldDefs.map((f, i) => (
-                      <FieldRow
-                        key={i}
-                        field={f}
-                        onChange={field => updateField(i, field)}
-                        onDelete={() => deleteField(i)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                {fieldDefs.map((f, i) => (
+                  <FieldCard
+                    key={f.id}
+                    field={f}
+                    onChange={field => updateField(i, field)}
+                    onDelete={() => deleteField(i)}
+                    allIds={fieldDefs.map(fd => fd.id).filter(id => id !== f.id)}
+                  />
+                ))}
               </div>
             ) : (
-              <div style={{
-                padding: '20px 0',
-                textAlign: 'center',
-                color: '#334',
-                fontFamily: "'Chakra Petch', sans-serif",
-                fontSize: 12,
-                marginBottom: 12,
-              }}>
-                フィールドが未設定です。カード属性が不要な場合はそのまま進んでください。
+              <div style={{ padding: '16px 0', textAlign: 'center', color: '#334', fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, marginBottom: 12 }}>
+                プリセットか「＋ 追加」から始めてください
               </div>
             )}
 
             <button style={addBtn} onClick={addField}>
-              + フィールドを追加
+              ＋ フィールドを追加
             </button>
           </div>
         )}

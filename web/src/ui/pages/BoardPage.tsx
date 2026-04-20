@@ -20,6 +20,7 @@ import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
 import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { BoardSidebar, type SidebarItem } from '../overlays/BoardSidebar'
 import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
+import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
 import { DeckPage } from './DeckPage'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
@@ -60,6 +61,24 @@ export function BoardPage() {
   }))
 
   const sidebarItems: SidebarItem[] = [
+    {
+      icon: '✨',
+      label: 'NEW GAME',
+      description: '新規ゲーム作成',
+      onClick: () => { useUIStore.getState().openDialog('setup-wizard'); useUIStore.getState().closeSidebar() },
+    },
+    {
+      icon: '📂',
+      label: 'FILE LOAD',
+      description: 'ゲームプロファイル読込',
+      onClick: () => { useUIStore.getState().openDialog('setup'); useUIStore.getState().closeSidebar() },
+    },
+    {
+      icon: '🏷',
+      label: 'CARD FIELDS',
+      description: 'カード属性フィールド編集',
+      onClick: () => { useUIStore.getState().openDialog('field-editor'); useUIStore.getState().closeSidebar() },
+    },
     {
       icon: '⚙',
       label: 'BOARD EDIT',
@@ -129,6 +148,7 @@ export function BoardPage() {
       <DeckDropDialog />
       <CardZoomOverlay />
       <GameSetupWizard />
+      <FieldEditorDialog />
       <BoardSidebar items={sidebarItems} />
       {boardEditorOpen && (
         <BoardEditorDialog

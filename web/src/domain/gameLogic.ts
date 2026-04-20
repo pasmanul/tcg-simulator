@@ -73,6 +73,7 @@ export function moveCard(
   instanceId: string,
   toZoneId: string,
   toIndex?: number,
+  zoneDefs?: ZoneDefinition[],
 ): Record<string, Zone> {
   const next = cloneZones(zones)
   const fromZone = next[fromZoneId]
@@ -83,10 +84,12 @@ export function moveCard(
   if (idx === -1) return zones
 
   const [card] = fromZone.cards.splice(idx, 1)
+  const destDef = zoneDefs?.find(z => z.id === toZoneId)
+  const movedCard = destDef ? { ...card, face_down: destDef.visibility === 'private' } : card
   if (toIndex !== undefined) {
-    toZone.cards.splice(toIndex, 0, card)
+    toZone.cards.splice(toIndex, 0, movedCard)
   } else {
-    toZone.cards.push(card)
+    toZone.cards.push(movedCard)
   }
   return next
 }

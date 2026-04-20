@@ -55,11 +55,10 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   const contentY = y + TITLE_H
   const contentH = height - TITLE_H
 
-  // ゾーン高さに収まるようにカードをスケールダウン（アスペクト比維持）
-  // two_row の場合は行の高さ（contentH/2）を基準にする
+  const effectiveRowCount = zoneDef.row_count ?? (zoneDef.two_row ? 2 : 1)
   const baseCardW = CARD_W * cardScale
   const baseCardH = CARD_H * cardScale
-  const rowH = zoneDef.two_row ? contentH / 2 : contentH
+  const rowH = contentH / effectiveRowCount
   const fitScale = Math.min(1, rowH / baseCardH)
   const cardW = Math.round(baseCardW * fitScale)
   const cardH = Math.round(baseCardH * fitScale)
@@ -69,7 +68,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
     x, contentY,
     width, contentH,
     cardW, cardH,
-    zoneDef.two_row,
+    effectiveRowCount,
   )
 
   const [bgR, bgG, bgB] = hexToRgb(colors.bgTop)
