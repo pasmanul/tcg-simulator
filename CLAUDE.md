@@ -3,8 +3,9 @@
 ## プロジェクト概要
 
 汎用カードゲームシミュレーター（旧称: dmapp）。
-Python + PyQt6 製。`data/game.json` でウィンドウ・ゾーン構成を自由に定義できる。
-デフォルト設定はデュエルマスターズ用 2 ウィンドウ構成。
+Python + PyQt6 製と Web 版（React + Vite + Konva）の 2 実装がある。
+Web 版は **サンドボックス設計**：1ゲーム=1 JSON（GameProfile）でゲーム種類を自由に登録できる。
+特定ゲーム（DM等）への依存はなく、ユーザーがカード属性・ボード配置を自由に定義する。
 
 ## 技術スタック
 
@@ -180,13 +181,13 @@ web/
 ├── vite.config.ts      # マルチページ設定 (index/hand/deck)
 └── src/
     ├── domain/
-    │   ├── types.ts        # GameCard, Zone, ZoneDefinition, GameStateSnapshot 等
+    │   ├── types.ts        # Card(fields汎用), GameCard, Zone, FieldDef, GameProfile 等
     │   └── gameLogic.ts    # 純粋関数: moveCard, stackCard, unstackCard, shuffleZone 等
     ├── store/
     │   ├── gameStore.ts    # ゲーム状態 + アクション（アンドゥスタック含む）
     │   ├── uiStore.ts      # UI 状態（ダイアログ・ログ・コンテキストメニュー等）
-    │   ├── layoutStore.ts  # レイアウト定義（game.json 相当、ZoneDefinition[]）
-    │   └── libraryStore.ts # カードライブラリ・画像キャッシュ・dirHandle
+    │   ├── layoutStore.ts  # レイアウト定義（GameProfile.boardConfig 相当）
+    │   └── libraryStore.ts # GameProfile 管理（fieldDefs/deckRules/boardConfig/pool/decks）
     ├── sync/
     │   └── useTabSync.ts   # BroadcastChannel によるタブ間状態同期
     ├── lib/
@@ -206,7 +207,10 @@ web/
         │   └── BoardHud.tsx    # 上部ボタンバー
         ├── overlays/           # ダイアログ群（常にマウント・自己非表示パターン）
         │   ├── ContextMenu.tsx
-        │   ├── SetupDialog.tsx
+        │   ├── GameLoadDialog.tsx    # 起動時：既存プロファイル開く or 新規作成
+        │   ├── GameSetupWizard.tsx   # 新規ゲーム作成（3ステップ）
+        │   ├── BoardEditorDialog.tsx # ゾーン GUI エディタ
+        │   ├── CardEditorDialog.tsx  # FieldDef ベースの動的フォーム
         │   ├── SearchDialog.tsx
         │   ├── DiceDialog.tsx
         │   ├── StackDialog.tsx
@@ -221,14 +225,44 @@ web/
 
 ## アーキテクチャ
 
+### GameProfile（サンドボックス設計）
+
+Web 版は **1ゲーム=1 JSON** の GameProfile 形式を採用。特定ゲームへの依存なし。
+
+```typescript
+interface GameProfile {
+  meta: { name: string; version?: string }
+  fieldDefs: FieldDef[]          // カード属性の定義
+  deckRules?: { maxDeckSize?: number; maxCopies?: number }
+  boardConfig: GameConfigJson    // windows[] + zones[]
+  pool: Card[]                   // カードプール
+  decks: DeckRecord[]            // デッキ一覧
+}
+
+interface FieldDef {
+  id: string; label: string
+  type: 'text' | 'number' | 'select' | 'multi-select'
+  options?: string[]
+  sortable?: boolean    // FilterBar ソートキー
+  filterable?: boolean  // FilterBar フィルタ表示
+}
+
+interface Card {
+  id: string; name: string; image_data?: string; count: number
+  fields: Record<string, any>  // FieldDef.id をキーとする任意フィールド
+}
+```
+
+起動フロー: `GameLoadDialog` → ファイルピッカーで JSON ロード or `GameSetupWizard` で新規作成
+
 ### Zustand ストア
 
 | ストア | 主な内容 |
 |--------|---------|
 | `gameStore` | `zones: Record<string, Zone>`、アンドゥスタック（最大50件）、moveCard / tapCard / stackCard / loadSnapshot 等 |
 | `uiStore` | activeDialog / contextMenu / stackInfo / deckDropInfo / actionLog（最大200件）/ deckPanelOpen |
-| `layoutStore` | `ZoneDefinition[]` + `WindowDefinition[]`（game.json 相当）|
-| `libraryStore` | カードライブラリ・`dirHandle`（File System Access API）・画像 URL 解決 |
+| `layoutStore` | `ZoneDefinition[]` + `WindowDefinition[]`（GameProfile.boardConfig から取得）|
+| `libraryStore` | GameProfile 全体管理（`fieldDefs` / `deckRules` / `boardConfig` / `pool` / `decks`）。`loadGameProfile(file)` / `exportGameProfile()` |
 
 ### ゲームロジック（`domain/gameLogic.ts`）
 

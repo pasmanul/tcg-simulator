@@ -1,22 +1,26 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useTabSync } from '../../sync/useTabSync'
 import { useCardHotkeys } from '../hooks/useCardHotkeys'
-import type { GameCard, Card } from '../../domain/types'
+import type { GameCard, Card, GameConfigJson } from '../../domain/types'
 import { BoardStage } from '../stage/BoardStage'
 import { BoardHud } from '../hud/BoardHud'
 import { ActionLog } from '../overlays/ActionLog'
 import { ContextMenu } from '../overlays/ContextMenu'
-import { SetupDialog } from '../overlays/SetupDialog'
+import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { SearchDialog } from '../overlays/SearchDialog'
 import { DiceDialog } from '../overlays/DiceDialog'
 import { StackDialog } from '../overlays/StackDialog'
 import { SaveLoadDialog } from '../overlays/SaveLoadDialog'
 import { DeckDropDialog } from '../overlays/DeckDropDialog'
 import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
+import { GameSetupWizard } from '../overlays/GameSetupWizard'
+import { BoardSidebar, type SidebarItem } from '../overlays/BoardSidebar'
+import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
+import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
 import { DeckPage } from './DeckPage'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
@@ -25,10 +29,8 @@ function makeDummyCard(index: number): GameCard {
     id: `dummy-${index}`,
     name: `ダミー ${index + 1}`,
     image_path: '',
-    mana: (index % 10) + 1,
-    civilizations: ['light'],
-    card_type: 'creature',
     count: 1,
+    fields: {},
   }
   return {
     instanceId: crypto.randomUUID(),
@@ -46,19 +48,61 @@ export function BoardPage() {
   useTabSync('board')
   useCardHotkeys()
 
+  const [boardEditorOpen, setBoardEditorOpen] = useState(false)
+
   const initZones = useGameStore(s => s.initZones)
-  const zones = useLayoutStore(s => s.zones)
+  const { zones: layoutZones, windows: layoutWindows } = useLayoutStore(s => ({
+    zones: s.zones,
+    windows: s.windows,
+  }))
   const { deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
     deckPanelOpen: s.deckPanelOpen,
     closeDeckPanel: s.closeDeckPanel,
   }))
 
+  const sidebarItems: SidebarItem[] = [
+    {
+      icon: '✨',
+      label: 'NEW GAME',
+      description: '新規ゲーム作成',
+      onClick: () => { useUIStore.getState().openDialog('setup-wizard'); useUIStore.getState().closeSidebar() },
+    },
+    {
+      icon: '📂',
+      label: 'FILE LOAD',
+      description: 'ゲームプロファイル読込',
+      onClick: () => { useUIStore.getState().openDialog('setup'); useUIStore.getState().closeSidebar() },
+    },
+    {
+      icon: '🏷',
+      label: 'CARD FIELDS',
+      description: 'カード属性フィールド編集',
+      onClick: () => { useUIStore.getState().openDialog('field-editor'); useUIStore.getState().closeSidebar() },
+    },
+    {
+      icon: '⚙',
+      label: 'BOARD EDIT',
+      description: 'ゾーン配置編集',
+      onClick: () => setBoardEditorOpen(true),
+    },
+  ]
+
+  function handleBoardEditorSave(config: GameConfigJson) {
+    useLayoutStore.getState().setConfig(config)
+    useLibraryStore.getState().applyLibrarySnapshot(
+      useLibraryStore.getState().cards,
+      useLibraryStore.getState().decks,
+      useLibraryStore.getState().activeDeckIndex,
+      undefined, undefined, config,
+    )
+    setBoardEditorOpen(false)
+  }
+
   useEffect(() => {
-    const realZoneIds = zones
+    const realZoneIds = layoutZones
       .filter(z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget)
       .map(z => z.id)
-    // Also include zones from hand window that need state
-    const handZoneIds = zones
+    const handZoneIds = layoutZones
       .filter(z => !z.source_zone_id && !z.ui_widget)
       .map(z => z.id)
     initZones([...new Set([...realZoneIds, ...handZoneIds])])
@@ -96,13 +140,23 @@ export function BoardPage() {
 
       {/* Overlays */}
       <ContextMenu />
-      <SetupDialog />
+      <GameLoadDialog />
       <SearchDialog />
       <DiceDialog />
       <StackDialog />
       <SaveLoadDialog />
       <DeckDropDialog />
       <CardZoomOverlay />
+      <GameSetupWizard />
+      <FieldEditorDialog />
+      <BoardSidebar items={sidebarItems} />
+      {boardEditorOpen && (
+        <BoardEditorDialog
+          initialConfig={{ windows: layoutWindows, zones: layoutZones }}
+          onSave={handleBoardEditorSave}
+          onClose={() => setBoardEditorOpen(false)}
+        />
+      )}
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

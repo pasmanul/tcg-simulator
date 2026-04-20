@@ -3,9 +3,11 @@ import { DeckHud } from '../deck/DeckHud'
 import { FilterBar, DEFAULT_FILTER, type FilterState } from '../deck/FilterBar'
 import { LibraryGrid } from '../deck/LibraryGrid'
 import { DeckGrid } from '../deck/DeckGrid'
-import { SetupDialog } from '../overlays/SetupDialog'
+import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { CardEditorDialog } from '../overlays/CardEditorDialog'
+import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { useLibraryStore } from '../../store/libraryStore'
+import { useUIStore } from '../../store/uiStore'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 import type { Card } from '../../domain/types'
 
@@ -249,6 +251,7 @@ export function DeckPage() {
   const [editingCard, setEditingCard] = useState<Card | null>(null)
   const allCards = useLibraryStore(s => s.cards)
   const { currentDeckFn, loadDeck } = useLibraryStore(s => ({ currentDeckFn: s.currentDeck, loadDeck: s.loadDeck }))
+  const { profileName, exportGameProfile } = useLibraryStore(s => ({ profileName: s.profileName, exportGameProfile: s.exportGameProfile }))
 
   function handleDeckCardDrop(cardId: string) {
     const deck = currentDeckFn()
@@ -260,9 +263,42 @@ export function DeckPage() {
     loadDeck(next)
   }
 
+  const openSetup = useUIStore(s => s.openDialog)
+
   return (
     <div style={PAGE_STYLE}>
       <div style={CRT_STYLE} />
+
+      {/* プロファイル情報バー */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '4px 14px',
+        background: '#060810',
+        borderBottom: '1px solid rgba(124,58,237,0.12)',
+        flexShrink: 0,
+        minHeight: 30,
+      }}>
+        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#505c78' }}>GAME:</span>
+        <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, color: profileName ? '#A78BFA' : '#334', fontStyle: profileName ? 'normal' : 'italic', flex: 1 }}>
+          {profileName || '未ロード'}
+        </span>
+        <button
+          onClick={() => openSetup('setup')}
+          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', background: '#0c1428', color: '#88aade', border: '1px solid #203050' }}
+        >
+          ロード
+        </button>
+        {profileName && (
+          <button
+            onClick={exportGameProfile}
+            style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', background: '#0c2814', color: '#66bb88', border: '1px solid #204030' }}
+          >
+            エクスポート
+          </button>
+        )}
+      </div>
 
       <DeckHud />
 
@@ -286,7 +322,8 @@ export function DeckPage() {
         </div>
       </div>
 
-      <SetupDialog />
+      <GameLoadDialog />
+      <GameSetupWizard />
       {cardEditorOpen && <CardEditorDialog onClose={() => setCardEditorOpen(false)} />}
       {editingCard && <CardEditorDialog card={editingCard} onClose={() => setEditingCard(null)} />}
     </div>

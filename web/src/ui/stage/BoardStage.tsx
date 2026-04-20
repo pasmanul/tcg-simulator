@@ -52,7 +52,7 @@ export function BoardStage() {
         r.x, r.y + TITLE_H,
         r.w, r.h - TITLE_H,
         cardW, cardH,
-        !!targetZone.two_row,
+        targetZone.row_count ?? (targetZone.two_row ? 2 : 1),
       )
       for (const pos of positions) {
         if (pos.instanceId === instanceId) continue
@@ -74,7 +74,17 @@ export function BoardStage() {
 
     // Regular zone move
     if (targetZoneId !== fromZoneId) {
-      moveCard(fromZoneId, instanceId, targetZoneId)
+      let toRow: number | undefined
+      if (targetZone) {
+        const rowCount = targetZone.row_count ?? (targetZone.two_row ? 2 : 1)
+        if (rowCount > 1) {
+          const zoneY = targetZone.grid_pos.row * cellH
+          const zoneH = targetZone.grid_pos.row_span * cellH
+          const relY = dropY - zoneY - 22 // subtract TITLE_H
+          toRow = Math.max(0, Math.min(rowCount - 1, Math.floor(relY / ((zoneH - 22) / rowCount))))
+        }
+      }
+      moveCard(fromZoneId, instanceId, targetZoneId, undefined, toRow)
       addLog(`カード移動 → ${targetZone?.name}`)
     }
   }, [zoneDefs, winDef, size, zones, moveCard, stackCard, addLog, setDeckDropInfo])

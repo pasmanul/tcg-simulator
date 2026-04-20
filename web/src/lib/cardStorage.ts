@@ -1,27 +1,15 @@
-import type { DeckPoolJson } from '../domain/types'
+import type { GameProfile } from '../domain/types'
 
 type WritableHandle = FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }
 
-export async function writeDeckPoolJson(
+export async function writeGameProfileToDir(
   dirHandle: FileSystemDirectoryHandle,
-  data: DeckPoolJson,
+  data: GameProfile,
 ): Promise<void> {
-  const fh = await dirHandle.getFileHandle('deck.json', { create: true })
+  const fh = await dirHandle.getFileHandle('game-profile.json', { create: true })
   const writable = await (fh as WritableHandle).createWritable()
   await writable.write(JSON.stringify(data, null, 2))
   await writable.close()
-}
-
-export async function readDeckPoolJson(
-  dirHandle: FileSystemDirectoryHandle,
-): Promise<DeckPoolJson> {
-  const fh = await dirHandle.getFileHandle('deck.json')
-  const file = await fh.getFile()
-  const raw = JSON.parse(await file.text())
-  return {
-    pool: raw.pool ?? [],
-    decks: raw.decks ?? (raw.deck ? [{ name: '無題', cards: raw.deck }] : []),
-  }
 }
 
 /** 画像を cards/ サブフォルダにコピーして 'cards/filename.ext' を返す（旧形式移行用） */

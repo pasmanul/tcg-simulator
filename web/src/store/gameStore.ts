@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Zone, GameCard, GameStateSnapshot } from '../domain/types'
+import { useLayoutStore } from './layoutStore'
 import {
   cloneZones,
   pushSnapshot,
@@ -20,10 +21,10 @@ interface GameStore {
   initZones: (zoneIds: string[]) => void
 
   // Game actions (all push snapshot first)
-  moveCard: (fromZoneId: string, instanceId: string, toZoneId: string, toIndex?: number) => void
+  moveCard: (fromZoneId: string, instanceId: string, toZoneId: string, toIndex?: number, toRow?: number) => void
   tapCard: (zoneId: string, instanceId: string) => void
   flipCard: (zoneId: string, instanceId: string) => void
-  setRow: (zoneId: string, instanceId: string, row: 0 | 1) => void
+  setRow: (zoneId: string, instanceId: string, row: number) => void
   setMarker: (zoneId: string, instanceId: string, marker: string | null) => void
   tapAllInZone: (zoneId: string) => void
   untapAllInZone: (zoneId: string) => void
@@ -76,10 +77,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ zones, undoStack: [] })
   },
 
-  moveCard: (fromZoneId, instanceId, toZoneId, toIndex) =>
+  moveCard: (fromZoneId, instanceId, toZoneId, toIndex, toRow) =>
     set((s) => {
       const undoStack = pushSnapshot(s.undoStack, s.zones)
-      const zones = moveCard(s.zones, fromZoneId, instanceId, toZoneId, toIndex)
+      const zoneDefs = useLayoutStore.getState().zones
+      let zones = moveCard(s.zones, fromZoneId, instanceId, toZoneId, toIndex, zoneDefs)
+      if (toRow !== undefined) {
+        zones = updateCard(zones, toZoneId, instanceId, gc => ({ ...gc, row: toRow }))
+      }
       return { zones, undoStack }
     }),
 
@@ -152,11 +157,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const deck = s.zones['deck']
       if (!deck || deck.cards.length === 0) return s
       const undoStack = pushSnapshot(s.undoStack, s.zones)
+      const zoneDefs = useLayoutStore.getState().zones
       const zones = moveCard(
         s.zones,
         'deck',
         deck.cards[deck.cards.length - 1].instanceId,
         'hand',
+        undefined,
+        zoneDefs,
       )
       return { zones, undoStack }
     }),

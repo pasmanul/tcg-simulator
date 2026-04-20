@@ -108,7 +108,9 @@ export function ContextMenu() {
 
   return (
     <div ref={ref} style={menuStyle}>
-      <div style={headerStyle}>{card.card.name.slice(0, 18)}</div>
+      <div style={headerStyle}>
+        {srcZoneDef?.visibility === 'private' || card.face_down ? '???' : card.card.name.slice(0, 18)}
+      </div>
 
       {/* スタック確認 — スタックカードがある場合のみ */}
       {card.under_cards.length > 0 && (

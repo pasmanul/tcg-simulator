@@ -73,21 +73,20 @@ export function calcCardPositions(
   areaH: number,
   cardW: number,
   cardH: number,
-  twoRow: boolean,
+  rowCount: number,
 ): CardPosition[] {
   if (cards.length === 0) return []
 
-  if (!twoRow) {
+  const n = Math.max(1, Math.round(rowCount))
+  if (n === 1) {
     return layoutRow(cards, areaX, areaY, areaW, areaH, cardW, cardH)
   }
 
-  // two_row: row=0 bottom, row=1 top
-  const row0 = cards.filter(gc => gc.row === 0)
-  const row1 = cards.filter(gc => gc.row === 1)
-  const halfH = areaH / 2
-
-  const bottom = layoutRow(row0, areaX, areaY + halfH, areaW, halfH, cardW, cardH)
-  const top = layoutRow(row1, areaX, areaY, areaW, halfH, cardW, cardH)
-
-  return [...top, ...bottom]
+  const rowH = areaH / n
+  const results: CardPosition[] = []
+  for (let r = 0; r < n; r++) {
+    const rowCards = cards.filter(gc => (gc.row ?? 0) % n === r)
+    results.push(...layoutRow(rowCards, areaX, areaY + r * rowH, areaW, rowH, cardW, cardH))
+  }
+  return results
 }

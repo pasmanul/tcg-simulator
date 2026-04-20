@@ -15,7 +15,7 @@ export function DeckHud() {
   } = useLibraryStore(s => ({
     decks: s.decks,
     activeDeckIndex: s.activeDeckIndex,
-    dirHandle: s.dirHandle,
+    dirHandle: s.fileHandle,
     cards: s.cards,
     currentDeck: s.currentDeck,
     selectDeck: s.selectDeck,

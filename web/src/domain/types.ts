@@ -1,12 +1,20 @@
+export interface FieldDef {
+  id: string
+  label: string
+  type: 'text' | 'number' | 'select' | 'multi-select'
+  options?: string[]      // select / multi-select のみ
+  default?: any
+  sortable?: boolean
+  filterable?: boolean
+}
+
 export interface Card {
   id: string
   name: string
-  image_path: string    // 旧形式後方互換用（新カードは ""）
-  image_data?: string   // base64 data URL（新形式）
-  mana: number
-  civilizations: string[]
-  card_type: string
+  image_path: string      // 後方互換のため維持（空文字可）
+  image_data?: string     // base64 data URL
   count: number
+  fields: Record<string, any>  // FieldDef.id をキー
 }
 
 export interface DeckEntry {
@@ -20,7 +28,11 @@ export interface DeckRecord {
   cardBack?: string  // base64 data URL（デッキ固有の裏面画像）
 }
 
-export interface DeckPoolJson {
+export interface GameProfile {
+  meta: { name: string; version?: string }
+  fieldDefs: FieldDef[]
+  deckRules?: { maxDeckSize?: number; maxCopies?: number }
+  boardConfig: GameConfigJson
   pool: Card[]
   decks: DeckRecord[]
 }
@@ -31,7 +43,7 @@ export interface GameCard {
   tapped: boolean
   face_down: boolean
   revealed: boolean
-  row: 0 | 1
+  row: number
   marker: string | null
   under_cards: GameCard[]
 }
@@ -58,7 +70,9 @@ export interface ZoneDefinition {
   tappable: boolean
   card_scale: number
   two_row: boolean
+  row_count?: number
   masked: boolean
+  show_face_up?: boolean   // 強制表面表示（masked より優先、手札ゾーン等）
   source_zone_id?: string
   ui_widget?: string
 }

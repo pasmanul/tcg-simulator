@@ -3,19 +3,14 @@ import { useLibraryStore } from '../../store/libraryStore'
 import { applyFilters, type FilterState } from './FilterBar'
 import type { Card } from '../../domain/types'
 
-const CIV_COLOR: Record<string, string> = {
-  '光': '#ffe44d',
-  '水': '#44aaff',
-  '闇': '#aa44ff',
-  '火': '#ff4444',
-  '自然': '#44cc44',
-  '無色': '#888888',
-}
-
 function LibraryCardTile({ card, onEdit }: { card: Card; onEdit: (card: Card) => void }) {
-  const { resolveImageUrl, cardBackUrl } = useLibraryStore.getState()
+  const { resolveImageUrl, cardBackUrl, fieldDefs } = useLibraryStore.getState()
   const imgUrl = resolveImageUrl(card) || cardBackUrl
   const [hovered, setHovered] = useState(false)
+
+  // sortable な数値フィールドのうち先頭を主要フィールドとして表示
+  const primaryField = fieldDefs.find(f => f.sortable && f.type === 'number')
+  const primaryValue = primaryField ? card.fields[primaryField.id] : undefined
 
   function onDragStart(e: React.DragEvent) {
     e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id }))
@@ -93,20 +88,13 @@ function LibraryCardTile({ card, onEdit }: { card: Card; onEdit: (card: Card) =>
         {card.name}
       </div>
 
-      <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: '#44bbff' }}>
-          M{card.mana}
-        </span>
-        {card.civilizations.map((civ, i) => (
-          <span key={i} style={{
-            display: 'inline-block',
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: CIV_COLOR[civ] ?? '#888',
-          }} />
-        ))}
-      </div>
+      {primaryValue !== undefined && (
+        <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: '#44bbff' }}>
+            {primaryField!.label.charAt(0)}{primaryValue}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
@@ -119,7 +107,8 @@ interface Props {
 
 export function LibraryGrid({ filter, onEditCard, onDeckCardDrop }: Props) {
   const cards = useLibraryStore(s => s.cards)
-  const filtered = applyFilters(cards, filter)
+  const fieldDefs = useLibraryStore(s => s.fieldDefs)
+  const filtered = applyFilters(cards, filter, fieldDefs)
   const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDrop(e: React.DragEvent) {

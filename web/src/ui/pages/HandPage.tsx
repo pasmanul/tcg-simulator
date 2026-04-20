@@ -3,7 +3,7 @@ import { useCardHotkeys } from '../hooks/useCardHotkeys'
 import { HandStage } from '../stage/HandStage'
 import { HandHud } from '../hud/HandHud'
 import { ContextMenu } from '../overlays/ContextMenu'
-import { SetupDialog } from '../overlays/SetupDialog'
+import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
 import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
 
@@ -20,7 +20,7 @@ export function HandPage() {
       <HandHud />
       <HandStage />
       <ContextMenu />
-      <SetupDialog />
+      <GameLoadDialog />
       <CardZoomOverlay />
     </div>
   )
