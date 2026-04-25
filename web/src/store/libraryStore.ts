@@ -32,6 +32,20 @@ async function writeGameProfile(fileHandle: FileSystemFileHandle, profile: GameP
   await writable.close()
 }
 
+function buildCurrentProfile(
+  state: Pick<LibraryStore, 'cards' | 'decks' | 'fieldDefs' | 'deckRules' | 'boardConfig' | 'profileName'>,
+  overrides?: { cards?: Card[]; decks?: DeckRecord[]; fieldDefs?: FieldDef[] }
+): GameProfile {
+  return {
+    meta: { name: state.profileName || 'game-profile', version: '1' },
+    fieldDefs: overrides?.fieldDefs ?? state.fieldDefs,
+    deckRules: state.deckRules,
+    boardConfig: state.boardConfig,
+    pool: overrides?.cards ?? state.cards,
+    decks: overrides?.decks ?? state.decks,
+  }
+}
+
 interface LibraryStore {
   cards: Card[]
   imageUrls: Record<string, string>   // image_path -> objectURL（旧形式用）
@@ -76,6 +90,7 @@ interface LibraryStore {
   deleteCard: (id: string) => Promise<void>
   exportDeckJson: () => void
   exportPoolJson: () => void
+  addFieldDef: (def: FieldDef) => Promise<void>
   applyLibrarySnapshot: (
     cards: Card[],
     decks: DeckRecord[],
@@ -233,88 +248,38 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   save: async () => {
-    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
-    if (!fileHandle) return
-    const profile: GameProfile = {
-      meta: { name: 'game-profile', version: '1' },
-      fieldDefs,
-      deckRules,
-      boardConfig,
-      pool: cards,
-      decks,
-    }
-    await writeGameProfile(fileHandle, profile)
+    const state = get()
+    if (!state.fileHandle) return
+    await writeGameProfile(state.fileHandle, buildCurrentProfile(state))
   },
 
   addCard: async (name, fields, imageFile?) => {
-    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
-    if (!fileHandle) throw new Error('No fileHandle')
-    let image_data: string | undefined
-    if (imageFile) {
-      image_data = await fileToBase64(imageFile)
-    }
-    const newCard: Card = {
-      id: crypto.randomUUID(),
-      name,
-      image_path: '',
-      image_data,
-      count: 1,
-      fields,
-    }
-    const updated = [...cards, newCard]
-    const profile: GameProfile = {
-      meta: { name: 'game-profile', version: '1' },
-      fieldDefs,
-      deckRules,
-      boardConfig,
-      pool: updated,
-      decks,
-    }
-    await writeGameProfile(fileHandle, profile)
+    const state = get()
+    if (!state.fileHandle) throw new Error('No fileHandle')
+    const image_data = imageFile ? await fileToBase64(imageFile) : undefined
+    const newCard: Card = { id: crypto.randomUUID(), name, image_path: '', image_data, count: 1, fields }
+    const updated = [...state.cards, newCard]
+    await writeGameProfile(state.fileHandle, buildCurrentProfile(state, { cards: updated }))
     set({ cards: updated })
   },
 
   updateCard: async (id, name, fields, imageFile?) => {
-    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
-    if (!fileHandle) throw new Error('No fileHandle')
-    let image_data: string | undefined
-    if (imageFile) {
-      image_data = await fileToBase64(imageFile)
-    }
-    const updated = cards.map(c =>
-      c.id === id
-        ? { ...c, name, fields, ...(image_data !== undefined ? { image_data } : {}) }
-        : c
+    const state = get()
+    if (!state.fileHandle) throw new Error('No fileHandle')
+    const image_data = imageFile ? await fileToBase64(imageFile) : undefined
+    const updated = state.cards.map(c =>
+      c.id === id ? { ...c, name, fields, ...(image_data !== undefined ? { image_data } : {}) } : c
     )
-    const profile: GameProfile = {
-      meta: { name: 'game-profile', version: '1' },
-      fieldDefs,
-      deckRules,
-      boardConfig,
-      pool: updated,
-      decks,
-    }
-    await writeGameProfile(fileHandle, profile)
+    await writeGameProfile(state.fileHandle, buildCurrentProfile(state, { cards: updated }))
     set({ cards: updated })
   },
 
   deleteCard: async (id) => {
-    const { fileHandle, cards, decks, fieldDefs, deckRules, boardConfig } = get()
-    if (!fileHandle) throw new Error('No fileHandle')
-    const updated = cards.filter(c => c.id !== id)
-    const updatedDecks = decks.map(d => ({
-      ...d,
-      cards: d.cards.filter(e => e.cardId !== id),
-    }))
-    const profile: GameProfile = {
-      meta: { name: 'game-profile', version: '1' },
-      fieldDefs,
-      deckRules,
-      boardConfig,
-      pool: updated,
-      decks: updatedDecks,
-    }
-    await writeGameProfile(fileHandle, profile)
+    const state = get()
+    if (!state.fileHandle) throw new Error('No fileHandle')
+    const updated = state.cards.filter(c => c.id !== id)
+    const updatedDecks = state.decks.map(d => ({ ...d, cards: d.cards.filter(e => e.cardId !== id) }))
+    await writeGameProfile(state.fileHandle, buildCurrentProfile(state, { cards: updated, decks: updatedDecks }))
     set({ cards: updated, decks: updatedDecks })
   },
 
@@ -327,6 +292,14 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
 
   exportPoolJson: () => {
     downloadJson(get().cards, 'pool.json')
+  },
+
+  addFieldDef: async (def) => {
+    const state = get()
+    if (!state.fileHandle) throw new Error('No fileHandle')
+    const newDefs = [...state.fieldDefs, def]
+    set({ fieldDefs: newDefs })
+    await writeGameProfile(state.fileHandle, buildCurrentProfile(state, { fieldDefs: newDefs }))
   },
 
   applyLibrarySnapshot: (cards, decks, activeDeckIndex, fieldDefs?, deckRules?, boardConfig?, profileName?) => {

@@ -219,8 +219,10 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
       })()}
 
       {/* Cards */}
-      {!zoneDef.pile_mode && positions.map((pos) => {
-        const gc = cards.find(c => c.instanceId === pos.instanceId)
+      {!zoneDef.pile_mode && (() => {
+        const cardMap = new Map(cards.map(c => [c.instanceId, c]))
+        return positions.map((pos) => {
+        const gc = cardMap.get(pos.instanceId)
         if (!gc) return null
         return (
           <CardShape
@@ -242,7 +244,8 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
             onDragEnd={handleDragEnd}
           />
         )
-      })}
+        })
+      })()}
 
       {/* Card count badge (non-pile zones) */}
       {!zoneDef.pile_mode && cards.length > 0 && (() => {
