@@ -298,8 +298,8 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     const state = get()
     if (!state.fileHandle) throw new Error('No fileHandle')
     const newDefs = [...state.fieldDefs, def]
-    set({ fieldDefs: newDefs })
     await writeGameProfile(state.fileHandle, buildCurrentProfile(state, { fieldDefs: newDefs }))
+    set({ fieldDefs: newDefs })
   },
 
   applyLibrarySnapshot: (cards, decks, activeDeckIndex, fieldDefs?, deckRules?, boardConfig?, profileName?) => {

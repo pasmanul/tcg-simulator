@@ -3,6 +3,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
+import { syncBoardConfigToLibrary } from '../../lib/boardConfigSync'
 import { useTabSync } from '../../sync/useTabSync'
 import { useCardHotkeys } from '../hooks/useCardHotkeys'
 import type { GameCard, Card, GameConfigJson } from '../../domain/types'
@@ -51,14 +52,24 @@ export function BoardPage() {
   const [boardEditorOpen, setBoardEditorOpen] = useState(false)
 
   const initZones = useGameStore(s => s.initZones)
-  const { zones: layoutZones, windows: layoutWindows } = useLayoutStore(s => ({
+  const addZoneToGame = useGameStore(s => s.addZoneToGame)
+  const { zones: layoutZones, windows: layoutWindows, addZone: addLayoutZone } = useLayoutStore(s => ({
     zones: s.zones,
     windows: s.windows,
+    addZone: s.addZone,
   }))
-  const { deckPanelOpen, closeDeckPanel } = useUIStore(s => ({
+  const { deckPanelOpen, closeDeckPanel, setEditingZoneId } = useUIStore(s => ({
     deckPanelOpen: s.deckPanelOpen,
     closeDeckPanel: s.closeDeckPanel,
+    setEditingZoneId: s.setEditingZoneId,
   }))
+
+  function handleAddZone() {
+    const newZone = addLayoutZone('board')
+    addZoneToGame(newZone.id)
+    syncBoardConfigToLibrary()
+    setEditingZoneId(newZone.id)
+  }
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -82,8 +93,8 @@ export function BoardPage() {
     {
       icon: '⚙',
       label: 'BOARD EDIT',
-      description: 'ゾーン配置編集',
-      onClick: () => setBoardEditorOpen(true),
+      description: 'ゾーン詳細設定',
+      onClick: () => { setBoardEditorOpen(true); useUIStore.getState().closeSidebar() },
     },
   ]
 
@@ -157,6 +168,30 @@ export function BoardPage() {
           onClose={() => setBoardEditorOpen(false)}
         />
       )}
+
+      {/* ゾーン追加ボタン */}
+      <button
+        onClick={handleAddZone}
+        style={{
+          position: 'fixed',
+          left: 16,
+          bottom: 16,
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #065f46, #047857)',
+          border: '1px solid #34d399',
+          color: '#6ee7b7',
+          fontSize: 24,
+          cursor: 'pointer',
+          zIndex: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 12px rgba(52,211,153,0.4)',
+        }}
+        aria-label="ゾーン追加"
+      >+</button>
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { GameCard, ActionLogEntry } from '../domain/types'
 
-export type DialogType = 'setup' | 'setup-wizard' | 'search' | 'dice' | 'save-load' | 'field-editor' | null
+export type DialogType = 'setup' | 'setup-wizard' | 'search' | 'dice' | 'save-load' | 'field-editor' | 'zone-inline-editor' | null
 
 interface ContextMenuState {
   x: number
@@ -56,9 +56,17 @@ interface UIStore {
   sidebarOpen: boolean
   toggleSidebar: () => void
   closeSidebar: () => void
+
+  zoneEditMode: boolean
+  editingZoneId: string | null
+  unlockedZoneIds: Set<string>
+  toggleZoneEditMode: () => void
+  setEditingZoneId: (id: string | null) => void
+  toggleZoneUnlock: (id: string) => void
+  isZoneUnlocked: (id: string) => boolean
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+export const useUIStore = create<UIStore>((set, get) => ({
   selectedCardIds: new Set(),
   zoomCard: null,
   zoomPos: null,
@@ -106,6 +114,18 @@ export const useUIStore = create<UIStore>((set) => ({
   closeSidebar: () => set({ sidebarOpen: false }),
 
   setHoveredCard: (info) => set({ hoveredCard: info }),
+
+  zoneEditMode: false,
+  editingZoneId: null,
+  unlockedZoneIds: new Set<string>(),
+  toggleZoneEditMode: () => set(s => ({ zoneEditMode: !s.zoneEditMode })),
+  setEditingZoneId: (id) => set({ editingZoneId: id }),
+  toggleZoneUnlock: (id) => set(s => {
+    const next = new Set(s.unlockedZoneIds)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return { unlockedZoneIds: next }
+  }),
+  isZoneUnlocked: (id) => get().unlockedZoneIds.has(id),
 
   addLog: (message) =>
     set((s) => ({

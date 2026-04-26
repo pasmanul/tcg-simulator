@@ -48,6 +48,10 @@ interface GameStore {
 
   // Internal: apply snapshot from remote tab (no undo push)
   _applySnapshot: (snapshot: GameStateSnapshot) => void
+
+  // Zone structure mutations (inline editor)
+  addZoneToGame: (zoneId: string) => void
+  removeZoneFromGame: (zoneId: string) => void
 }
 
 function updateCard(
@@ -214,4 +218,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   _applySnapshot: (snapshot) =>
     set(() => ({ zones: cloneZones(snapshot.zones) })),
+
+  addZoneToGame: (zoneId) =>
+    set(s => ({ zones: { ...s.zones, [zoneId]: { zoneId, cards: [] } } })),
+
+  removeZoneFromGame: (zoneId) =>
+    set(s => {
+      const next = { ...s.zones }
+      delete next[zoneId]
+      return { zones: next }
+    }),
 }))
