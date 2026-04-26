@@ -7,6 +7,8 @@ import { useStageSize, gridToPixel } from '../hooks/useStageSize'
 import { calcCardPositions } from '../hooks/useCardLayout'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
+import { ZoneEditOverlay } from '../zones/ZoneEditOverlay'
+import { ZoneInlineEditor } from '../overlays/ZoneInlineEditor'
 import { TOKENS, CARD_W, CARD_H } from '../../theme'
 import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
@@ -19,9 +21,13 @@ export function BoardStage() {
   const zones = useGameStore(s => s.zones)
   const moveCard = useGameStore(s => s.moveCard)
   const stackCard = useGameStore(s => s.stackCard)
-  const addLog = useUIStore(s => s.addLog)
-  const setDeckDropInfo = useUIStore(s => s.setDeckDropInfo)
-  const closeContextMenu = useUIStore(s => s.closeContextMenu)
+  const { addLog, setDeckDropInfo, closeContextMenu, editingZoneId, setEditingZoneId } = useUIStore(s => ({
+    addLog: s.addLog,
+    setDeckDropInfo: s.setDeckDropInfo,
+    closeContextMenu: s.closeContextMenu,
+    editingZoneId: s.editingZoneId,
+    setEditingZoneId: s.setEditingZoneId,
+  }))
 
   const handleCardDrop = useCallback((e: Event) => {
     const { fromZoneId, instanceId, dropX, dropY } = (e as CustomEvent<CardDropDetail>).detail
@@ -141,7 +147,26 @@ export function BoardStage() {
               />
             ))}
           </div>
+
+          {/* Zone inline edit overlay */}
+          {winDef && (
+            <ZoneEditOverlay
+              zoneDefs={zoneDefs}
+              zoneRects={zoneRects}
+              stageWidth={size.width}
+              stageHeight={size.height}
+              winDef={winDef}
+            />
+          )}
         </>
+      )}
+
+      {/* Zone property popup */}
+      {editingZoneId && (
+        <ZoneInlineEditor
+          zoneId={editingZoneId}
+          onClose={() => setEditingZoneId(null)}
+        />
       )}
     </div>
   )

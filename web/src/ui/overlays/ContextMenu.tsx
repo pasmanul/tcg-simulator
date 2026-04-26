@@ -4,17 +4,6 @@ import { useGameStore } from '../../store/gameStore'
 import { useLayoutStore } from '../../store/layoutStore'
 import { logCardName } from '../../domain/gameLogic'
 
-const ZONES = [
-  { id: 'battle', label: 'バトルゾーン', toIndex: undefined as number | undefined },
-  { id: 'mana', label: 'マナゾーン', toIndex: undefined },
-  { id: 'graveyard', label: '墓地', toIndex: undefined },
-  { id: 'shield', label: 'シールド', toIndex: undefined },
-  { id: 'hand', label: '手札', toIndex: undefined },
-  { id: 'temp', label: '保留', toIndex: undefined },
-  { id: 'deck', label: '山札（上）', toIndex: 0 },
-  { id: 'deck', label: '山札（下）', toIndex: undefined },
-]
-
 const MARKERS = [
   { id: 'red', label: '赤' },
   { id: 'blue', label: '青' },
@@ -37,7 +26,7 @@ export function ContextMenu() {
     setMarker: s.setMarker,
     moveCard: s.moveCard,
   }))
-  const zoneDefs = useLayoutStore.getState().zones
+  const zoneDefs = useLayoutStore(s => s.zones)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -55,6 +44,7 @@ export function ContextMenu() {
   const { x, y, zoneId, cardInstanceId, card } = contextMenu
 
   const srcZoneDef = zoneDefs.find(z => z.id === zoneId)
+
   function cardName(destZoneId?: string) {
     const destZoneDef = destZoneId ? zoneDefs.find(z => z.id === destZoneId) : undefined
     return logCardName(card, srcZoneDef, destZoneDef)
@@ -64,6 +54,17 @@ export function ContextMenu() {
     fn()
     closeContextMenu()
   }
+
+  // Build move targets from layout definitions
+  const moveTargets = zoneDefs
+    .filter(z => !z.source_zone_id && !z.ui_widget && z.id !== zoneId)
+    .flatMap(z => z.pile_mode
+      ? [
+          { id: z.id, label: `${z.name}（上）`, toIndex: 0 as number | undefined },
+          { id: z.id, label: `${z.name}（下）`, toIndex: undefined as number | undefined },
+        ]
+      : [{ id: z.id, label: z.name, toIndex: undefined as number | undefined }]
+    )
 
   const menuStyle: React.CSSProperties = {
     position: 'fixed',
@@ -112,7 +113,6 @@ export function ContextMenu() {
         {srcZoneDef?.visibility === 'private' || card.face_down ? '???' : card.card.name.slice(0, 18)}
       </div>
 
-      {/* スタック確認 — スタックカードがある場合のみ */}
       {card.under_cards.length > 0 && (
         <div
           style={{ ...itemStyle, color: '#e07020' }}
@@ -124,8 +124,7 @@ export function ContextMenu() {
         </div>
       )}
 
-      {/* サーチ — 山札のみ */}
-      {zoneId === 'deck' && (
+      {srcZoneDef?.pile_mode && (
         <div
           style={{ ...itemStyle, color: '#00FFFF' }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,255,255,0.1)')}
@@ -181,7 +180,7 @@ export function ContextMenu() {
       ))}
 
       <div style={labelStyle}>ゾーン移動</div>
-      {ZONES.filter(z => z.id !== zoneId).map((z, i) => (
+      {moveTargets.map((z, i) => (
         <div
           key={`${z.id}-${i}`}
           style={itemStyle}
