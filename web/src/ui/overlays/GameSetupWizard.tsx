@@ -22,31 +22,31 @@ const overlay: React.CSSProperties = {
 }
 
 const dialog: React.CSSProperties = {
-  background: '#0e1228',
-  border: '1px solid rgba(0,255,200,0.3)',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
   borderRadius: 16,
   padding: 28,
   width: 560,
   maxHeight: '88vh',
   overflowY: 'auto',
-  boxShadow: '0 0 60px rgba(0,200,150,0.15)',
-  fontFamily: "'Chakra Petch', sans-serif",
+  boxShadow: '0 0 60px rgba(var(--cyan-rgb, 0,200,150), 0.15)',
+  fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)',
   display: 'flex',
   flexDirection: 'column',
   gap: 0,
 }
 
 const titleStyle: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
+  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
   fontSize: 11,
-  color: '#00FFD0',
-  textShadow: '0 0 16px rgba(0,255,200,0.6)',
+  color: 'var(--cyan)',
+  textShadow: '0 0 16px rgba(var(--cyan-rgb, 0,255,200), 0.6)',
   margin: 0,
 }
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  color: '#94A3B8',
+  color: 'var(--muted)',
   fontSize: 11,
   marginBottom: 4,
   marginTop: 14,
@@ -54,12 +54,12 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: '#0a0e1a',
-  color: '#E2E8F0',
-  border: '1px solid rgba(124,58,237,0.4)',
+  background: 'var(--surface2)',
+  color: 'var(--text)',
+  border: '1px solid rgba(var(--purple-rgb, 124,58,237), 0.4)',
   borderRadius: 4,
   padding: '6px 10px',
-  fontFamily: "'Chakra Petch', sans-serif",
+  fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)',
   fontSize: 13,
   boxSizing: 'border-box',
 }
@@ -70,36 +70,36 @@ const selectStyle: React.CSSProperties = {
 }
 
 const primaryBtn: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
+  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
   fontSize: 8,
   padding: '10px 16px',
   borderRadius: 6,
   cursor: 'pointer',
-  background: 'linear-gradient(135deg, #00aa88, #006655)',
+  background: 'var(--purple)',
   color: '#fff',
   border: 'none',
 }
 
 const secondaryBtn: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
+  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
   fontSize: 8,
   padding: '10px 16px',
   borderRadius: 6,
   cursor: 'pointer',
   background: 'transparent',
-  color: '#505c78',
-  border: '1px solid rgba(255,255,255,0.1)',
+  color: 'var(--muted)',
+  border: '1px solid var(--border)',
 }
 
 const addBtn: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
+  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
   fontSize: 7,
   padding: '6px 12px',
   borderRadius: 5,
   cursor: 'pointer',
-  background: '#0a1a0a',
-  color: '#66dd66',
-  border: '1px solid #204020',
+  background: 'rgba(var(--cyan-rgb, 0,200,150), 0.08)',
+  color: 'var(--cyan)',
+  border: '1px solid rgba(var(--cyan-rgb, 0,200,150), 0.3)',
 }
 
 // ──────────────────────────────────────────────
@@ -129,7 +129,7 @@ function StepIndicator({ current }: { current: number }) {
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             {/* connector line */}
             <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : (done || active ? '#00aa88' : '#1e2540') }} />
+              <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : (done || active ? 'var(--cyan)' : 'var(--surface2)') }} />
               <div style={{
                 width: 24,
                 height: 24,
@@ -137,18 +137,18 @@ function StepIndicator({ current }: { current: number }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily: "'Press Start 2P', monospace",
+                fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
                 fontSize: 8,
-                background: done ? '#00aa88' : (active ? '#006655' : '#0a0e1a'),
-                border: `2px solid ${done || active ? '#00aa88' : '#1e2540'}`,
-                color: done || active ? '#fff' : '#505c78',
+                background: done ? 'var(--cyan)' : (active ? 'rgba(var(--cyan-rgb, 0,200,150), 0.3)' : 'var(--surface2)'),
+                border: `2px solid ${done || active ? 'var(--cyan)' : 'var(--border)'}`,
+                color: done || active ? 'var(--bg)' : 'var(--muted)',
                 flexShrink: 0,
               }}>
                 {done ? '✓' : i + 1}
               </div>
-              <div style={{ flex: 1, height: 2, background: i === STEPS.length - 1 ? 'transparent' : (done ? '#00aa88' : '#1e2540') }} />
+              <div style={{ flex: 1, height: 2, background: i === STEPS.length - 1 ? 'transparent' : (done ? 'var(--cyan)' : 'var(--surface2)') }} />
             </div>
-            <span style={{ fontSize: 9, color: active ? '#00FFD0' : (done ? '#00aa88' : '#505c78'), fontFamily: "'Chakra Petch', sans-serif" }}>
+            <span style={{ fontSize: 9, color: active ? 'var(--cyan)' : (done ? 'var(--cyan)' : 'var(--muted)'), fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)' }}>
               {label}
             </span>
           </div>
@@ -286,7 +286,7 @@ export function GameSetupWizard() {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#505c78',
+              color: 'var(--muted)',
               fontSize: 18,
               cursor: 'pointer',
               lineHeight: 1,
@@ -302,13 +302,13 @@ export function GameSetupWizard() {
         {/* ──────── Step 0: 基本情報 ──────── */}
         {step === 0 && (
           <div>
-            <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
+            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
               新しいゲームの基本情報を設定します。
             </p>
 
             <label style={labelStyle}>ゲーム名 *</label>
             <input
-              style={{ ...inputStyle, borderColor: nameError ? 'rgba(220,60,60,0.6)' : 'rgba(124,58,237,0.4)' }}
+              style={{ ...inputStyle, borderColor: nameError ? 'rgba(220,60,60,0.6)' : `rgba(var(--purple-rgb, 124,58,237), 0.4)` }}
               type="text"
               value={gameName}
               onChange={e => { setGameName(e.target.value); if (nameError) setNameError('') }}
@@ -344,13 +344,13 @@ export function GameSetupWizard() {
         {/* ──────── Step 1: カード属性定義 ──────── */}
         {step === 1 && (
           <div>
-            <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 12, marginTop: 0 }}>
               カードが持つ属性を定義します。（後から変更可能）
             </p>
 
             {/* プリセット */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: '#505c78', fontFamily: "'Chakra Petch', sans-serif", marginBottom: 6 }}>
+              <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)', marginBottom: 6 }}>
                 よく使うフィールド:
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -367,9 +367,9 @@ export function GameSetupWizard() {
                         padding: '4px 10px',
                         borderRadius: 4,
                         cursor: used ? 'default' : 'pointer',
-                        border: '1px solid rgba(124,58,237,0.3)',
-                        background: used ? 'transparent' : 'rgba(124,58,237,0.1)',
-                        color: used ? '#334' : '#A78BFA',
+                        border: '1px solid rgba(var(--purple-rgb, 124,58,237), 0.3)',
+                        background: used ? 'transparent' : 'rgba(var(--purple-rgb, 124,58,237), 0.1)',
+                        color: used ? 'var(--surface2)' : 'var(--purple-lite)',
                         opacity: used ? 0.4 : 1,
                       }}
                     >
@@ -394,7 +394,7 @@ export function GameSetupWizard() {
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '16px 0', textAlign: 'center', color: '#334', fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, marginBottom: 12 }}>
+              <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)', fontSize: 12, marginBottom: 12 }}>
                 プリセットか「＋ 追加」から始めてください
               </div>
             )}
@@ -408,28 +408,28 @@ export function GameSetupWizard() {
         {/* ──────── Step 2: ボード配置 ──────── */}
         {step === 2 && (
           <div>
-            <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
+            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
               ゲームボードのゾーン配置を設定します。
             </p>
 
             <div style={{
-              background: '#090c1c',
-              border: '1px solid rgba(124,58,237,0.2)',
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
               borderRadius: 8,
               padding: '16px',
               marginBottom: 16,
             }}>
-              <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 10, fontFamily: "'Chakra Petch', sans-serif" }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)' }}>
                 現在の設定: {boardConfig.windows.length} ウィンドウ / {boardConfig.zones.length} ゾーン
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
                 {boardConfig.zones.slice(0, 6).map(z => (
-                  <span key={z.id} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: z.visibility === 'public' ? 'rgba(59,130,246,0.15)' : 'rgba(124,58,237,0.15)', color: z.visibility === 'public' ? '#60a5fa' : '#A78BFA', border: `1px solid ${z.visibility === 'public' ? 'rgba(59,130,246,0.3)' : 'rgba(124,58,237,0.3)'}` }}>
+                  <span key={z.id} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: z.visibility === 'public' ? 'rgba(59,130,246,0.15)' : `rgba(var(--purple-rgb, 124,58,237), 0.15)`, color: z.visibility === 'public' ? '#60a5fa' : 'var(--purple-lite)', border: `1px solid ${z.visibility === 'public' ? 'rgba(59,130,246,0.3)' : `rgba(var(--purple-rgb, 124,58,237), 0.3)`}` }}>
                     {z.visibility === 'public' ? '●' : '◆'} {z.name}
                   </span>
                 ))}
                 {boardConfig.zones.length > 6 && (
-                  <span style={{ fontSize: 10, color: '#505c78' }}>+{boardConfig.zones.length - 6}...</span>
+                  <span style={{ fontSize: 10, color: 'var(--muted)' }}>+{boardConfig.zones.length - 6}...</span>
                 )}
               </div>
             </div>
@@ -462,7 +462,7 @@ export function GameSetupWizard() {
                 ボード編集
               </button>
               <button
-                style={{ ...primaryBtn, background: 'linear-gradient(135deg, #7c3aed, #4c1d95)' }}
+                style={{ ...primaryBtn, background: 'var(--purple)' }}
                 onClick={() => handleComplete()}
               >
                 完了

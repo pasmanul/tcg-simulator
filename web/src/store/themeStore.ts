@@ -25,7 +25,10 @@ function applyTheme(theme: Theme) {
     r.setProperty('--text',        theme.tokens.text)
     r.setProperty('--muted',       theme.tokens.muted)
     r.setProperty('--border',      theme.tokens.border)
+    r.setProperty('--surface',     theme.tokens.surface)
+    r.setProperty('--surface2',    theme.tokens.surface2)
     r.setProperty('--purple-rgb',  hexToRgbString(theme.tokens.purple))
+    r.setProperty('--cyan-rgb',    hexToRgbString(theme.tokens.cyan))
 
     // スタイルオプション
     r.setProperty('--font-body',   theme.style?.fontBody   ?? "'Chakra Petch', sans-serif")

@@ -3,6 +3,8 @@
 export interface ThemeTokens {
   bg: string
   bg2: string
+  surface: string   // パネル・ダイアログ背景
+  surface2: string  // 深ネスト背景（input, list等）
   purple: string
   purpleLite: string
   cyan: string
@@ -35,6 +37,8 @@ export const darkCyber: Theme = {
   tokens: {
     bg:         '#0F0F23',
     bg2:        '#080818',
+    surface:    '#08091e',
+    surface2:   '#060814',
     purple:     '#7C3AED',
     purpleLite: '#A78BFA',
     cyan:       '#00FFFF',
@@ -60,6 +64,8 @@ export const crimsonCourt: Theme = {
   tokens: {
     bg:         '#180808',
     bg2:        '#0d0404',
+    surface:    '#120406',
+    surface2:   '#0a0203',
     purple:     '#C41E3A',
     purpleLite: '#E8607A',
     cyan:       '#D4AF37',
@@ -97,6 +103,8 @@ export const neonArcade: Theme = {
   tokens: {
     bg:         '#050010',
     bg2:        '#020008',
+    surface:    '#080018',
+    surface2:   '#04000e',
     purple:     '#FF00FF',
     purpleLite: '#FF66FF',
     cyan:       '#00FF41',
@@ -162,7 +170,49 @@ canvas {
 `,
 }
 
-export const THEMES: Theme[] = [darkCyber, crimsonCourt, neonArcade]
+export const softPaper: Theme = {
+  id: 'soft-paper',
+  name: 'Soft Paper',
+  tokens: {
+    bg:         '#F5F0E8',
+    bg2:        '#EDE8DC',
+    surface:    '#FFFFFF',
+    surface2:   '#F0EBE1',
+    purple:     '#5B6AF0',
+    purpleLite: '#8B96F7',
+    cyan:       '#0EA5A0',
+    pink:       '#E0516B',
+    text:       '#1A1A2E',
+    muted:      '#6B7280',
+    border:     'rgba(91,106,240,0.20)',
+  },
+  zonePalette: {
+    battle:    ['#fdf0f0', '#fae8e8', '#dc4444', '#ff8080', '#f9dede'],
+    mana:      ['#f0f8f0', '#e8f5e8', '#2e8b57', '#4caf50', '#dff0df'],
+    shield:    ['#f0f4ff', '#e8eeff', '#4a6fdc', '#7a9fff', '#dde8ff'],
+    graveyard: ['#f8f0f8', '#f4e8f4', '#8b4fa8', '#c080dc', '#f0dff0'],
+    deck:      ['#f0f8ff', '#e8f2ff', '#2563eb', '#60a5fa', '#dceeff'],
+    hand:      ['#f0faf8', '#e8f8f4', '#0d9488', '#34d399', '#dcf8f2'],
+    temp:      ['#f4f4f4', '#ebebeb', '#8080a0', '#a0a0c0', '#e8e8ec'],
+  },
+  style: {
+    fontBody:      "'Inter', 'Noto Sans JP', sans-serif",
+    fontMono:      "'JetBrains Mono', 'Fira Code', monospace",
+    borderRadius:  10,
+    glowIntensity: 0.2,
+  },
+  cssOverrides: `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+body {
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(91,106,240,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(14,165,160,0.05) 0%, transparent 50%);
+}
+`,
+}
+
+export const THEMES: Theme[] = [darkCyber, crimsonCourt, neonArcade, softPaper]
 
 // --- 後方互換：既存コードが直接インポートしているものを維持 ---
 
