@@ -54,7 +54,44 @@ export const darkCyber: Theme = {
   },
 }
 
-export const THEMES: Theme[] = [darkCyber]
+export const crimsonCourt: Theme = {
+  id: 'crimson-court',
+  name: 'Crimson Court',
+  tokens: {
+    bg:         '#180808',
+    bg2:        '#0d0404',
+    purple:     '#C41E3A',
+    purpleLite: '#E8607A',
+    cyan:       '#D4AF37',
+    pink:       '#FF6B35',
+    text:       '#F5E6D3',
+    muted:      '#8B7355',
+    border:     'rgba(196,30,58,0.35)',
+  },
+  zonePalette: {
+    battle:    ['#2a0808', '#160404', '#c41e3a', '#e8607a', '#3a0a0a'],
+    mana:      ['#1a1408', '#0d0a04', '#a07828', '#d4af37', '#221a08'],
+    shield:    ['#0a1020', '#050810', '#2a5098', '#5a8fdd', '#0a1428'],
+    graveyard: ['#160a1a', '#0b0510', '#6b1e8a', '#b066cc', '#1e0a28'],
+    deck:      ['#0a1a0a', '#050d05', '#2a6b2a', '#5abf5a', '#081408'],
+    hand:      ['#1a1208', '#0d0904', '#8b4513', '#cd8a3f', '#201408'],
+    temp:      ['#161010', '#0c0808', '#6b5050', '#9b8080', '#120c0c'],
+  },
+  style: {
+    fontBody:      "'Cinzel', 'Georgia', serif",
+    borderRadius:  4,
+    glowIntensity: 0.6,
+  },
+  cssOverrides: `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+body {
+  background-image: radial-gradient(ellipse at top left, rgba(196,30,58,0.06) 0%, transparent 60%),
+                    radial-gradient(ellipse at bottom right, rgba(212,175,55,0.04) 0%, transparent 60%);
+}
+`,
+}
+
+export const THEMES: Theme[] = [darkCyber, crimsonCourt]
 
 // --- 後方互換：既存コードが直接インポートしているものを維持 ---
 
