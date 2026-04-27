@@ -24,7 +24,7 @@ import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
 import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
 import { ThemeDialog } from '../overlays/ThemeDialog'
 import { DeckPage } from './DeckPage'
-import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
+import { PAGE_STYLE } from '../pageLayout'
 
 function makeDummyCard(index: number): GameCard {
   const card: Card = {
@@ -141,8 +141,6 @@ export function BoardPage() {
 
   return (
     <div style={PAGE_STYLE}>
-      <div style={CRT_STYLE} />
-
       {/* HUD bar */}
       <BoardHud />
 
