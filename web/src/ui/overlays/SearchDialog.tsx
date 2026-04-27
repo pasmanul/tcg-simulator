@@ -69,8 +69,8 @@ export function SearchDialog() {
     zIndex: 2000,
   }
   const dialog: React.CSSProperties = {
-    background: '#080c1c',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
     borderRadius: 12,
     padding: 24,
     width: 480,
@@ -84,15 +84,15 @@ export function SearchDialog() {
   const title: React.CSSProperties = {
     fontFamily: "'Press Start 2P', monospace",
     fontSize: 11,
-    color: '#00FFFF',
-    textShadow: '0 0 10px rgba(0,255,255,0.5)',
+    color: 'var(--cyan)',
+    textShadow: '0 0 10px rgba(var(--cyan-rgb),0.5)',
     marginBottom: 4,
   }
   const input: React.CSSProperties = {
-    background: '#0e1228',
-    border: '1px solid rgba(124,58,237,0.3)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.3)',
     borderRadius: 6,
-    color: '#aabbd0',
+    color: 'var(--text)',
     padding: '6px 10px',
     fontSize: 13,
     fontFamily: "'Chakra Petch', sans-serif",
@@ -102,7 +102,7 @@ export function SearchDialog() {
   const listWrap: React.CSSProperties = {
     flex: 1,
     overflowY: 'auto',
-    border: '1px solid rgba(124,58,237,0.15)',
+    border: '1px solid rgba(var(--purple-rgb),0.15)',
     borderRadius: 6,
     maxHeight: 320,
   }
@@ -111,7 +111,7 @@ export function SearchDialog() {
     padding: '6px 12px',
     borderBottom: '1px solid rgba(255,255,255,0.04)',
     cursor: 'pointer',
-    color: '#aabbd0',
+    color: 'var(--text)',
     fontSize: 12,
     transition: 'background 100ms',
   }
@@ -125,10 +125,10 @@ export function SearchDialog() {
     transition: 'all 150ms',
   }
   const selectStyle: React.CSSProperties = {
-    background: '#0e1228',
-    border: '1px solid rgba(124,58,237,0.3)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.3)',
     borderRadius: 6,
-    color: '#aabbd0',
+    color: 'var(--text)',
     padding: '6px 10px',
     fontSize: 12,
     fontFamily: "'Chakra Petch', sans-serif",
@@ -139,7 +139,7 @@ export function SearchDialog() {
     <div style={overlay} onClick={handleClose}>
       <div style={dialog} onClick={e => e.stopPropagation()}>
         <div style={title}>DECK SEARCH</div>
-        <div style={{ color: '#505c78', fontSize: 11 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 11 }}>
           山札: {deckCards.length}枚 / 選択: {selected.size}枚
         </div>
 
@@ -153,7 +153,7 @@ export function SearchDialog() {
 
         <div style={listWrap}>
           {filtered.length === 0 && (
-            <div style={{ padding: 16, color: '#505c78', fontSize: 12, textAlign: 'center' }}>
+            <div style={{ padding: 16, color: 'var(--muted)', fontSize: 12, textAlign: 'center' }}>
               該当カードなし
             </div>
           )}
@@ -162,11 +162,11 @@ export function SearchDialog() {
               key={gc.instanceId}
               style={{
                 ...row,
-                background: selected.has(gc.instanceId) ? 'rgba(124,58,237,0.2)' : '',
+                background: selected.has(gc.instanceId) ? 'rgba(var(--purple-rgb),0.2)' : '',
               }}
               onMouseEnter={e => {
                 if (!selected.has(gc.instanceId))
-                  e.currentTarget.style.background = 'rgba(124,58,237,0.08)'
+                  e.currentTarget.style.background = 'rgba(var(--purple-rgb),0.08)'
               }}
               onMouseLeave={e => {
                 if (!selected.has(gc.instanceId))
@@ -176,8 +176,8 @@ export function SearchDialog() {
             >
               <div style={{
                 width: 14, height: 14, borderRadius: 3,
-                border: '1px solid rgba(124,58,237,0.5)',
-                background: selected.has(gc.instanceId) ? '#7C3AED' : 'transparent',
+                border: '1px solid rgba(var(--purple-rgb),0.5)',
+                background: selected.has(gc.instanceId) ? 'var(--purple)' : 'transparent',
                 flexShrink: 0,
               }} />
               <span style={{ flex: 1 }}>{gc.card.name}</span>
@@ -186,7 +186,7 @@ export function SearchDialog() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ color: '#505c78', fontSize: 12 }}>移動先:</span>
+          <span style={{ color: 'var(--muted)', fontSize: 12 }}>移動先:</span>
           <select
             style={selectStyle}
             value={target}
@@ -200,7 +200,7 @@ export function SearchDialog() {
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
-            style={{ ...btn, background: '#1a1a2e', color: '#505c78', border: '1px solid #303050' }}
+            style={{ ...btn, background: '#1a1a2e', color: 'var(--muted)', border: '1px solid #303050' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#22223a')}
             onMouseLeave={e => (e.currentTarget.style.background = '#1a1a2e')}
             onClick={handleClose}
@@ -211,8 +211,8 @@ export function SearchDialog() {
             style={{
               ...btn,
               background: selected.size > 0 ? '#4c1d95' : '#1a1a2e',
-              color: selected.size > 0 ? '#c4b5fd' : '#505c78',
-              border: `1px solid ${selected.size > 0 ? '#7C3AED' : '#303050'}`,
+              color: selected.size > 0 ? 'var(--purple-lite)' : 'var(--muted)',
+              border: `1px solid ${selected.size > 0 ? 'var(--purple)' : '#303050'}`,
             }}
             onMouseEnter={e => {
               if (selected.size > 0) e.currentTarget.style.background = '#5b21b6'

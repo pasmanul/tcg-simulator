@@ -85,8 +85,8 @@ export function SaveLoadDialog() {
     zIndex: 2000,
   }
   const dialog: React.CSSProperties = {
-    background: '#080c1c',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
     borderRadius: 12,
     padding: 24,
     width: 420,
@@ -103,16 +103,16 @@ export function SaveLoadDialog() {
     padding: '7px 14px',
     borderRadius: 6,
     cursor: 'pointer',
-    border: `1px solid ${active ? '#7C3AED' : 'rgba(124,58,237,0.3)'}`,
-    background: active ? '#4c1d95' : '#0e1228',
-    color: active ? '#c4b5fd' : '#6672a0',
+    border: `1px solid ${active ? 'var(--purple)' : 'rgba(var(--purple-rgb),0.3)'}`,
+    background: active ? '#4c1d95' : 'var(--surface2)',
+    color: active ? 'var(--purple-lite)' : 'var(--muted)',
     transition: 'all 150ms',
   })
   const input: React.CSSProperties = {
-    background: '#0e1228',
-    border: '1px solid rgba(124,58,237,0.3)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.3)',
     borderRadius: 6,
-    color: '#aabbd0',
+    color: 'var(--text)',
     padding: '8px 12px',
     fontSize: 13,
     fontFamily: "'Chakra Petch', sans-serif",
@@ -127,7 +127,7 @@ export function SaveLoadDialog() {
     cursor: 'pointer',
     border: 'none',
     background: '#4c1d95',
-    color: '#c4b5fd',
+    color: 'var(--purple-lite)',
     transition: 'all 150ms',
   }
 
@@ -137,8 +137,8 @@ export function SaveLoadDialog() {
         <div style={{
           fontFamily: "'Press Start 2P', monospace",
           fontSize: 11,
-          color: '#00FFFF',
-          textShadow: '0 0 10px rgba(0,255,255,0.5)',
+          color: 'var(--cyan)',
+          textShadow: '0 0 10px rgba(var(--cyan-rgb),0.5)',
         }}>
           SAVE / LOAD
         </div>
@@ -153,7 +153,7 @@ export function SaveLoadDialog() {
         {tab === 'save' && (
           <>
             <div>
-              <div style={{ color: '#505c78', fontSize: 11, marginBottom: 6 }}>ファイル名</div>
+              <div style={{ color: 'var(--muted)', fontSize: 11, marginBottom: 6 }}>ファイル名</div>
               <input
                 style={input}
                 value={saveName}
@@ -162,7 +162,7 @@ export function SaveLoadDialog() {
               />
             </div>
             {!dirHandle && (
-              <div style={{ color: '#f59e0b', fontSize: 11 }}>
+              <div style={{ color: 'var(--warning)', fontSize: 11 }}>
                 ※ ライブラリフォルダ未設定のため、ダウンロードとして保存します
               </div>
             )}
@@ -184,7 +184,7 @@ export function SaveLoadDialog() {
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 4,
                 maxHeight: 240, overflowY: 'auto',
-                border: '1px solid rgba(124,58,237,0.15)',
+                border: '1px solid rgba(var(--purple-rgb),0.15)',
                 borderRadius: 6,
               }}>
                 {saveList.map(name => (
@@ -193,12 +193,12 @@ export function SaveLoadDialog() {
                     style={{
                       padding: '8px 12px',
                       cursor: 'pointer',
-                      color: '#aabbd0',
+                      color: 'var(--text)',
                       fontSize: 12,
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
                       transition: 'background 100ms',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.1)')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb),0.1)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                     onClick={() => handleLoad(name)}
                   >
@@ -208,12 +208,12 @@ export function SaveLoadDialog() {
               </div>
             )}
             {dirHandle && saveList.length === 0 && (
-              <div style={{ color: '#505c78', fontSize: 12, textAlign: 'center', padding: 16 }}>
+              <div style={{ color: 'var(--muted)', fontSize: 12, textAlign: 'center', padding: 16 }}>
                 保存データがありません
               </div>
             )}
             <button
-              style={{ ...btn, background: '#1a1a2e', color: '#94A3B8', border: '1px solid #303050' }}
+              style={{ ...btn, background: '#1a1a2e', color: 'var(--text)', border: '1px solid #303050' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#22223a')}
               onMouseLeave={e => (e.currentTarget.style.background = '#1a1a2e')}
               onClick={handleUploadLoad}
@@ -225,14 +225,14 @@ export function SaveLoadDialog() {
 
         {/* ステータス */}
         {status && (
-          <div style={{ color: '#22c55e', fontSize: 12 }}>{status}</div>
+          <div style={{ color: 'var(--success)', fontSize: 12 }}>{status}</div>
         )}
 
         <button
           onClick={closeDialog}
           style={{
             background: 'transparent', border: 'none',
-            color: '#505c78', cursor: 'pointer',
+            color: 'var(--muted)', cursor: 'pointer',
             fontSize: 11, fontFamily: "'Chakra Petch', sans-serif",
             alignSelf: 'flex-end',
           }}
