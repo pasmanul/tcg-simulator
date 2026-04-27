@@ -42,8 +42,8 @@ export function StackDialog() {
     zIndex: 2000,
   }
   const dialog: React.CSSProperties = {
-    background: '#080c1c',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
     borderRadius: 12,
     padding: 24,
     width: 400,
@@ -58,8 +58,8 @@ export function StackDialog() {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '8px 12px',
     borderRadius: 6,
-    border: '1px solid rgba(124,58,237,0.15)',
-    background: '#0e1228',
+    border: '1px solid rgba(var(--purple-rgb),0.15)',
+    background: 'var(--surface2)',
   }
   const detachBtn: React.CSSProperties = {
     fontFamily: "'Press Start 2P', monospace",
@@ -86,7 +86,7 @@ export function StackDialog() {
           STACK ({allCards.length})
         </div>
 
-        <div style={{ color: '#505c78', fontSize: 11 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 11 }}>
           上から順に表示。「切り離す」でゾーンに戻します。
         </div>
 
@@ -104,7 +104,7 @@ export function StackDialog() {
                 {i + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#aabbd0', fontSize: 13 }}>{gc.card.name}</div>
+                <div style={{ color: 'var(--text)', fontSize: 13 }}>{gc.card.name}</div>
               </div>
               {i > 0 && (
                 <button
@@ -128,7 +128,7 @@ export function StackDialog() {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#505c78',
+            color: 'var(--muted)',
             cursor: 'pointer',
             fontSize: 11,
             fontFamily: "'Chakra Petch', sans-serif",
