@@ -26,12 +26,11 @@ body {
   background: var(--bg2, #080818);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--purple, #7C3AED);
-  opacity: 0.4;
+  background: rgba(var(--purple-rgb, 124,58,237), 0.4);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  opacity: 0.7;
+  background: rgba(var(--purple-rgb, 124,58,237), 0.7);
 }
 
 /* Konva canvas */

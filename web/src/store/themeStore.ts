@@ -3,6 +3,14 @@ import { THEMES, darkCyber, type Theme } from '../theme'
 
 const STORAGE_KEY = 'tcg-sim-theme'
 
+function hexToRgbString(hex: string): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  return `${r},${g},${b}`
+}
+
 function applyTheme(theme: Theme) {
   try {
     const r = document.documentElement.style
@@ -17,6 +25,7 @@ function applyTheme(theme: Theme) {
     r.setProperty('--text',        theme.tokens.text)
     r.setProperty('--muted',       theme.tokens.muted)
     r.setProperty('--border',      theme.tokens.border)
+    r.setProperty('--purple-rgb',  hexToRgbString(theme.tokens.purple))
 
     // スタイルオプション
     r.setProperty('--font-body',   theme.style?.fontBody   ?? "'Chakra Petch', sans-serif")
