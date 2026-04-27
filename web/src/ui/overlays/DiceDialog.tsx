@@ -68,8 +68,8 @@ export function DiceDialog() {
     zIndex: 2000,
   }
   const dialog: React.CSSProperties = {
-    background: '#080c1c',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
     borderRadius: 12,
     padding: 24,
     width: 360,
@@ -86,8 +86,8 @@ export function DiceDialog() {
         <div style={{
           fontFamily: "'Press Start 2P', monospace",
           fontSize: 11,
-          color: '#00FFFF',
-          textShadow: '0 0 10px rgba(0,255,255,0.5)',
+          color: 'var(--cyan)',
+          textShadow: '0 0 10px rgba(var(--cyan-rgb),0.5)',
         }}>
           DICE ROLLER
         </div>
@@ -104,9 +104,9 @@ export function DiceDialog() {
                 padding: '6px 10px',
                 borderRadius: 6,
                 cursor: 'pointer',
-                border: `1px solid ${sides === d ? '#7C3AED' : 'rgba(124,58,237,0.3)'}`,
-                background: sides === d ? '#4c1d95' : '#0e1228',
-                color: sides === d ? '#c4b5fd' : '#6672a0',
+                border: `1px solid ${sides === d ? 'var(--purple)' : 'rgba(var(--purple-rgb),0.3)'}`,
+                background: sides === d ? '#4c1d95' : 'var(--surface2)',
+                color: sides === d ? 'var(--purple-lite)' : '#6672a0',
                 transition: 'all 150ms',
               }}
             >
@@ -120,16 +120,16 @@ export function DiceDialog() {
           textAlign: 'center',
           padding: '24px 0',
           borderRadius: 8,
-          background: '#0e1228',
-          border: '1px solid rgba(124,58,237,0.2)',
+          background: 'var(--surface2)',
+          border: '1px solid rgba(var(--purple-rgb),0.2)',
         }}>
           <div style={{
             fontFamily: "'Press Start 2P', monospace",
             fontSize: display !== null ? 56 : 32,
-            color: rolling ? '#7C3AED' : '#00FFFF',
+            color: rolling ? 'var(--purple)' : 'var(--cyan)',
             textShadow: rolling
-              ? '0 0 20px rgba(124,58,237,0.8)'
-              : display !== null ? '0 0 20px rgba(0,255,255,0.8)' : 'none',
+              ? '0 0 20px rgba(var(--purple-rgb),0.8)'
+              : display !== null ? '0 0 20px rgba(var(--cyan-rgb),0.8)' : 'none',
             minHeight: 80,
             display: 'flex',
             alignItems: 'center',
@@ -138,7 +138,7 @@ export function DiceDialog() {
           }}>
             {display !== null ? display : '?'}
           </div>
-          <div style={{ color: '#505c78', fontSize: 11, marginTop: 4 }}>
+          <div style={{ color: 'var(--muted)', fontSize: 11, marginTop: 4 }}>
             d{sides}
           </div>
         </div>
@@ -155,9 +155,9 @@ export function DiceDialog() {
             cursor: rolling ? 'not-allowed' : 'pointer',
             border: 'none',
             background: rolling ? '#1a1a2e' : '#4c1d95',
-            color: rolling ? '#505c78' : '#c4b5fd',
+            color: rolling ? 'var(--muted)' : 'var(--purple-lite)',
             transition: 'all 150ms',
-            boxShadow: rolling ? 'none' : '0 0 16px rgba(124,58,237,0.4)',
+            boxShadow: rolling ? 'none' : '0 0 16px rgba(var(--purple-rgb),0.4)',
           }}
           onMouseEnter={e => { if (!rolling) e.currentTarget.style.background = '#5b21b6' }}
           onMouseLeave={e => { if (!rolling) e.currentTarget.style.background = '#4c1d95' }}
@@ -168,7 +168,7 @@ export function DiceDialog() {
         {/* 履歴 */}
         {history.length > 0 && (
           <div>
-            <div style={{ color: '#505c78', fontSize: 10, fontFamily: "'Press Start 2P', monospace", marginBottom: 6 }}>
+            <div style={{ color: 'var(--muted)', fontSize: 10, fontFamily: "'Press Start 2P', monospace", marginBottom: 6 }}>
               HISTORY
             </div>
             <div style={{
@@ -180,8 +180,8 @@ export function DiceDialog() {
                   display: 'flex', justifyContent: 'space-between',
                   padding: '3px 8px',
                   borderRadius: 4,
-                  background: i === 0 ? 'rgba(124,58,237,0.1)' : 'transparent',
-                  color: i === 0 ? '#a78bfa' : '#505c78',
+                  background: i === 0 ? 'rgba(var(--purple-rgb),0.1)' : 'transparent',
+                  color: i === 0 ? 'var(--purple-lite)' : 'var(--muted)',
                   fontSize: 12,
                 }}>
                   <span>d{h.sides}</span>
@@ -199,7 +199,7 @@ export function DiceDialog() {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#505c78',
+            color: 'var(--muted)',
             cursor: 'pointer',
             fontSize: 11,
             fontFamily: "'Chakra Petch', sans-serif",

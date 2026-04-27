@@ -38,12 +38,12 @@ export function GameLoadDialog() {
   }
 
   const modal: React.CSSProperties = {
-    background: '#0e1228',
-    border: '1px solid rgba(124,58,237,0.5)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.5)',
     borderRadius: 16,
     padding: 32,
     width: 460,
-    boxShadow: '0 0 60px rgba(124,58,237,0.3)',
+    boxShadow: '0 0 60px rgba(var(--purple-rgb),0.3)',
     fontFamily: "'Chakra Petch', sans-serif",
   }
 
@@ -64,15 +64,15 @@ export function GameLoadDialog() {
         <h2 style={{
           fontFamily: "'Press Start 2P', monospace",
           fontSize: 14,
-          color: '#00FFFF',
-          textShadow: '0 0 20px rgba(0,255,255,0.7)',
+          color: 'var(--cyan)',
+          textShadow: '0 0 20px rgba(var(--cyan-rgb),0.7)',
           marginBottom: 8,
           lineHeight: 1.6,
         }}>
           GAME PROFILE
         </h2>
 
-        <p style={{ color: '#94A3B8', fontSize: 12, marginBottom: 24, lineHeight: 1.7 }}>
+        <p style={{ color: 'var(--text)', fontSize: 12, marginBottom: 24, lineHeight: 1.7 }}>
           既存のゲームプロファイルを開くか、<br />
           新規ゲームをセットアップしてください。
         </p>
@@ -105,7 +105,7 @@ export function GameLoadDialog() {
           style={{
             ...btnBase,
             background: 'transparent',
-            color: '#505c78',
+            color: 'var(--muted)',
             border: '1px solid rgba(255,255,255,0.1)',
             marginTop: 8,
             marginBottom: 0,
