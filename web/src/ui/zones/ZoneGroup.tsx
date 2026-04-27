@@ -7,6 +7,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { zoneColors, CARD_W, CARD_H } from '../../theme'
+import { useThemeStore } from '../../store/themeStore'
 import { calcCardPositions } from '../hooks/useCardLayout'
 import { CardShape } from '../cards/CardShape'
 import { logCardName } from '../../domain/gameLogic'
@@ -48,7 +49,8 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   const cardBackUrl = useLibraryStore(s => s.cardBackUrl)
   const [backImg] = useImage(cardBackUrl)
 
-  const colors = zoneColors(zoneDef.id)
+  const zonePalette = useThemeStore(s => s.currentTheme.zonePalette)
+  const colors = zoneColors(zoneDef.id, zonePalette)
   const cardScale = zoneDef.card_scale ?? 1.0
 
   const TITLE_H = 22
