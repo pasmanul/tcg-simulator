@@ -27,8 +27,8 @@ export function ThemeDialog() {
     >
       <div
         style={{
-          background: '#08091e',
-          border: '1px solid rgba(124,58,237,0.4)',
+          background: 'var(--bg2, #08091e)',
+          border: '1px solid var(--border, rgba(124,58,237,0.4))',
           borderRadius: 10,
           boxShadow: '0 0 40px rgba(124,58,237,0.3)',
           width: 420,
@@ -43,12 +43,12 @@ export function ThemeDialog() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '14px 18px',
-          borderBottom: '1px solid rgba(124,58,237,0.2)',
+          borderBottom: '1px solid var(--border, rgba(124,58,237,0.2))',
         }}>
           <span style={{
             fontFamily: "'Press Start 2P', monospace",
             fontSize: 9,
-            color: '#A78BFA',
+            color: 'var(--purple-lite, #A78BFA)',
             textShadow: '0 0 10px rgba(167,139,250,0.5)',
           }}>
             🎨 THEME
@@ -58,7 +58,7 @@ export function ThemeDialog() {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#505c78',
+              color: 'var(--muted, #505c78)',
               fontSize: 18,
               cursor: 'pointer',
               lineHeight: 1,
@@ -84,7 +84,7 @@ export function ThemeDialog() {
                 style={{
                   background: isActive ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.03)',
                   border: isActive
-                    ? '2px solid #7C3AED'
+                    ? '2px solid var(--purple, #7C3AED)'
                     : '1px solid rgba(124,58,237,0.2)',
                   borderRadius: 8,
                   padding: '10px 12px',
@@ -118,13 +118,13 @@ export function ThemeDialog() {
                 <div style={{
                   fontFamily: "'Press Start 2P', monospace",
                   fontSize: 7,
-                  color: isActive ? '#c4b5fd' : '#8899bb',
+                  color: isActive ? 'var(--purple-lite, #c4b5fd)' : 'var(--muted, #8899bb)',
                   marginBottom: isActive ? 4 : 0,
                 }}>
                   {theme.name}
                 </div>
                 {isActive && (
-                  <div style={{ fontSize: 9, color: '#7C3AED' }}>✓ 選択中</div>
+                  <div style={{ fontSize: 9, color: 'var(--purple, #7C3AED)' }}>✓ 選択中</div>
                 )}
               </button>
             )
