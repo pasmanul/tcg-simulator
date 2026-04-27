@@ -91,7 +91,78 @@ body {
 `,
 }
 
-export const THEMES: Theme[] = [darkCyber, crimsonCourt]
+export const neonArcade: Theme = {
+  id: 'neon-arcade',
+  name: 'Neon Arcade',
+  tokens: {
+    bg:         '#050010',
+    bg2:        '#020008',
+    purple:     '#FF00FF',
+    purpleLite: '#FF66FF',
+    cyan:       '#00FF41',
+    pink:       '#FFFF00',
+    text:       '#E8FFE8',
+    muted:      '#506050',
+    border:     'rgba(255,0,255,0.40)',
+  },
+  zonePalette: {
+    battle:    ['#1a0010', '#0d0008', '#ff0066', '#ff66aa', '#220014'],
+    mana:      ['#001800', '#000c00', '#00cc44', '#00ff66', '#001600'],
+    shield:    ['#001818', '#000c0c', '#00bbcc', '#00eeff', '#001616'],
+    graveyard: ['#100010', '#080008', '#cc00cc', '#ff44ff', '#140014'],
+    deck:      ['#080818', '#04040c', '#4444ff', '#8888ff', '#060616'],
+    hand:      ['#181000', '#0c0800', '#cc8800', '#ffcc44', '#160e00'],
+    temp:      ['#080808', '#040404', '#448844', '#77bb77', '#060606'],
+  },
+  style: {
+    fontBody:      "'VT323', 'Courier New', monospace",
+    fontMono:      "'Press Start 2P', monospace",
+    borderRadius:  2,
+    glowIntensity: 1.8,
+  },
+  cssOverrides: `
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+@keyframes neon-scanline {
+  0%   { top: -4px; opacity: 0.8; }
+  100% { top: 100vh; opacity: 0.3; }
+}
+
+@keyframes neon-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93%            { opacity: 0.85; }
+  94%            { opacity: 1; }
+  97%            { opacity: 0.7; }
+  98%            { opacity: 1; }
+}
+
+@keyframes border-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,0,255,0.4); }
+  50%       { box-shadow: 0 0 18px rgba(255,0,255,0.9), 0 0 6px rgba(0,255,65,0.4); }
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,65,0.6), rgba(255,0,255,0.6), transparent);
+  animation: neon-scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+body {
+  animation: neon-flicker 10s infinite;
+}
+
+canvas {
+  filter: contrast(1.08) brightness(1.02) saturate(1.3) !important;
+}
+`,
+}
+
+export const THEMES: Theme[] = [darkCyber, crimsonCourt, neonArcade]
 
 // --- 後方互換：既存コードが直接インポートしているものを維持 ---
 
