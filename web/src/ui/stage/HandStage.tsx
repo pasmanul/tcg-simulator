@@ -7,7 +7,6 @@ import { useStageSize, gridToPixel } from '../hooks/useStageSize'
 import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
 import { DeckListPanel } from '../zones/DeckListPanel'
-import { TOKENS } from '../../theme'
 import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
 export function HandStage() {
@@ -55,7 +54,7 @@ export function HandStage() {
 
   return (
     <div
-      style={{ flex: 1, background: TOKENS.bg, position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}
+      className="flex-1 bg-bg relative flex flex-col overflow-hidden min-h-0"
       onClick={() => closeContextMenu()}
     >
       {/* Konva stage for hand + temp zones */}

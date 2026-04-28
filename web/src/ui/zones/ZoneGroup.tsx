@@ -50,6 +50,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   const [backImg] = useImage(cardBackUrl)
 
   const zonePalette = useThemeStore(s => s.currentTheme.zonePalette)
+  const tokens = useThemeStore(s => s.currentTheme.tokens)
   const colors = zoneColors(zoneDef.id, zonePalette)
   const cardScale = zoneDef.card_scale ?? 1.0
 
@@ -194,7 +195,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
               <Rect
                 x={pileX} y={pileY}
                 width={pileCardW} height={pileCardH}
-                fill="#061420"
+                fill={tokens.bg2}
                 stroke={colors.border}
                 strokeWidth={2}
                 cornerRadius={6}
@@ -209,9 +210,9 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
               return (
                 <>
                   <Rect x={bx} y={by} width={bw} height={bh}
-                    fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} />
+                    fill={tokens.surface2} stroke={tokens.cyan} strokeWidth={1} cornerRadius={3} />
                   <Text x={bx} y={by + 2} width={bw} align="center"
-                    text={bt} fontSize={9} fill="#ffdd66"
+                    text={bt} fontSize={9} fill={tokens.purpleLite}
                     fontFamily="'Press Start 2P', monospace" />
                 </>
               )
@@ -259,9 +260,9 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
         return (
           <>
             <Rect x={bx} y={by} width={bw} height={bh}
-              fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} listening={false} />
+              fill={tokens.surface2} stroke={tokens.cyan} strokeWidth={1} cornerRadius={3} listening={false} />
             <Text x={bx} y={by + 2} width={bw} align="center"
-              text={bt} fontSize={9} fill="#ffdd66"
+              text={bt} fontSize={9} fill={tokens.purpleLite}
               fontFamily="'Press Start 2P', monospace" listening={false} />
           </>
         )
