@@ -8,7 +8,7 @@ import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
-import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
+import { PAGE_STYLE } from '../pageLayout'
 import type { Card } from '../../domain/types'
 
 function DeckPanelHeader() {
@@ -267,7 +267,6 @@ export function DeckPage() {
 
   return (
     <div style={PAGE_STYLE}>
-      <div style={CRT_STYLE} />
 
       {/* プロファイル情報バー */}
       <div style={{

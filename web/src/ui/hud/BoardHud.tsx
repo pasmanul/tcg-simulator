@@ -64,8 +64,8 @@ export function BoardHud() {
       display: 'flex',
       gap: 8,
       padding: '6px 12px',
-      background: '#08091a',
-      borderBottom: '1px solid rgba(124,58,237,0.2)',
+      background: 'var(--surface)',
+      borderBottom: '1px solid rgba(var(--purple-rgb),0.2)',
       alignItems: 'center',
     }}>
       {/* ハンバーガーメニュー */}

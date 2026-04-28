@@ -25,8 +25,8 @@ export function DeckDropDialog() {
     zIndex: 2000,
   }
   const dialog: React.CSSProperties = {
-    background: '#080c1c',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface2)',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
     borderRadius: 12,
     padding: '24px 32px',
     display: 'flex',
@@ -42,9 +42,9 @@ export function DeckDropDialog() {
     padding: '10px 24px',
     borderRadius: 8,
     cursor: 'pointer',
-    border: '1px solid rgba(124,58,237,0.4)',
-    background: '#0e1228',
-    color: '#aabbd0',
+    border: '1px solid rgba(var(--purple-rgb),0.4)',
+    background: 'var(--surface2)',
+    color: 'var(--text)',
     transition: 'all 150ms',
     minWidth: 120,
   }
@@ -55,12 +55,12 @@ export function DeckDropDialog() {
         <div style={{
           fontFamily: "'Press Start 2P', monospace",
           fontSize: 10,
-          color: '#00FFFF',
-          textShadow: '0 0 10px rgba(0,255,255,0.5)',
+          color: 'var(--cyan)',
+          textShadow: '0 0 10px rgba(var(--cyan-rgb),0.5)',
         }}>
           山札に追加
         </div>
-        <div style={{ color: '#505c78', fontSize: 12 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 12 }}>
           どこに追加しますか？
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
@@ -68,13 +68,13 @@ export function DeckDropDialog() {
             style={btn}
             onMouseEnter={e => {
               e.currentTarget.style.background = '#1a1a3a'
-              e.currentTarget.style.borderColor = '#7C3AED'
-              e.currentTarget.style.color = '#c4b5fd'
+              e.currentTarget.style.borderColor = 'var(--purple)'
+              e.currentTarget.style.color = 'var(--purple-lite)'
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = '#0e1228'
-              e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'
-              e.currentTarget.style.color = '#aabbd0'
+              e.currentTarget.style.background = 'var(--surface2)'
+              e.currentTarget.style.borderColor = 'rgba(var(--purple-rgb),0.4)'
+              e.currentTarget.style.color = 'var(--text)'
             }}
             onClick={() => handleChoose(true)}
           >
@@ -84,13 +84,13 @@ export function DeckDropDialog() {
             style={btn}
             onMouseEnter={e => {
               e.currentTarget.style.background = '#1a1a3a'
-              e.currentTarget.style.borderColor = '#7C3AED'
-              e.currentTarget.style.color = '#c4b5fd'
+              e.currentTarget.style.borderColor = 'var(--purple)'
+              e.currentTarget.style.color = 'var(--purple-lite)'
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = '#0e1228'
-              e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'
-              e.currentTarget.style.color = '#aabbd0'
+              e.currentTarget.style.background = 'var(--surface2)'
+              e.currentTarget.style.borderColor = 'rgba(var(--purple-rgb),0.4)'
+              e.currentTarget.style.color = 'var(--text)'
             }}
             onClick={() => handleChoose(false)}
           >

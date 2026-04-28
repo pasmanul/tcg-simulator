@@ -11,9 +11,9 @@ html, body, #root {
 }
 
 body {
-  background: #0F0F23;
-  color: #E2E8F0;
-  font-family: 'Chakra Petch', sans-serif;
+  background: var(--bg, #0F0F23);
+  color: var(--text, #E2E8F0);
+  font-family: var(--font-body, 'Chakra Petch', sans-serif);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -23,14 +23,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #080818;
+  background: var(--bg2, #080818);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(124,58,237,0.4);
+  background: rgba(var(--purple-rgb, 124,58,237), 0.4);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(124,58,237,0.7);
+  background: rgba(var(--purple-rgb, 124,58,237), 0.7);
 }
 
 /* Konva canvas */

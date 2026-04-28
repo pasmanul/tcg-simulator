@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { GameCard, ActionLogEntry } from '../domain/types'
 
-export type DialogType = 'setup' | 'setup-wizard' | 'search' | 'dice' | 'save-load' | 'field-editor' | 'zone-inline-editor' | null
+export type DialogType = 'setup' | 'setup-wizard' | 'search' | 'dice' | 'save-load' | 'field-editor' | 'zone-inline-editor' | 'theme' | null
 
 interface ContextMenuState {
   x: number

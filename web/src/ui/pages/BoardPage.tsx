@@ -22,8 +22,9 @@ import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { BoardSidebar, type SidebarItem } from '../overlays/BoardSidebar'
 import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
 import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
+import { ThemeDialog } from '../overlays/ThemeDialog'
 import { DeckPage } from './DeckPage'
-import { CRT_STYLE, PAGE_STYLE } from '../pageLayout'
+import { PAGE_STYLE } from '../pageLayout'
 
 function makeDummyCard(index: number): GameCard {
   const card: Card = {
@@ -96,6 +97,12 @@ export function BoardPage() {
       description: 'ゾーン詳細設定',
       onClick: () => { setBoardEditorOpen(true); useUIStore.getState().closeSidebar() },
     },
+    {
+      icon: '🎨',
+      label: 'THEME',
+      description: 'カラーテーマ変更',
+      onClick: () => { useUIStore.getState().openDialog('theme'); useUIStore.getState().closeSidebar() },
+    },
   ]
 
   function handleBoardEditorSave(config: GameConfigJson) {
@@ -134,8 +141,6 @@ export function BoardPage() {
 
   return (
     <div style={PAGE_STYLE}>
-      <div style={CRT_STYLE} />
-
       {/* HUD bar */}
       <BoardHud />
 
@@ -160,6 +165,7 @@ export function BoardPage() {
       <CardZoomOverlay />
       <GameSetupWizard />
       <FieldEditorDialog />
+      <ThemeDialog />
       <BoardSidebar items={sidebarItems} />
       {boardEditorOpen && (
         <BoardEditorDialog

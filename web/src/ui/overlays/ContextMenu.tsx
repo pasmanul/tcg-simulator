@@ -71,8 +71,8 @@ export function ContextMenu() {
     left: Math.min(x, window.innerWidth - 200),
     top: Math.min(y, window.innerHeight - 300),
     width: 190,
-    background: '#0e1228',
-    border: '1px solid rgba(124,58,237,0.4)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(var(--purple-rgb), 0.4)',
     borderRadius: 8,
     zIndex: 1000,
     overflow: 'hidden',
@@ -84,15 +84,15 @@ export function ContextMenu() {
   const itemStyle: React.CSSProperties = {
     padding: '7px 14px',
     cursor: 'pointer',
-    color: '#aabbd0',
+    color: 'var(--text)',
     borderBottom: '1px solid rgba(255,255,255,0.04)',
     transition: 'background 150ms',
   }
 
   const headerStyle: React.CSSProperties = {
     padding: '6px 14px',
-    background: '#080c1c',
-    color: '#505c78',
+    background: 'var(--surface)',
+    color: 'var(--muted)',
     fontSize: 10,
     fontFamily: "'Press Start 2P', monospace",
     letterSpacing: 0.5,
@@ -101,7 +101,7 @@ export function ContextMenu() {
 
   const labelStyle: React.CSSProperties = {
     padding: '5px 14px 2px',
-    color: '#505c78',
+    color: 'var(--muted)',
     fontSize: 10,
     letterSpacing: 0.5,
     textTransform: 'uppercase' as const,
@@ -126,8 +126,8 @@ export function ContextMenu() {
 
       {srcZoneDef?.pile_mode && (
         <div
-          style={{ ...itemStyle, color: '#00FFFF' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,255,255,0.1)')}
+          style={{ ...itemStyle, color: 'var(--cyan)' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--cyan-rgb), 0.1)')}
           onMouseLeave={e => (e.currentTarget.style.background = '')}
           onClick={() => action(() => openDialog('search'))}
         >
@@ -137,7 +137,7 @@ export function ContextMenu() {
 
       <div
         style={itemStyle}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb), 0.15)')}
         onMouseLeave={e => (e.currentTarget.style.background = '')}
         onClick={() => action(() => {
           tapCard(zoneId, cardInstanceId)
@@ -149,7 +149,7 @@ export function ContextMenu() {
 
       <div
         style={itemStyle}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb), 0.15)')}
         onMouseLeave={e => (e.currentTarget.style.background = '')}
         onClick={() => action(() => {
           flipCard(zoneId, cardInstanceId)

@@ -13,6 +13,6 @@ export const PAGE_STYLE: React.CSSProperties = {
   flexDirection: 'column',
   height: '100%',
   width: '100%',
-  background: '#0F0F23',
+  background: 'var(--bg, #0F0F23)',
   overflow: 'hidden',
 }
