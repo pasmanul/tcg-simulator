@@ -56,43 +56,43 @@ export function HandHud() {
       display: 'flex',
       gap: 8,
       padding: '6px 12px',
-      background: '#08091a',
-      borderBottom: '1px solid rgba(32,168,176,0.2)',
+      background: 'var(--surface)',
+      borderBottom: '1px solid var(--border)',
       alignItems: 'center',
       flexWrap: 'wrap',
     }}>
       <span style={{
-        fontFamily: "'VT323', monospace",
-        fontSize: 16,
-        color: '#55ddee',
-        textShadow: '0 0 10px rgba(0,255,255,0.4)',
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: 10,
+        color: 'var(--cyan)',
+        textShadow: '0 0 10px rgba(var(--cyan-rgb),0.4)',
         marginRight: 4,
       }}>
         手札
       </span>
 
       <button
-        style={{ ...btn, background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', border: 'none' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        style={{ ...btn, background: 'var(--btn-init-bg)', color: 'var(--btn-init-color)', border: 'var(--btn-init-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-init-bg-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-init-bg)' }}
         onClick={handleInit}
       >
         INIT FIELD
       </button>
 
       <button
-        style={{ ...btn, background: '#1a0c0c', color: '#eea0a0', border: '1px solid #803030' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#280e0e')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#1a0c0c')}
+        style={{ ...btn, background: 'var(--btn-undo-bg)', color: 'var(--btn-undo-color)', border: 'var(--btn-undo-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-undo-bg-hover)'; e.currentTarget.style.color = 'var(--btn-undo-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-undo-bg)'; e.currentTarget.style.color = 'var(--btn-undo-color)' }}
         onClick={undo}
       >
         UNDO
       </button>
 
       <button
-        style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060', marginLeft: 'auto' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
+        style={{ ...btn, background: 'var(--btn-load-bg)', color: 'var(--btn-load-color)', border: 'var(--btn-load-border)', marginLeft: 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-load-bg-hover)'; e.currentTarget.style.color = 'var(--btn-load-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-load-bg)'; e.currentTarget.style.color = 'var(--btn-load-color)' }}
         onClick={() => openDialog('setup')}
       >
         LOAD CARDS

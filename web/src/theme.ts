@@ -22,11 +22,31 @@ export interface ThemeStyle {
   cardAspect?: number
 }
 
+export interface ButtonColors {
+  bg: string
+  bgHover: string
+  color: string
+  colorHover: string
+  border: string
+}
+
+export interface ButtonPalette {
+  initField: ButtonColors
+  dice: ButtonColors
+  saveLoad: ButtonColors
+  undo: ButtonColors
+  hand: ButtonColors
+  deck: ButtonColors
+  loadCards: ButtonColors
+  zoneAction: ButtonColors
+}
+
 export interface Theme {
   id: string
   name: string
   tokens: ThemeTokens
   zonePalette: Record<string, [string, string, string, string, string]>
+  buttonPalette: ButtonPalette
   style?: ThemeStyle
   cssOverrides?: string
 }
@@ -56,6 +76,16 @@ export const darkCyber: Theme = {
     hand:      ['#061a1a', '#030e0e', '#20a8b0', '#55ddee', '#041818'],
     temp:      ['#0c1018', '#080c12', '#505c78', '#8899bb', '#0a0e18'],
   },
+  buttonPalette: {
+    initField: { bg: '#7C3AED', bgHover: '#6D28D9', color: '#ffffff', colorHover: '#ffffff', border: 'none' },
+    dice:      { bg: '#0d1035', bgHover: '#151d55', color: '#7799ee', colorHover: '#99bbff', border: '1px solid rgba(50,70,160,0.6)' },
+    saveLoad:  { bg: '#061816', bgHover: '#0d2a24', color: '#44bb99', colorHover: '#66ddbb', border: '1px solid rgba(30,100,80,0.6)' },
+    undo:      { bg: '#180808', bgHover: '#280c0c', color: '#dd7777', colorHover: '#ff9999', border: '1px solid rgba(120,30,30,0.6)' },
+    hand:      { bg: '#061412', bgHover: '#0d2220', color: '#44cc88', colorHover: '#66ee99', border: '1px solid rgba(25,90,60,0.6)' },
+    deck:      { bg: '#080820', bgHover: '#10103a', color: '#9977dd', colorHover: '#bbaaff', border: '1px solid rgba(60,40,140,0.6)' },
+    loadCards: { bg: '#060c1c', bgHover: '#0c1a32', color: '#6699cc', colorHover: '#88bbee', border: '1px solid rgba(30,60,110,0.6)' },
+    zoneAction:{ bg: 'rgba(8,10,24,0.85)', bgHover: 'rgba(18,24,55,0.92)', color: '#6688aa', colorHover: '#99ccee', border: '1px solid rgba(40,60,120,0.6)' },
+  },
 }
 
 export const crimsonCourt: Theme = {
@@ -82,6 +112,16 @@ export const crimsonCourt: Theme = {
     deck:      ['#0a1a0a', '#050d05', '#2a6b2a', '#5abf5a', '#081408'],
     hand:      ['#1a1208', '#0d0904', '#8b4513', '#cd8a3f', '#201408'],
     temp:      ['#161010', '#0c0808', '#6b5050', '#9b8080', '#120c0c'],
+  },
+  buttonPalette: {
+    initField: { bg: '#C41E3A', bgHover: '#a01830', color: '#ffffff', colorHover: '#ffffff', border: 'none' },
+    dice:      { bg: '#181006', bgHover: '#241806', color: '#c4982a', colorHover: '#D4AF37', border: '1px solid rgba(140,100,20,0.5)' },
+    saveLoad:  { bg: '#100e06', bgHover: '#1a1808', color: '#9a8850', colorHover: '#c0a868', border: '1px solid rgba(110,90,30,0.5)' },
+    undo:      { bg: '#1a0608', bgHover: '#260a0c', color: '#cc5566', colorHover: '#ee7788', border: '1px solid rgba(150,20,30,0.5)' },
+    hand:      { bg: '#140c04', bgHover: '#201408', color: '#b07040', colorHover: '#cc9050', border: '1px solid rgba(130,70,20,0.5)' },
+    deck:      { bg: '#100410', bgHover: '#180618', color: '#9050a0', colorHover: '#bb70cc', border: '1px solid rgba(100,20,100,0.5)' },
+    loadCards: { bg: '#0c0c0e', bgHover: '#141416', color: '#807060', colorHover: '#aa9980', border: '1px solid rgba(80,60,50,0.5)' },
+    zoneAction:{ bg: 'rgba(20,8,8,0.85)', bgHover: 'rgba(36,12,12,0.92)', color: '#7a5050', colorHover: '#cc8870', border: '1px solid rgba(140,40,40,0.4)' },
   },
   style: {
     fontBody:      "'Cinzel', 'Georgia', serif",
@@ -121,6 +161,16 @@ export const neonArcade: Theme = {
     deck:      ['#080818', '#04040c', '#4444ff', '#8888ff', '#060616'],
     hand:      ['#181000', '#0c0800', '#cc8800', '#ffcc44', '#160e00'],
     temp:      ['#080808', '#040404', '#448844', '#77bb77', '#060606'],
+  },
+  buttonPalette: {
+    initField: { bg: '#FF00FF', bgHover: '#cc00cc', color: '#000000', colorHover: '#000000', border: 'none' },
+    dice:      { bg: '#0e0010', bgHover: '#1a0020', color: '#ffee00', colorHover: '#ffff44', border: '1px solid rgba(180,0,180,0.6)' },
+    saveLoad:  { bg: '#001400', bgHover: '#002200', color: '#00cc44', colorHover: '#00ff55', border: '1px solid rgba(0,140,0,0.6)' },
+    undo:      { bg: '#1a0000', bgHover: '#2a0000', color: '#ff4444', colorHover: '#ff7777', border: '1px solid rgba(180,0,0,0.6)' },
+    hand:      { bg: '#001818', bgHover: '#002828', color: '#00dddd', colorHover: '#00ffff', border: '1px solid rgba(0,140,140,0.6)' },
+    deck:      { bg: '#000018', bgHover: '#000028', color: '#6666ff', colorHover: '#9999ff', border: '1px solid rgba(0,0,180,0.6)' },
+    loadCards: { bg: '#140c00', bgHover: '#201600', color: '#ff8800', colorHover: '#ffaa44', border: '1px solid rgba(180,80,0,0.6)' },
+    zoneAction:{ bg: 'rgba(4,0,14,0.85)', bgHover: 'rgba(10,0,26,0.92)', color: '#00cc55', colorHover: '#00ff66', border: '1px solid rgba(0,160,50,0.55)' },
   },
   style: {
     fontBody:      "'VT323', 'Courier New', monospace",
@@ -194,6 +244,16 @@ export const softPaper: Theme = {
     deck:      ['#f0f8ff', '#e8f2ff', '#2563eb', '#60a5fa', '#dceeff'],
     hand:      ['#f0faf8', '#e8f8f4', '#0d9488', '#34d399', '#dcf8f2'],
     temp:      ['#f4f4f4', '#ebebeb', '#8080a0', '#a0a0c0', '#e8e8ec'],
+  },
+  buttonPalette: {
+    initField: { bg: '#5B6AF0', bgHover: '#4a59df', color: '#ffffff', colorHover: '#ffffff', border: 'none' },
+    dice:      { bg: '#fff8ee', bgHover: '#ffeedd', color: '#b06820', colorHover: '#7a4010', border: '1px solid rgba(200,130,30,0.3)' },
+    saveLoad:  { bg: '#eefaf8', bgHover: '#ddf5f2', color: '#0a6a60', colorHover: '#065050', border: '1px solid rgba(14,165,160,0.25)' },
+    undo:      { bg: '#fff0f3', bgHover: '#ffe4e8', color: '#a01030', colorHover: '#800820', border: '1px solid rgba(224,81,107,0.25)' },
+    hand:      { bg: '#f0f9f4', bgHover: '#e0f5e8', color: '#0a6030', colorHover: '#085020', border: '1px solid rgba(16,160,80,0.25)' },
+    deck:      { bg: '#f0f2ff', bgHover: '#e4e8ff', color: '#3040a0', colorHover: '#203080', border: '1px solid rgba(91,106,240,0.25)' },
+    loadCards: { bg: '#f2f4f8', bgHover: '#e8ecf4', color: '#405080', colorHover: '#304060', border: '1px solid rgba(91,106,240,0.2)' },
+    zoneAction:{ bg: 'rgba(240,242,248,0.9)', bgHover: 'rgba(228,234,248,0.95)', color: '#506080', colorHover: '#3a4a6a', border: '1px solid rgba(91,106,240,0.2)' },
   },
   style: {
     fontBody:      "'Inter', 'Noto Sans JP', sans-serif",

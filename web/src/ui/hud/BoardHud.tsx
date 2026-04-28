@@ -73,9 +73,9 @@ export function BoardHud() {
         onClick={toggleSidebar}
         style={{
           background: 'transparent',
-          border: '1px solid rgba(124,58,237,0.3)',
+          border: '1px solid var(--border)',
           borderRadius: 5,
-          color: '#A78BFA',
+          color: 'var(--purple-lite)',
           fontSize: 16,
           lineHeight: 1,
           width: 30,
@@ -87,7 +87,7 @@ export function BoardHud() {
           flexShrink: 0,
           transition: 'all 150ms',
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb),0.15)')}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         aria-label="メニュー"
       >
@@ -97,71 +97,71 @@ export function BoardHud() {
       <span style={{
         fontFamily: "'Press Start 2P', monospace",
         fontSize: 10,
-        color: '#00FFFF',
-        textShadow: '0 0 12px rgba(0,255,255,0.6)',
+        color: 'var(--cyan)',
+        textShadow: '0 0 12px rgba(var(--cyan-rgb),0.6)',
         marginRight: 8,
       }}>
         TCG SIM
       </span>
 
       <button
-        style={{ ...btn, background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', border: 'none' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        style={{ ...btn, background: 'var(--btn-init-bg)', color: 'var(--btn-init-color)', border: 'var(--btn-init-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-init-bg-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-init-bg)' }}
         onClick={handleInit}
       >
         INIT FIELD
       </button>
 
       <button
-        style={{ ...btn, background: '#0e1440', color: '#a0b8ff', border: '1px solid #283880' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#141c60')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0e1440')}
+        style={{ ...btn, background: 'var(--btn-dice-bg)', color: 'var(--btn-dice-color)', border: 'var(--btn-dice-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-dice-bg-hover)'; e.currentTarget.style.color = 'var(--btn-dice-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-dice-bg)'; e.currentTarget.style.color = 'var(--btn-dice-color)' }}
         onClick={() => openDialog('dice')}
       >
         DICE
       </button>
 
       <button
-        style={{ ...btn, background: '#0c1820', color: '#88c4aa', border: '1px solid #204040' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#0f2030')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1820')}
+        style={{ ...btn, background: 'var(--btn-save-bg)', color: 'var(--btn-save-color)', border: 'var(--btn-save-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-save-bg-hover)'; e.currentTarget.style.color = 'var(--btn-save-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-save-bg)'; e.currentTarget.style.color = 'var(--btn-save-color)' }}
         onClick={() => openDialog('save-load')}
       >
         SAVE/LOAD
       </button>
 
       <button
-        style={{ ...btn, background: '#1a0c0c', color: '#eea0a0', border: '1px solid #803030' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#280e0e')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#1a0c0c')}
+        style={{ ...btn, background: 'var(--btn-undo-bg)', color: 'var(--btn-undo-color)', border: 'var(--btn-undo-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-undo-bg-hover)'; e.currentTarget.style.color = 'var(--btn-undo-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-undo-bg)'; e.currentTarget.style.color = 'var(--btn-undo-color)' }}
         onClick={undo}
       >
         UNDO
       </button>
 
       <button
-        style={{ ...btn, background: '#0c1c14', color: '#66ddaa', border: '1px solid #225040', marginLeft: 'auto' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102618')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1c14')}
+        style={{ ...btn, background: 'var(--btn-hand-bg)', color: 'var(--btn-hand-color)', border: 'var(--btn-hand-border)', marginLeft: 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-hand-bg-hover)'; e.currentTarget.style.color = 'var(--btn-hand-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-hand-bg)'; e.currentTarget.style.color = 'var(--btn-hand-color)' }}
         onClick={() => window.open('/hand.html', 'hand', 'width=540,height=720')}
       >
         HAND
       </button>
 
       <button
-        style={{ ...btn, background: '#0c0c28', color: '#aa88dd', border: '1px solid #404080' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
+        style={{ ...btn, background: 'var(--btn-deck-bg)', color: 'var(--btn-deck-color)', border: 'var(--btn-deck-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-deck-bg-hover)'; e.currentTarget.style.color = 'var(--btn-deck-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-deck-bg)'; e.currentTarget.style.color = 'var(--btn-deck-color)' }}
         onClick={openDeckPanel}
       >
         DECK
       </button>
 
       <button
-        style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
+        style={{ ...btn, background: 'var(--btn-load-bg)', color: 'var(--btn-load-color)', border: 'var(--btn-load-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-load-bg-hover)'; e.currentTarget.style.color = 'var(--btn-load-color-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-load-bg)'; e.currentTarget.style.color = 'var(--btn-load-color)' }}
         onClick={() => openDialog('setup')}
       >
         LOAD CARDS

@@ -36,6 +36,26 @@ function applyTheme(theme: Theme) {
     r.setProperty('--radius',      `${theme.style?.borderRadius ?? 6}px`)
     r.setProperty('--glow',        `${theme.style?.glowIntensity ?? 1}`)
 
+    // ボタンカラートークン
+    const btnMap: [string, keyof typeof theme.buttonPalette][] = [
+      ['init', 'initField'],
+      ['dice', 'dice'],
+      ['save', 'saveLoad'],
+      ['undo', 'undo'],
+      ['hand', 'hand'],
+      ['deck', 'deck'],
+      ['load', 'loadCards'],
+      ['zone', 'zoneAction'],
+    ]
+    for (const [cssKey, paletteKey] of btnMap) {
+      const b = theme.buttonPalette[paletteKey]
+      r.setProperty(`--btn-${cssKey}-bg`,          b.bg)
+      r.setProperty(`--btn-${cssKey}-bg-hover`,    b.bgHover)
+      r.setProperty(`--btn-${cssKey}-color`,       b.color)
+      r.setProperty(`--btn-${cssKey}-color-hover`, b.colorHover)
+      r.setProperty(`--btn-${cssKey}-border`,      b.border)
+    }
+
     // cssOverrides注入
     let styleEl = document.getElementById('theme-overrides') as HTMLStyleElement | null
     if (!styleEl) {

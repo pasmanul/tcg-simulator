@@ -16,9 +16,9 @@ const BTN: React.CSSProperties = {
   padding: '3px 7px',
   borderRadius: 3,
   cursor: 'pointer',
-  background: 'rgba(10,14,32,0.85)',
-  border: '1px solid rgba(60,90,140,0.7)',
-  color: '#99bbdd',
+  background: 'var(--btn-zone-bg)',
+  border: 'var(--btn-zone-border)',
+  color: 'var(--btn-zone-color)',
   lineHeight: 1.4,
   transition: 'background 150ms, color 150ms',
   whiteSpace: 'nowrap' as const,
@@ -58,8 +58,8 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
           <button
             key={b.label}
             style={{ ...BTN, flex: 1, textAlign: 'center' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-zone-bg-hover)'; e.currentTarget.style.color = 'var(--btn-zone-color-hover)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-zone-bg)'; e.currentTarget.style.color = 'var(--btn-zone-color)' }}
             onClick={b.onClick}
           >{b.label}</button>
         ))}
@@ -104,8 +104,8 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
         <button
           key={b.label}
           style={BTN}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-zone-bg-hover)'; e.currentTarget.style.color = 'var(--btn-zone-color-hover)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-zone-bg)'; e.currentTarget.style.color = 'var(--btn-zone-color)' }}
           onClick={b.onClick}
         >
           {b.label}
