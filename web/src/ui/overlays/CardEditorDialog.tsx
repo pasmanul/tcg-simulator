@@ -2,12 +2,34 @@ import { useState, useRef, useEffect } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
 import type { Card, FieldDef } from '../../domain/types'
 import { labelToId, ensureUniqueId } from './fieldDefShared'
+import { Dialog } from '../components/Dialog'
+import { Button } from '../components/Button'
 
 type NewFieldType = FieldDef['type']
 
 interface Props {
   onClose: () => void
-  card?: Card  // 編集モード時に渡す
+  card?: Card
+}
+
+const inp: React.CSSProperties = {
+  width: '100%',
+  background: 'var(--surface2)',
+  color: 'var(--text)',
+  border: '1px solid rgba(var(--purple-rgb),0.4)',
+  borderRadius: 4,
+  padding: '6px 10px',
+  fontFamily: 'var(--font-body)',
+  fontSize: 13,
+  boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  color: 'var(--muted)',
+  fontSize: 11,
+  marginBottom: 4,
+  marginTop: 14,
 }
 
 export function CardEditorDialog({ onClose, card }: Props) {
@@ -22,7 +44,6 @@ export function CardEditorDialog({ onClose, card }: Props) {
 
   const isEdit = !!card
 
-  // 初期値: 編集時は card.fields、新規は fieldDefs の default 値
   function buildInitialFields(): Record<string, any> {
     if (isEdit && card) return { ...card.fields }
     const init: Record<string, any> = {}
@@ -41,7 +62,6 @@ export function CardEditorDialog({ onClose, card }: Props) {
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // 新規フィールド追加UI
   const [showAddField, setShowAddField] = useState(false)
   const [newFieldLabel, setNewFieldLabel] = useState('')
   const [newFieldType, setNewFieldType] = useState<NewFieldType>('text')
@@ -157,23 +177,15 @@ export function CardEditorDialog({ onClose, card }: Props) {
         )
       case 'multi-select':
         return (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="flex gap-2 flex-wrap">
             {def.options?.map(o => {
               const cur: string[] = Array.isArray(fieldValues[def.id]) ? fieldValues[def.id] : []
               const active = cur.includes(o)
               return (
                 <label
                   key={o}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    cursor: 'pointer',
-                    color: active ? '#A78BFA' : '#555c78',
-                    fontSize: 12,
-                    userSelect: 'none',
-                    transition: 'color 100ms',
-                  }}
+                  className="flex items-center gap-1 cursor-pointer font-body text-xs select-none transition-colors duration-100"
+                  style={{ color: active ? 'var(--purple-lite)' : 'var(--muted)' }}
                 >
                   <input
                     type="checkbox"
@@ -182,7 +194,7 @@ export function CardEditorDialog({ onClose, card }: Props) {
                       const next = e.target.checked ? [...cur, o] : cur.filter(x => x !== o)
                       setField(def.id, next)
                     }}
-                    style={{ accentColor: '#A78BFA' }}
+                    style={{ accentColor: 'var(--purple-lite)' }}
                   />
                   {o}
                 </label>
@@ -195,267 +207,194 @@ export function CardEditorDialog({ onClose, card }: Props) {
     }
   }
 
-  const overlay: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    zIndex: 2000,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backdropFilter: 'blur(4px)',
-  }
-
-  const dialog: React.CSSProperties = {
-    background: '#0e1228',
-    border: '1px solid rgba(0,255,200,0.3)',
-    borderRadius: 16,
-    padding: 28,
-    width: 800,
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    boxShadow: '0 0 60px rgba(0,200,150,0.15)',
-    fontFamily: "'Chakra Petch', sans-serif",
-  }
-
-  const label: React.CSSProperties = {
-    display: 'block',
-    color: '#94A3B8',
-    fontSize: 11,
-    marginBottom: 4,
-    marginTop: 14,
-  }
-
-  const inp: React.CSSProperties = {
-    width: '100%',
-    background: '#0a0e1a',
-    color: '#E2E8F0',
-    border: '1px solid rgba(124,58,237,0.4)',
-    borderRadius: 4,
-    padding: '6px 10px',
-    fontFamily: "'Chakra Petch', sans-serif",
-    fontSize: 13,
-    boxSizing: 'border-box',
-  }
-
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={dialog} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <h2 style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 11,
-            color: '#00FFD0',
-            textShadow: '0 0 16px rgba(0,255,200,0.6)',
-          }}>
-            {isEdit ? 'EDIT CARD' : 'ADD CARD'}
-          </h2>
-          {isEdit && !confirmDelete && (
+    <Dialog
+      open={true}
+      onClose={onClose}
+      width="max-w-[800px]"
+      className="!bg-surface2"
+    >
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-mono text-[11px]" style={{ color: 'var(--cyan)', textShadow: '0 0 16px rgba(var(--cyan-rgb),0.6)' }}>
+          {isEdit ? 'EDIT CARD' : 'ADD CARD'}
+        </h2>
+        {isEdit && !confirmDelete && (
+          <Button
+            variant="danger"
+            size="sm"
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+          >
+            削除
+          </Button>
+        )}
+      </div>
+
+      {confirmDelete && (
+        <div
+          className="rounded-lg p-2.5 mb-3 flex items-center gap-2.5"
+          style={{ background: 'rgba(var(--pink-rgb),0.08)', border: '1px solid rgba(var(--pink-rgb),0.3)' }}
+        >
+          <span className="font-body text-xs flex-1" style={{ color: 'var(--pink)' }}>
+            「{card?.name}」を削除しますか？
+          </span>
+          <Button variant="danger" size="sm" onClick={handleDelete} disabled={saving}>はい</Button>
+          <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>いいえ</Button>
+        </div>
+      )}
+
+      <div className="flex gap-6 items-start">
+        <form className="flex-1 min-w-0" onSubmit={handleSubmit}>
+          <label style={labelStyle}>画像（任意）</label>
+          <div className="flex gap-2.5 items-center">
             <button
               type="button"
-              onClick={() => setConfirmDelete(true)}
-              style={{
-                fontFamily: "'Press Start 2P', monospace",
-                fontSize: 7,
-                padding: '5px 10px',
-                borderRadius: 5,
-                cursor: 'pointer',
-                background: '#200c0c',
-                color: '#dd6666',
-                border: '1px solid #502828',
-              }}
-            >削除</button>
-          )}
-        </div>
-
-        {confirmDelete && (
-          <div style={{
-            background: '#1a0a0a',
-            border: '1px solid #602020',
-            borderRadius: 8,
-            padding: '10px 14px',
-            marginBottom: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, color: '#ff8888', flex: 1 }}>
-              「{card?.name}」を削除しますか？
+              style={{ ...inp, width: 'auto', padding: '5px 12px', cursor: 'pointer', color: 'var(--purple-lite)', border: '1px solid rgba(var(--purple-rgb),0.5)' }}
+              onClick={() => fileRef.current?.click()}
+            >
+              ファイルを選択
+            </button>
+            <span className="font-body text-xs" style={{ color: 'var(--muted)' }}>
+              {imageFile ? imageFile.name : (isEdit && card?.image_data ? '登録済み' : '未選択')}
             </span>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp"
+            className="hidden"
+            onChange={handleFile}
+          />
+
+          <label style={labelStyle}>カード名 *</label>
+          <input
+            style={inp}
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="カード名"
+            autoFocus
+          />
+
+          {fieldDefs.map(def => (
+            <div key={def.id}>
+              <label style={labelStyle}>{def.label}</label>
+              {renderField(def)}
+            </div>
+          ))}
+
+          {!showAddField ? (
             <button
-              onClick={handleDelete}
+              type="button"
+              onClick={() => setShowAddField(true)}
+              className="mt-3 font-body text-xs px-2.5 py-1 rounded cursor-pointer transition-all"
+              style={{ background: 'transparent', color: 'var(--purple-lite)', border: '1px dashed rgba(var(--purple-rgb),0.5)' }}
+            >
+              + フィールド追加
+            </button>
+          ) : (
+            <div
+              className="mt-3 rounded-lg"
+              style={{ padding: '10px 12px', background: 'var(--bg2)', border: '1px solid rgba(var(--purple-rgb),0.4)' }}
+            >
+              <div className="flex gap-1.5 mb-1.5">
+                <input
+                  style={{ ...inp, flex: 1 }}
+                  type="text"
+                  placeholder="ラベル名"
+                  value={newFieldLabel}
+                  onChange={e => setNewFieldLabel(e.target.value)}
+                />
+                <select
+                  style={{ ...inp, width: 120 }}
+                  value={newFieldType}
+                  onChange={e => setNewFieldType(e.target.value as NewFieldType)}
+                >
+                  <option value="text">テキスト</option>
+                  <option value="number">数値</option>
+                  <option value="select">選択</option>
+                  <option value="multi-select">複数選択</option>
+                </select>
+              </div>
+              {(newFieldType === 'select' || newFieldType === 'multi-select') && (
+                <input
+                  style={{ ...inp, marginBottom: 6 }}
+                  type="text"
+                  placeholder="選択肢をカンマ区切りで (例: 赤,青,緑)"
+                  value={newFieldOptions}
+                  onChange={e => setNewFieldOptions(e.target.value)}
+                />
+              )}
+              {addFieldError && <p className="font-body text-xs mb-1.5" style={{ color: 'var(--danger)' }}>{addFieldError}</p>}
+              <div className="flex gap-1.5">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  style={{ background: 'linear-gradient(135deg,#6040cc,#402090)', color: '#fff', border: 'none' }}
+                  onClick={handleAddField}
+                >
+                  追加
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setShowAddField(false); setAddFieldError('') }}
+                >
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="font-body text-xs mt-2.5" style={{ color: 'var(--pink)' }}>{error}</p>
+          )}
+
+          <div className="flex gap-2 mt-5">
+            <button
+              type="submit"
               disabled={saving}
-              style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: '#2a0a0a', color: '#ff6666', border: '1px solid #602020' }}
-            >はい</button>
+              className="flex-1 font-mono text-[8px] rounded-theme cursor-pointer transition-all disabled:opacity-50 disabled:cursor-wait"
+              style={{ padding: '10px 0', background: 'linear-gradient(135deg, #00aa88, #006655)', color: '#fff', border: 'none' }}
+            >
+              {saving ? '保存中...' : (isEdit ? '更新' : '追加')}
+            </button>
             <button
-              onClick={() => setConfirmDelete(false)}
-              style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: '#111', color: '#888', border: '1px solid #333' }}
-            >いいえ</button>
+              type="button"
+              onClick={onClose}
+              className="flex-1 font-mono text-[8px] rounded-theme cursor-pointer transition-all"
+              style={{ padding: '10px 0', background: 'transparent', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              キャンセル
+            </button>
           </div>
-        )}
+        </form>
 
-        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-          <form style={{ flex: 1, minWidth: 0 }} onSubmit={handleSubmit}>
-            <label style={label}>画像（任意）</label>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button
-                type="button"
-                style={{
-                  ...inp,
-                  width: 'auto',
-                  padding: '5px 12px',
-                  cursor: 'pointer',
-                  color: '#A78BFA',
-                  border: '1px solid rgba(124,58,237,0.5)',
-                }}
-                onClick={() => fileRef.current?.click()}
-              >
-                ファイルを選択
-              </button>
-              <span style={{ color: '#505c78', fontSize: 11 }}>
-                {imageFile ? imageFile.name : (isEdit && card?.image_data ? '登録済み' : '未選択')}
+        {/* 右カラム: 画像プレビュー */}
+        <div
+          onClick={() => fileRef.current?.click()}
+          className="rounded-lg overflow-hidden cursor-pointer flex items-center justify-center transition-shadow duration-200"
+          style={{
+            width: 280,
+            flexShrink: 0,
+            aspectRatio: '150/210',
+            border: preview ? '1px solid rgba(var(--purple-rgb),0.5)' : '2px dashed rgba(var(--purple-rgb),0.3)',
+            background: 'var(--bg2)',
+            boxShadow: preview ? '0 0 30px rgba(var(--cyan-rgb),0.2)' : 'none',
+            alignSelf: 'flex-start',
+            marginTop: 14,
+          }}
+        >
+          {preview
+            ? <img src={preview} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <span className="font-body text-[10px] text-center p-2.5 leading-relaxed" style={{ color: 'var(--surface2)' }}>
+                クリックして<br />画像を選択
               </span>
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp"
-              style={{ display: 'none' }}
-              onChange={handleFile}
-            />
-
-            <label style={label}>カード名 *</label>
-            <input
-              style={inp}
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="カード名"
-              autoFocus
-            />
-
-            {fieldDefs.map(def => (
-              <div key={def.id}>
-                <label style={label}>{def.label}</label>
-                {renderField(def)}
-              </div>
-            ))}
-
-            {/* フィールド追加 */}
-            {!showAddField ? (
-              <button
-                type="button"
-                onClick={() => setShowAddField(true)}
-                style={{ marginTop: 12, fontFamily: "'Chakra Petch', sans-serif", fontSize: 11, padding: '4px 10px', borderRadius: 4, cursor: 'pointer', background: 'transparent', color: '#A78BFA', border: '1px dashed rgba(124,58,237,0.5)' }}
-              >+ フィールド追加</button>
-            ) : (
-              <div style={{ marginTop: 12, padding: '10px 12px', background: '#0a0e1a', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 6 }}>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                  <input
-                    style={{ ...inp, flex: 1 }}
-                    type="text"
-                    placeholder="ラベル名"
-                    value={newFieldLabel}
-                    onChange={e => setNewFieldLabel(e.target.value)}
-                  />
-                  <select
-                    style={{ ...inp, width: 120 }}
-                    value={newFieldType}
-                    onChange={e => setNewFieldType(e.target.value as NewFieldType)}
-                  >
-                    <option value="text">テキスト</option>
-                    <option value="number">数値</option>
-                    <option value="select">選択</option>
-                    <option value="multi-select">複数選択</option>
-                  </select>
-                </div>
-                {(newFieldType === 'select' || newFieldType === 'multi-select') && (
-                  <input
-                    style={{ ...inp, marginBottom: 6 }}
-                    type="text"
-                    placeholder="選択肢をカンマ区切りで (例: 赤,青,緑)"
-                    value={newFieldOptions}
-                    onChange={e => setNewFieldOptions(e.target.value)}
-                  />
-                )}
-                {addFieldError && <p style={{ color: '#ff6666', fontSize: 11, margin: '0 0 6px' }}>{addFieldError}</p>}
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={handleAddField} style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: 'linear-gradient(135deg,#6040cc,#402090)', color: '#fff', border: 'none' }}>追加</button>
-                  <button type="button" onClick={() => { setShowAddField(false); setAddFieldError('') }} style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, padding: '5px 10px', borderRadius: 4, cursor: 'pointer', background: 'transparent', color: '#555c78', border: '1px solid #333' }}>キャンセル</button>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <p style={{ color: '#ff6666', fontSize: 11, marginTop: 10 }}>{error}</p>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: 8,
-                  padding: '10px 0',
-                  borderRadius: 6,
-                  cursor: saving ? 'wait' : 'pointer',
-                  background: 'linear-gradient(135deg, #00aa88, #006655)',
-                  color: '#fff',
-                  border: 'none',
-                }}
-              >
-                {saving ? '保存中...' : (isEdit ? '更新' : '追加')}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  flex: 1,
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: 8,
-                  padding: '10px 0',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  color: '#505c78',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                キャンセル
-              </button>
-            </div>
-          </form>
-
-          {/* 右カラム: 画像プレビュー */}
-          <div
-            onClick={() => fileRef.current?.click()}
-            style={{
-              width: 280,
-              flexShrink: 0,
-              aspectRatio: '150/210',
-              borderRadius: 8,
-              border: preview ? '1px solid rgba(124,58,237,0.5)' : '2px dashed rgba(124,58,237,0.3)',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#080c1a',
-              boxShadow: preview ? '0 0 30px rgba(0,200,150,0.2)' : 'none',
-              transition: 'box-shadow 200ms',
-              alignSelf: 'flex-start',
-              marginTop: 14,
-            }}
-          >
-            {preview
-              ? <img src={preview} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              : <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 10, color: '#3a4060', textAlign: 'center', padding: 10, lineHeight: 1.6 }}>クリックして<br />画像を選択</span>
-            }
-          </div>
+          }
         </div>
       </div>
-    </div>
+    </Dialog>
   )
 }

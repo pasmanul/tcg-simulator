@@ -12,6 +12,13 @@ const MARKERS = [
   { id: null, label: 'なし' },
 ]
 
+const MARKER_BG: Record<string, string> = {
+  red: 'bg-red-500',
+  blue: 'bg-blue-500',
+  green: 'bg-green-500',
+  yellow: 'bg-yellow-400',
+}
+
 export function ContextMenu() {
   const { contextMenu, closeContextMenu, addLog, openDialog, openStackDialog } = useUIStore(s => ({
     contextMenu: s.contextMenu,
@@ -71,53 +78,26 @@ export function ContextMenu() {
     left: Math.min(x, window.innerWidth - 200),
     top: Math.min(y, window.innerHeight - 300),
     width: 190,
-    background: 'var(--surface)',
-    border: '1px solid rgba(var(--purple-rgb), 0.4)',
-    borderRadius: 8,
     zIndex: 1000,
-    overflow: 'hidden',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-    fontFamily: "'Chakra Petch', sans-serif",
-    fontSize: 12,
   }
 
-  const itemStyle: React.CSSProperties = {
-    padding: '7px 14px',
-    cursor: 'pointer',
-    color: 'var(--text)',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
-    transition: 'background 150ms',
-  }
-
-  const headerStyle: React.CSSProperties = {
-    padding: '6px 14px',
-    background: 'var(--surface)',
-    color: 'var(--muted)',
-    fontSize: 10,
-    fontFamily: "'Press Start 2P', monospace",
-    letterSpacing: 0.5,
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    padding: '5px 14px 2px',
-    color: 'var(--muted)',
-    fontSize: 10,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase' as const,
-  }
+  const itemBase = 'px-3.5 py-[7px] cursor-pointer text-text-base border-b border-white/[0.04] transition-colors duration-150 hover:bg-primary/15 font-body text-[12px]'
+  const labelBase = 'px-3.5 py-1 text-muted text-[10px] font-mono uppercase tracking-wide'
 
   return (
-    <div ref={ref} style={menuStyle}>
-      <div style={headerStyle}>
+    <div
+      ref={ref}
+      style={menuStyle}
+      className="bg-surface border border-primary/40 rounded-theme overflow-hidden shadow-2xl font-body"
+    >
+      {/* Header */}
+      <div className="px-3.5 py-1.5 bg-surface border-b border-white/[0.06] font-mono text-[10px] text-muted tracking-wide">
         {srcZoneDef?.visibility === 'private' || card.face_down ? '???' : card.card.name.slice(0, 18)}
       </div>
 
       {card.under_cards.length > 0 && (
         <div
-          style={{ ...itemStyle, color: '#e07020' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(224,112,32,0.15)')}
-          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          className="px-3.5 py-[7px] cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-orange-500/15 font-body text-[12px] text-orange-400"
           onClick={() => action(() => openStackDialog(card, zoneId))}
         >
           スタック確認 ({card.under_cards.length + 1})
@@ -126,9 +106,7 @@ export function ContextMenu() {
 
       {srcZoneDef?.pile_mode && (
         <div
-          style={{ ...itemStyle, color: 'var(--cyan)' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--cyan-rgb), 0.1)')}
-          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          className="px-3.5 py-[7px] cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-accent/10 font-body text-[12px] text-accent"
           onClick={() => action(() => openDialog('search'))}
         >
           サーチ
@@ -136,9 +114,7 @@ export function ContextMenu() {
       )}
 
       <div
-        style={itemStyle}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb), 0.15)')}
-        onMouseLeave={e => (e.currentTarget.style.background = '')}
+        className={itemBase}
         onClick={() => action(() => {
           tapCard(zoneId, cardInstanceId)
           addLog(`${cardName()} タップ/アンタップ`)
@@ -148,9 +124,7 @@ export function ContextMenu() {
       </div>
 
       <div
-        style={itemStyle}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(var(--purple-rgb), 0.15)')}
-        onMouseLeave={e => (e.currentTarget.style.background = '')}
+        className={itemBase}
         onClick={() => action(() => {
           flipCard(zoneId, cardInstanceId)
           addLog(`${cardName()} 裏返し`)
@@ -159,33 +133,26 @@ export function ContextMenu() {
         {card.face_down ? '表向きにする' : '裏向きにする'}
       </div>
 
-      <div style={labelStyle}>マーカー</div>
+      <div className={labelBase}>マーカー</div>
       {MARKERS.map(m => (
         <div
           key={String(m.id)}
-          style={{ ...itemStyle, display: 'flex', alignItems: 'center', gap: 8 }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
-          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          className="flex items-center gap-2 px-3.5 py-[7px] cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-primary/15 font-body text-[12px] text-text-base"
           onClick={() => action(() => setMarker(zoneId, cardInstanceId, m.id))}
         >
           {m.id && (
-            <div style={{
-              width: 10, height: 10, borderRadius: '50%',
-              background: { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308' }[m.id] ?? '#fff',
-            }} />
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${MARKER_BG[m.id] ?? 'bg-white'}`} />
           )}
           {m.label}
           {card.marker === m.id && ' ✓'}
         </div>
       ))}
 
-      <div style={labelStyle}>ゾーン移動</div>
+      <div className={labelBase}>ゾーン移動</div>
       {moveTargets.map((z, i) => (
         <div
           key={`${z.id}-${i}`}
-          style={itemStyle}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
-          onMouseLeave={e => (e.currentTarget.style.background = '')}
+          className={itemBase}
           onClick={() => action(() => {
             moveCard(zoneId, cardInstanceId, z.id, z.toIndex)
             addLog(`${cardName(z.id)} → ${z.label}`)

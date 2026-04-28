@@ -6,101 +6,8 @@ import type { FieldDef, GameProfile, GameConfigJson } from '../../domain/types'
 import defaultBoardConfig from '../../assets/gameConfig.json'
 import { BoardEditorDialog } from './BoardEditorDialog'
 import { FieldCard, labelToId, ensureUniqueId } from './fieldDefShared'
-
-// ──────────────────────────────────────────────
-// スタイル定数
-// ──────────────────────────────────────────────
-const overlay: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.75)',
-  zIndex: 2000,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backdropFilter: 'blur(4px)',
-}
-
-const dialog: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 16,
-  padding: 28,
-  width: 560,
-  maxHeight: '88vh',
-  overflowY: 'auto',
-  boxShadow: '0 0 60px rgba(var(--cyan-rgb, 0,200,150), 0.15)',
-  fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 0,
-}
-
-const titleStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
-  fontSize: 11,
-  color: 'var(--cyan)',
-  textShadow: '0 0 16px rgba(var(--cyan-rgb, 0,255,200), 0.6)',
-  margin: 0,
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  color: 'var(--muted)',
-  fontSize: 11,
-  marginBottom: 4,
-  marginTop: 14,
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--surface2)',
-  color: 'var(--text)',
-  border: '1px solid rgba(var(--purple-rgb, 124,58,237), 0.4)',
-  borderRadius: 4,
-  padding: '6px 10px',
-  fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)',
-  fontSize: 13,
-  boxSizing: 'border-box',
-}
-
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  cursor: 'pointer',
-}
-
-const primaryBtn: React.CSSProperties = {
-  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
-  fontSize: 8,
-  padding: '10px 16px',
-  borderRadius: 6,
-  cursor: 'pointer',
-  background: 'var(--purple)',
-  color: '#fff',
-  border: 'none',
-}
-
-const secondaryBtn: React.CSSProperties = {
-  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
-  fontSize: 8,
-  padding: '10px 16px',
-  borderRadius: 6,
-  cursor: 'pointer',
-  background: 'transparent',
-  color: 'var(--muted)',
-  border: '1px solid var(--border)',
-}
-
-const addBtn: React.CSSProperties = {
-  fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
-  fontSize: 7,
-  padding: '6px 12px',
-  borderRadius: 5,
-  cursor: 'pointer',
-  background: 'rgba(var(--cyan-rgb, 0,200,150), 0.08)',
-  color: 'var(--cyan)',
-  border: '1px solid rgba(var(--cyan-rgb, 0,200,150), 0.3)',
-}
+import { Button } from '../components/Button'
+import { Input } from '../components/Input'
 
 // ──────────────────────────────────────────────
 // プリセット
@@ -114,21 +21,17 @@ const FIELD_PRESETS: FieldDef[] = [
   { id: 'set',       label: 'セット',     type: 'text',         filterable: true },
 ]
 
-// ──────────────────────────────────────────────
-// ステップインジケーター
-// ──────────────────────────────────────────────
 const STEPS = ['基本情報', 'カード属性', 'ボード配置']
 
 function StepIndicator({ current }: { current: number }) {
   return (
-    <div style={{ display: 'flex', gap: 0, marginBottom: 24, marginTop: 4 }}>
+    <div className="flex mb-6 mt-1">
       {STEPS.map((label, i) => {
         const active = i === current
         const done = i < current
         return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            {/* connector line */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div className="flex items-center w-full">
               <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : (done || active ? 'var(--cyan)' : 'var(--surface2)') }} />
               <div style={{
                 width: 24,
@@ -137,9 +40,9 @@ function StepIndicator({ current }: { current: number }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily: 'var(--font-mono, "Press Start 2P", monospace)',
+                fontFamily: 'var(--font-mono)',
                 fontSize: 8,
-                background: done ? 'var(--cyan)' : (active ? 'rgba(var(--cyan-rgb, 0,200,150), 0.3)' : 'var(--surface2)'),
+                background: done ? 'var(--cyan)' : (active ? 'rgba(var(--cyan-rgb),0.3)' : 'var(--surface2)'),
                 border: `2px solid ${done || active ? 'var(--cyan)' : 'var(--border)'}`,
                 color: done || active ? 'var(--bg)' : 'var(--muted)',
                 flexShrink: 0,
@@ -148,7 +51,10 @@ function StepIndicator({ current }: { current: number }) {
               </div>
               <div style={{ flex: 1, height: 2, background: i === STEPS.length - 1 ? 'transparent' : (done ? 'var(--cyan)' : 'var(--surface2)') }} />
             </div>
-            <span style={{ fontSize: 9, color: active ? 'var(--cyan)' : (done ? 'var(--cyan)' : 'var(--muted)'), fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)' }}>
+            <span
+              className="text-[9px] font-body"
+              style={{ color: active ? 'var(--cyan)' : (done ? 'var(--cyan)' : 'var(--muted)') }}
+            >
               {label}
             </span>
           </div>
@@ -162,33 +68,22 @@ function StepIndicator({ current }: { current: number }) {
 // ウィザード本体
 // ──────────────────────────────────────────────
 export function GameSetupWizard() {
-  const { activeDialog, closeDialog, openDialog } = useUIStore(s => ({
+  const { activeDialog, closeDialog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,
-    openDialog: s.openDialog,
   }))
 
-  // ステップ①: 基本情報
   const [gameName, setGameName] = useState('')
   const [maxDeckSize, setMaxDeckSize] = useState('')
   const [maxCopies, setMaxCopies] = useState('')
-
-  // ステップ②: フィールド定義
   const [fieldDefs, setFieldDefs] = useState<FieldDef[]>([])
-
-  // ステップ③: ボード設定
   const [boardConfig, setBoardConfig] = useState<GameConfigJson>(defaultBoardConfig as GameConfigJson)
   const [showBoardEditor, setShowBoardEditor] = useState(false)
-
-  // 現在のステップ
   const [step, setStep] = useState(0)
   const [nameError, setNameError] = useState('')
 
   if (activeDialog !== 'setup-wizard') return null
 
-  // ──────────────────────────────────────────────
-  // ナビゲーション
-  // ──────────────────────────────────────────────
   function handleNext() {
     if (step === 0) {
       if (!gameName.trim()) {
@@ -204,9 +99,6 @@ export function GameSetupWizard() {
     setStep(s => s - 1)
   }
 
-  // ──────────────────────────────────────────────
-  // フィールド操作
-  // ──────────────────────────────────────────────
   function addField() {
     const newField: FieldDef = {
       id: ensureUniqueId('field', fieldDefs.map(f => f.id)),
@@ -231,9 +123,6 @@ export function GameSetupWizard() {
     setFieldDefs(prev => prev.filter((_, i) => i !== index))
   }
 
-  // ──────────────────────────────────────────────
-  // 完了処理
-  // ──────────────────────────────────────────────
   function handleComplete(config: GameConfigJson = boardConfig) {
     const profile: GameProfile = {
       meta: { name: gameName.trim() },
@@ -252,19 +141,12 @@ export function GameSetupWizard() {
     closeDialog()
   }
 
-  function handleOpenBoardEditor() {
-    setShowBoardEditor(true)
-  }
-
   function handleBoardEditorSave(config: GameConfigJson) {
     setBoardConfig(config)
     setShowBoardEditor(false)
     handleComplete(config)
   }
 
-  // ──────────────────────────────────────────────
-  // レンダリング
-  // ──────────────────────────────────────────────
   if (showBoardEditor) {
     return (
       <BoardEditorDialog
@@ -276,84 +158,81 @@ export function GameSetupWizard() {
   }
 
   return (
-    <div style={overlay}>
-      <div style={dialog} onClick={e => e.stopPropagation()}>
-        {/* タイトル */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <h2 style={titleStyle}>NEW GAME SETUP</h2>
-          <button
-            onClick={closeDialog}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--muted)',
-              fontSize: 18,
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: '0 4px',
-            }}
-            aria-label="閉じる"
-          >×</button>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.75)' }}>
+      <div
+        className="relative w-[560px] max-h-[88vh] overflow-y-auto rounded-2xl flex flex-col font-body"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          padding: 28,
+          boxShadow: '0 0 60px rgba(var(--cyan-rgb),0.15)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-mono text-[11px]" style={{ color: 'var(--cyan)', textShadow: '0 0 16px rgba(var(--cyan-rgb),0.6)' }}>
+            NEW GAME SETUP
+          </h2>
+          <Button variant="ghost" onClick={closeDialog} style={{ border: 'none', color: 'var(--muted)', padding: '0 4px', fontSize: 18, lineHeight: 1 }} aria-label="閉じる">
+            ×
+          </Button>
         </div>
 
-        {/* ステップインジケーター */}
         <StepIndicator current={step} />
 
         {/* ──────── Step 0: 基本情報 ──────── */}
         {step === 0 && (
-          <div>
-            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
+          <div className="flex flex-col gap-1">
+            <p className="font-body text-xs mb-4" style={{ color: 'var(--muted)' }}>
               新しいゲームの基本情報を設定します。
             </p>
 
-            <label style={labelStyle}>ゲーム名 *</label>
-            <input
-              style={{ ...inputStyle, borderColor: nameError ? 'rgba(220,60,60,0.6)' : `rgba(var(--purple-rgb, 124,58,237), 0.4)` }}
+            <Input
+              label="ゲーム名 *"
               type="text"
               value={gameName}
               onChange={e => { setGameName(e.target.value); if (nameError) setNameError('') }}
               placeholder="例: デュエルマスターズ"
               autoFocus
-            />
-            {nameError && (
-              <p style={{ color: '#ff6666', fontSize: 11, marginTop: 4, marginBottom: 0 }}>{nameError}</p>
-            )}
-
-            <label style={labelStyle}>最大デッキ枚数（任意）</label>
-            <input
-              style={{ ...inputStyle, width: 160 }}
-              type="number"
-              min={1}
-              value={maxDeckSize}
-              onChange={e => setMaxDeckSize(e.target.value)}
-              placeholder="例: 40（空=制限なし）"
+              error={nameError || undefined}
             />
 
-            <label style={labelStyle}>同名カード最大枚数（任意）</label>
-            <input
-              style={{ ...inputStyle, width: 160 }}
-              type="number"
-              min={1}
-              value={maxCopies}
-              onChange={e => setMaxCopies(e.target.value)}
-              placeholder="例: 4（空=制限なし）"
-            />
+            <div className="mt-2">
+              <Input
+                label="最大デッキ枚数（任意）"
+                type="number"
+                min={1}
+                value={maxDeckSize}
+                onChange={e => setMaxDeckSize(e.target.value)}
+                placeholder="例: 40（空=制限なし）"
+                className="w-40"
+              />
+            </div>
+
+            <div className="mt-2">
+              <Input
+                label="同名カード最大枚数（任意）"
+                type="number"
+                min={1}
+                value={maxCopies}
+                onChange={e => setMaxCopies(e.target.value)}
+                placeholder="例: 4（空=制限なし）"
+                className="w-40"
+              />
+            </div>
           </div>
         )}
 
         {/* ──────── Step 1: カード属性定義 ──────── */}
         {step === 1 && (
           <div>
-            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+            <p className="font-body text-xs mb-3" style={{ color: 'var(--muted)' }}>
               カードが持つ属性を定義します。（後から変更可能）
             </p>
 
-            {/* プリセット */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)', marginBottom: 6 }}>
-                よく使うフィールド:
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            <div className="mb-3.5">
+              <div className="font-body text-[10px] mb-1.5" style={{ color: 'var(--muted)' }}>よく使うフィールド:</div>
+              <div className="flex flex-wrap gap-1.5">
                 {FIELD_PRESETS.map(preset => {
                   const used = fieldDefs.some(f => f.id === preset.id)
                   return (
@@ -361,16 +240,11 @@ export function GameSetupWizard() {
                       key={preset.id}
                       onClick={() => addPreset(preset)}
                       disabled={used}
+                      className="font-body text-xs px-2.5 py-1 rounded cursor-pointer disabled:opacity-40 disabled:cursor-default transition-all"
                       style={{
-                        fontFamily: "'Chakra Petch', sans-serif",
-                        fontSize: 11,
-                        padding: '4px 10px',
-                        borderRadius: 4,
-                        cursor: used ? 'default' : 'pointer',
-                        border: '1px solid rgba(var(--purple-rgb, 124,58,237), 0.3)',
-                        background: used ? 'transparent' : 'rgba(var(--purple-rgb, 124,58,237), 0.1)',
+                        border: '1px solid rgba(var(--purple-rgb),0.3)',
+                        background: used ? 'transparent' : 'rgba(var(--purple-rgb),0.1)',
                         color: used ? 'var(--surface2)' : 'var(--purple-lite)',
-                        opacity: used ? 0.4 : 1,
                       }}
                     >
                       {used ? '✓ ' : '+ '}{preset.label}
@@ -380,9 +254,8 @@ export function GameSetupWizard() {
               </div>
             </div>
 
-            {/* フィールドカード一覧 */}
             {fieldDefs.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              <div className="flex flex-col gap-2 mb-3">
                 {fieldDefs.map((f, i) => (
                   <FieldCard
                     key={f.id}
@@ -394,42 +267,54 @@ export function GameSetupWizard() {
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)', fontSize: 12, marginBottom: 12 }}>
+              <div className="py-4 text-center font-body text-xs mb-3" style={{ color: 'var(--muted)', opacity: 0.5 }}>
                 プリセットか「＋ 追加」から始めてください
               </div>
             )}
 
-            <button style={addBtn} onClick={addField}>
+            <Button
+              variant="secondary"
+              size="sm"
+              style={{ background: 'rgba(var(--cyan-rgb),0.08)', color: 'var(--cyan)', border: '1px solid rgba(var(--cyan-rgb),0.3)' }}
+              onClick={addField}
+            >
               ＋ フィールドを追加
-            </button>
+            </Button>
           </div>
         )}
 
         {/* ──────── Step 2: ボード配置 ──────── */}
         {step === 2 && (
           <div>
-            <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 16, marginTop: 0 }}>
+            <p className="font-body text-xs mb-4" style={{ color: 'var(--muted)' }}>
               ゲームボードのゾーン配置を設定します。
             </p>
 
-            <div style={{
-              background: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '16px',
-              marginBottom: 16,
-            }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, fontFamily: 'var(--font-body, "Chakra Petch", sans-serif)' }}>
+            <div
+              className="rounded-lg p-4 mb-4"
+              style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
+            >
+              <div className="font-body text-xs mb-2.5" style={{ color: 'var(--muted)' }}>
                 現在の設定: {boardConfig.windows.length} ウィンドウ / {boardConfig.zones.length} ゾーン
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+              <div className="flex flex-wrap gap-1.5">
                 {boardConfig.zones.slice(0, 6).map(z => (
-                  <span key={z.id} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: z.visibility === 'public' ? 'rgba(59,130,246,0.15)' : `rgba(var(--purple-rgb, 124,58,237), 0.15)`, color: z.visibility === 'public' ? '#60a5fa' : 'var(--purple-lite)', border: `1px solid ${z.visibility === 'public' ? 'rgba(59,130,246,0.3)' : `rgba(var(--purple-rgb, 124,58,237), 0.3)`}` }}>
+                  <span
+                    key={z.id}
+                    className="font-body text-[10px] px-2 py-0.5 rounded-full"
+                    style={{
+                      background: z.visibility === 'public' ? 'rgba(59,130,246,0.15)' : 'rgba(var(--purple-rgb),0.15)',
+                      color: z.visibility === 'public' ? '#60a5fa' : 'var(--purple-lite)',
+                      border: `1px solid ${z.visibility === 'public' ? 'rgba(59,130,246,0.3)' : 'rgba(var(--purple-rgb),0.3)'}`,
+                    }}
+                  >
                     {z.visibility === 'public' ? '●' : '◆'} {z.name}
                   </span>
                 ))}
                 {boardConfig.zones.length > 6 && (
-                  <span style={{ fontSize: 10, color: 'var(--muted)' }}>+{boardConfig.zones.length - 6}...</span>
+                  <span className="font-body text-[10px]" style={{ color: 'var(--muted)' }}>
+                    +{boardConfig.zones.length - 6}...
+                  </span>
                 )}
               </div>
             </div>
@@ -437,36 +322,26 @@ export function GameSetupWizard() {
         )}
 
         {/* ボタン行 */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 24, justifyContent: 'flex-end' }}>
+        <div className="flex gap-2 mt-6 justify-end">
           {step > 0 && (
-            <button style={secondaryBtn} onClick={handleBack}>
-              戻る
-            </button>
+            <Button variant="secondary" onClick={handleBack}>戻る</Button>
           )}
 
           {step < 2 && (
-            <button style={primaryBtn} onClick={handleNext}>
-              次へ
-            </button>
+            <Button variant="primary" onClick={handleNext}>次へ</Button>
           )}
 
           {step === 2 && (
             <>
-              <button style={secondaryBtn} onClick={() => handleComplete()}>
-                後で設定する
-              </button>
-              <button
-                style={{ ...primaryBtn, background: 'linear-gradient(135deg, #3b82f6, #1e40af)' }}
-                onClick={handleOpenBoardEditor}
+              <Button variant="secondary" onClick={() => handleComplete()}>後で設定する</Button>
+              <Button
+                variant="primary"
+                style={{ background: 'linear-gradient(135deg, #3b82f6, #1e40af)', color: '#fff', border: 'none' }}
+                onClick={() => setShowBoardEditor(true)}
               >
                 ボード編集
-              </button>
-              <button
-                style={{ ...primaryBtn, background: 'var(--purple)' }}
-                onClick={() => handleComplete()}
-              >
-                完了
-              </button>
+              </Button>
+              <Button variant="primary" onClick={() => handleComplete()}>完了</Button>
             </>
           )}
         </div>

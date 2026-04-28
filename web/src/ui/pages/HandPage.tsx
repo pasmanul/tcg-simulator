@@ -5,7 +5,7 @@ import { HandHud } from '../hud/HandHud'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { CardZoomOverlay } from '../overlays/CardZoomOverlay'
-import { PAGE_STYLE } from '../pageLayout'
+import { PAGE_CLASSES } from '../pageLayout'
 
 export function HandPage() {
   useTabSync('hand')
@@ -15,7 +15,7 @@ export function HandPage() {
   // BroadcastChannel (PING/PONG) で状態を同期する
 
   return (
-    <div style={PAGE_STYLE}>
+    <div className={PAGE_CLASSES}>
       <HandHud />
       <HandStage />
       <ContextMenu />

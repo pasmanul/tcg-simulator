@@ -24,7 +24,7 @@ import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
 import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
 import { ThemeDialog } from '../overlays/ThemeDialog'
 import { DeckPage } from './DeckPage'
-import { PAGE_STYLE } from '../pageLayout'
+import { PAGE_CLASSES } from '../pageLayout'
 
 function makeDummyCard(index: number): GameCard {
   const card: Card = {
@@ -140,16 +140,16 @@ export function BoardPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={PAGE_STYLE}>
+    <div className={PAGE_CLASSES}>
       {/* HUD bar */}
       <BoardHud />
 
       {/* Main content: stage + action log */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="flex flex-1 overflow-hidden">
         <BoardStage />
 
         {/* Action log sidebar */}
-        <div style={{ width: 200, flexShrink: 0, borderLeft: '1px solid rgba(124,58,237,0.2)' }}>
+        <div className="w-48 flex-shrink-0 border-l border-border overflow-y-auto">
           <ActionLog />
         </div>
       </div>

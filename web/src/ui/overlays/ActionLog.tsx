@@ -4,60 +4,24 @@ export function ActionLog() {
   const log = useUIStore(s => s.actionLog)
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--surface2)',
-        border: '1px solid rgba(var(--purple-rgb), 0.2)',
-        borderRadius: 8,
-        overflow: 'hidden',
-        height: '100%',
-      }}
-    >
-      <div
-        style={{
-          padding: '5px 10px',
-          background: 'var(--surface2)',
-          borderBottom: '1px solid rgba(var(--purple-rgb), 0.15)',
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 8,
-          color: 'var(--muted)',
-          letterSpacing: 0.5,
-          flexShrink: 0,
-        }}
-      >
+    <div className="flex flex-col bg-surface2 border border-primary/20 rounded-theme overflow-hidden h-full">
+      {/* Header */}
+      <div className="px-2.5 py-1.5 bg-surface2 border-b border-primary/15 font-mono text-[8px] text-muted tracking-wide flex-shrink-0">
         ACTION LOG
       </div>
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '4px 8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
+
+      {/* Log entries */}
+      <div className="flex-1 overflow-y-auto px-2 py-1 flex flex-col gap-0.5">
         {log.map(entry => (
           <div
             key={entry.id}
-            style={{
-              fontFamily: "'Chakra Petch', sans-serif",
-              fontSize: 11,
-              color: 'var(--text)',
-              padding: '2px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.03)',
-              lineHeight: 1.4,
-            }}
+            className="font-body text-[11px] text-text-base py-0.5 border-b border-white/[0.03] leading-snug"
           >
             {entry.message}
           </div>
         ))}
         {log.length === 0 && (
-          <div style={{ color: 'var(--muted)', fontSize: 10, fontFamily: "'VT323', monospace", marginTop: 4 }}>
-            No actions yet
-          </div>
+          <p className="text-muted text-[10px] font-mono mt-1">No actions yet</p>
         )}
       </div>
     </div>

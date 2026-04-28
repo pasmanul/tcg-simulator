@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
 import type { GameCard } from '../../domain/types'
+import { Dialog } from '../components/Dialog'
+import { Button } from '../components/Button'
 
 export function StackDialog() {
   const { stackInfo, closeStackDialog, addLog } = useUIStore(s => ({
@@ -24,9 +26,7 @@ export function StackDialog() {
     if (stackInfo && !topCard) closeStackDialog()
   }, [stackInfo, topCard, closeStackDialog])
 
-  if (!stackInfo || !topCard) return null
-
-  const allCards: GameCard[] = [topCard, ...topCard.under_cards]
+  const allCards: GameCard[] = stackInfo && topCard ? [topCard, ...topCard.under_cards] : []
 
   function handleDetach(gc: GameCard, index: number) {
     if (index === 0) return // トップカードは切り離さない
@@ -35,109 +35,54 @@ export function StackDialog() {
     closeStackDialog()
   }
 
-  const overlay: React.CSSProperties = {
-    position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 2000,
-  }
-  const dialog: React.CSSProperties = {
-    background: 'var(--surface)',
-    border: '1px solid rgba(var(--purple-rgb),0.4)',
-    borderRadius: 12,
-    padding: 24,
-    width: 400,
-    maxHeight: '80vh',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
-    fontFamily: "'Chakra Petch', sans-serif",
-  }
-  const cardRow: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '8px 12px',
-    borderRadius: 6,
-    border: '1px solid rgba(var(--purple-rgb),0.15)',
-    background: 'var(--surface2)',
-  }
-  const detachBtn: React.CSSProperties = {
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 8,
-    padding: '4px 8px',
-    borderRadius: 4,
-    cursor: 'pointer',
-    border: '1px solid rgba(239,68,68,0.5)',
-    background: 'rgba(239,68,68,0.1)',
-    color: '#f87171',
-    transition: 'all 150ms',
-    marginLeft: 'auto',
-  }
-
   return (
-    <div style={overlay} onClick={closeStackDialog}>
-      <div style={dialog} onClick={e => e.stopPropagation()}>
-        <div style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 11,
-          color: '#e07020',
-          textShadow: '0 0 10px rgba(224,112,32,0.5)',
-        }}>
-          STACK ({allCards.length})
-        </div>
-
-        <div style={{ color: 'var(--muted)', fontSize: 11 }}>
+    <Dialog
+      open={!!stackInfo && !!topCard}
+      onClose={closeStackDialog}
+      title={`STACK (${allCards.length})`}
+      width="max-w-sm"
+    >
+      <div className="flex flex-col gap-3">
+        <p className="text-muted text-[11px] font-body">
           上から順に表示。「切り離す」でゾーンに戻します。
-        </div>
+        </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
+        <div className="flex flex-col gap-1.5 overflow-y-auto">
           {allCards.map((gc, i) => (
-            <div key={gc.instanceId} style={cardRow}>
-              <div style={{
-                width: 20, height: 20, borderRadius: 4,
-                background: i === 0 ? '#e07020' : '#1e293b',
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 10, color: '#fff', fontFamily: 'monospace',
-                flexShrink: 0,
-              }}>
+            <div
+              key={gc.instanceId}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-theme border border-primary/15 bg-surface2"
+            >
+              {/* Index badge */}
+              <div className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center text-[10px] text-white font-mono border border-white/10
+                ${i === 0 ? 'bg-orange-500' : 'bg-slate-800'}`}
+              >
                 {i + 1}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'var(--text)', fontSize: 13 }}>{gc.card.name}</div>
+
+              <div className="flex-1">
+                <span className="text-text-base text-[13px] font-body">{gc.card.name}</span>
               </div>
-              {i > 0 && (
-                <button
-                  style={detachBtn}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.1)')}
+
+              {i > 0 ? (
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={() => handleDetach(gc, i)}
                 >
                   切り離す
-                </button>
-              )}
-              {i === 0 && (
-                <span style={{ fontSize: 10, color: '#e07020', marginLeft: 'auto' }}>TOP</span>
+                </Button>
+              ) : (
+                <span className="text-[10px] text-orange-400 font-mono ml-auto">TOP</span>
               )}
             </div>
           ))}
         </div>
 
-        <button
-          onClick={closeStackDialog}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--muted)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontFamily: "'Chakra Petch', sans-serif",
-            alignSelf: 'flex-end',
-          }}
-        >
-          閉じる
-        </button>
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={closeStackDialog}>閉じる</Button>
+        </div>
       </div>
-    </div>
+    </Dialog>
   )
 }

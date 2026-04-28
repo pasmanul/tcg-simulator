@@ -25,17 +25,14 @@ export function CardZoomOverlay() {
 
   return (
     <div
+      className="fixed overflow-hidden pointer-events-none rounded-[10px]"
       style={{
-        position: 'fixed',
         left,
         top,
         width: ZW,
         height: ZH,
-        borderRadius: 10,
-        overflow: 'hidden',
         boxShadow: '0 0 30px rgba(124,58,237,0.7), 0 4px 24px rgba(0,0,0,0.8)',
         border: '2px solid rgba(124,58,237,0.6)',
-        pointerEvents: 'none',
         zIndex: 9000,
         background: '#0d1020',
       }}
@@ -44,22 +41,11 @@ export function CardZoomOverlay() {
         <img
           src={imgUrl}
           alt={zoomCard.card.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          className="w-full h-full object-cover block"
         />
       ) : (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#8899bb',
-            fontSize: 18,
-            fontFamily: "'Chakra Petch', sans-serif",
-            padding: 16,
-            textAlign: 'center',
-          }}
+        <div className="w-full h-full flex items-center justify-center text-[18px] p-4 text-center font-[Chakra_Petch,sans-serif]"
+          style={{ color: '#8899bb' }}
         >
           {zoomCard.card.name}
         </div>
