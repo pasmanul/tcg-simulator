@@ -11,6 +11,8 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset'
   onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>
   onMouseLeave?: React.MouseEventHandler<HTMLButtonElement>
+  onMouseDown?: React.MouseEventHandler<HTMLButtonElement>
+  title?: string
   'aria-label'?: string
 }
 
@@ -25,6 +27,8 @@ export function Button({
   type = 'button',
   onMouseEnter,
   onMouseLeave,
+  onMouseDown,
+  title,
   'aria-label': ariaLabel,
 }: ButtonProps) {
   const base =
@@ -54,8 +58,10 @@ export function Button({
       disabled={disabled}
       className={combined}
       style={style}
+      title={title}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onMouseDown={onMouseDown}
       aria-label={ariaLabel}
     >
       {children}
