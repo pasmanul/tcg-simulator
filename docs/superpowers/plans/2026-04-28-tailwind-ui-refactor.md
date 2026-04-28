@@ -83,28 +83,28 @@
 
 #### Phase 4 タスク詳細
 
-- [ ] **Task 4-1: `DeckHud.tsx` を変換する**
+- [x] **Task 4-1: `DeckHud.tsx` を変換する**
   - インラインスタイルのボタン → `Button` コンポーネント
   - ラッパーdiv → Tailwind（`flex items-center gap-2 p-2 border-b border-border bg-bg2`）
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 4-2: `FilterBar.tsx` を変換する**
+- [x] **Task 4-2: `FilterBar.tsx` を変換する**
   - テキスト検索input → `Input` コンポーネント
   - セレクト → `Select` コンポーネント
   - フィルタチップ（active/inactive）→ Tailwindクラス切り替え（`bg-primary/20 border-primary` vs `bg-surface border-border`）
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 4-3: `LibraryGrid.tsx` を変換する**
+- [x] **Task 4-3: `LibraryGrid.tsx` を変換する**
   - グリッドコンテナ → `grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2 p-2`
   - カードサムネイル → Tailwindのホバー・選択状態クラス
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 4-4: `DeckGrid.tsx` を変換する**
+- [x] **Task 4-4: `DeckGrid.tsx` を変換する**
   - デッキカードリスト → Tailwind（`flex flex-col gap-1 p-2`）
   - 各行 → `flex items-center justify-between px-2 py-1 rounded bg-surface hover:bg-surface2`
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 4-5: `DeckPage.tsx` を変換する**
+- [x] **Task 4-5: `DeckPage.tsx` を変換する**
   - 2カラムレイアウト → `flex h-full` + 左右パネルの `flex-col`
   - ヘッダー・フッター → Tailwind
   - インラインスタイルを全て除去
@@ -127,24 +127,24 @@ Konvaはブラウザ標準のCSS変数を読めないため、`useThemeStore(s =
 
 #### Phase 5 タスク詳細
 
-- [ ] **Task 5-1: `ZoneGroup.tsx` のzonePaletteをthemeStore経由にする**
+- [x] **Task 5-1: `ZoneGroup.tsx` のzonePaletteをthemeStore経由にする**
   - `import { useThemeStore } from '../../store/themeStore'` を追加
   - `const colors = zoneColors(zoneDef.id)` → `const zonePalette = useThemeStore(s => s.currentTheme.zonePalette); const colors = zoneColors(zoneDef.id, zonePalette)`
   - 型チェック: `cd web && npx tsc --noEmit`
 
   > 注意: theme-selectionフェーズで既に着手されている場合はスキップする
 
-- [ ] **Task 5-2: `CardShape.tsx` のハードコード色をテーマトークンに変換する**
+- [x] **Task 5-2: `CardShape.tsx` のハードコード色をテーマトークンに変換する**
   - `useThemeStore` でトークンを取得
   - `#1a1a3a` → `tokens.bg`、`#aaccaa` → フェースアップカラー（tokens参照）、`#50b4ff` → `tokens.cyan`、`#e07020` → スタックバッジ色（既存 accentカラーを参照）
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 5-3: `ZoneOverlayButtons.tsx` をTailwindに変換する**
+- [x] **Task 5-3: `ZoneOverlayButtons.tsx` をTailwindに変換する**
   - インラインスタイルのボタン → `Button` コンポーネント（variant="ghost", size="sm"）
   - ラッパーdiv → `flex gap-1 absolute bottom-1 right-1`
   - 型チェック: `cd web && npx tsc --noEmit`
 
-- [ ] **Task 5-4: `BoardStage.tsx` / `HandStage.tsx` のラッパーdivをTailwindに変換する**
+- [x] **Task 5-4: `BoardStage.tsx` / `HandStage.tsx` のラッパーdivをTailwindに変換する**
   - `style={{ width: '100%', height: '100%' }}` → `className="w-full h-full"`
   - 型チェック: `cd web && npx tsc --noEmit`
 
