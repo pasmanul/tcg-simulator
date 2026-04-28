@@ -28,13 +28,13 @@ export function ThemeDialog() {
               onClick={() => setTheme(theme.id)}
               className="rounded-lg p-2.5 text-left cursor-pointer transition-all duration-[120ms]"
               style={{
-                background: isActive ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.03)',
+                background: isActive ? 'rgba(var(--purple-rgb),0.25)' : 'rgba(255,255,255,0.03)',
                 border: isActive
-                  ? '2px solid var(--purple, #7C3AED)'
-                  : '1px solid rgba(124,58,237,0.2)',
+                  ? '2px solid var(--purple)'
+                  : '1px solid rgba(var(--purple-rgb),0.2)',
               }}
               onMouseEnter={e => {
-                if (!isActive) e.currentTarget.style.background = 'rgba(124,58,237,0.12)'
+                if (!isActive) e.currentTarget.style.background = 'rgba(var(--purple-rgb),0.12)'
               }}
               onMouseLeave={e => {
                 if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'

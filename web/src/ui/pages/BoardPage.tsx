@@ -219,8 +219,8 @@ export function BoardPage() {
               height: '88vh',
               borderRadius: 10,
               overflow: 'hidden',
-              boxShadow: '0 0 40px rgba(124,58,237,0.4)',
-              border: '1px solid rgba(124,58,237,0.5)',
+              boxShadow: '0 0 40px rgba(var(--purple-rgb),0.4)',
+              border: '1px solid rgba(var(--purple-rgb),0.5)',
             }}
             onClick={e => e.stopPropagation()}
           >

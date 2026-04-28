@@ -22,13 +22,6 @@ interface Props {
   sourceZoneId?: string
 }
 
-function hexToRgb(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return [r, g, b] as const
-}
-
 export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props) {
   const zoneId = sourceZoneId ?? zoneDef.id
   const effectiveZoneId = zoneDef.source_zone_id ?? zoneDef.id
@@ -73,8 +66,6 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
     cardW, cardH,
     effectiveRowCount,
   )
-
-  const [bgR, bgG, bgB] = hexToRgb(colors.bgTop)
 
   // Find which zone contains a point (used for drop target detection)
   const groupRef = useRef<Konva.Group>(null)
