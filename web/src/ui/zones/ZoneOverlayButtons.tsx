@@ -43,7 +43,7 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
           <Button
             key={b.label}
             size="sm"
-            variant="ghost"
+            variant="secondary"
             className="flex-1 text-center"
             onClick={b.onClick}
           >
