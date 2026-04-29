@@ -30,7 +30,6 @@ export function HandHud() {
     let deckCards: GameCard[]
 
     if (cards.length === 0) {
-      // ライブラリ未ロード（ダミーモード）: 全ゾーンのカードを集めて使う
       deckCards = Object.values(zones).flatMap(zone => flattenCards(zone.cards))
     } else {
       deckCards = buildDeckFromLibrary(cards, currentDeck)
@@ -53,48 +52,9 @@ export function HandHud() {
         手札
       </span>
 
-      <Button
-        variant="primary"
-        style={{
-          background: 'var(--btn-init-bg)',
-          color: 'var(--btn-init-color)',
-          border: 'var(--btn-init-border)',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-init-bg-hover)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-init-bg)' }}
-        onClick={handleInit}
-      >
-        INIT FIELD
-      </Button>
-
-      <Button
-        variant="secondary"
-        style={{
-          background: 'var(--btn-undo-bg)',
-          color: 'var(--btn-undo-color)',
-          border: 'var(--btn-undo-border)',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-undo-bg-hover)'; e.currentTarget.style.color = 'var(--btn-undo-color-hover)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-undo-bg)'; e.currentTarget.style.color = 'var(--btn-undo-color)' }}
-        onClick={undo}
-      >
-        UNDO
-      </Button>
-
-      <Button
-        variant="secondary"
-        style={{
-          background: 'var(--btn-load-bg)',
-          color: 'var(--btn-load-color)',
-          border: 'var(--btn-load-border)',
-          marginLeft: 'auto',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--btn-load-bg-hover)'; e.currentTarget.style.color = 'var(--btn-load-color-hover)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'var(--btn-load-bg)'; e.currentTarget.style.color = 'var(--btn-load-color)' }}
-        onClick={() => openDialog('setup')}
-      >
-        LOAD CARDS
-      </Button>
+      <Button variant="primary" onClick={handleInit}>INIT FIELD</Button>
+      <Button variant="secondary" onClick={undo}>UNDO</Button>
+      <Button variant="secondary" style={{ marginLeft: 'auto' }} onClick={() => openDialog('setup')}>LOAD CARDS</Button>
     </div>
   )
 }

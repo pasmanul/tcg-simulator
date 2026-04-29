@@ -45,7 +45,6 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
             size="sm"
             variant="ghost"
             className="flex-1 text-center"
-            style={{ background: 'var(--btn-zone-bg)', borderColor: 'var(--btn-zone-border)', color: 'var(--btn-zone-color)' }}
             onClick={b.onClick}
           >
             {b.label}
@@ -91,7 +90,6 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
           key={b.label}
           size="sm"
           variant="ghost"
-          style={{ background: 'var(--btn-zone-bg)', borderColor: 'var(--btn-zone-border)', color: 'var(--btn-zone-color)' }}
           onClick={b.onClick}
         >
           {b.label}
