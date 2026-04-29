@@ -3,9 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { newGameCard } from '../../domain/gameLogic'
 import type { GameCard } from '../../domain/types'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function BoardHud() {
+  const { Button } = useSkin()
   const { undo, initializeField, zones } = useGameStore(s => ({
     undo: s.undo,
     initializeField: s.initializeField,

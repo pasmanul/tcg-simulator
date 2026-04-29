@@ -1,9 +1,9 @@
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function GameLoadDialog() {
+  const { Button, Dialog } = useSkin()
   const { activeDialog, closeDialog, openDialog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,

@@ -8,10 +8,11 @@ import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 import type { Card } from '../../domain/types'
 
 function DeckPanelHeader() {
+  const { Button } = useSkin()
   const { activeDeckIndex, currentDeckName, newDeck, renameDeck, deleteDeck, decks, setDeckCardBack } = useLibraryStore(s => ({
     activeDeckIndex: s.activeDeckIndex,
     currentDeckName: s.currentDeckName,
@@ -160,6 +161,7 @@ function DeckPanelHeader() {
 }
 
 export function DeckPage() {
+  const { Button } = useSkin()
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER)
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [cardEditorOpen, setCardEditorOpen] = useState(false)

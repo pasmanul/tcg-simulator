@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FieldDef } from '../../domain/types'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function labelToId(label: string): string {
   const ascii = label
@@ -47,6 +47,7 @@ export interface FieldCardProps {
 }
 
 export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps) {
+  const { Button } = useSkin()
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [optionInput, setOptionInput] = useState('')
   const needsOptions = field.type === 'select' || field.type === 'multi-select'

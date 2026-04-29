@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
-import { Dialog } from '../components/Dialog'
-import { Input } from '../components/Input'
-import { Button } from '../components/Button'
-import { Select } from '../components/Select'
+import { useSkin } from '../skin/SkinContext'
 
 const MOVE_TARGETS = [
   { id: 'hand', label: '手札' },
@@ -14,6 +11,7 @@ const MOVE_TARGETS = [
 ]
 
 export function SearchDialog() {
+  const { Button, Dialog, Input, Select } = useSkin()
   const { activeDialog, closeDialog, addLog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,

@@ -3,10 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import type { FieldDef } from '../../domain/types'
 import { FieldCard, ensureUniqueId } from './fieldDefShared'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function FieldEditorDialog() {
+  const { Button, Dialog } = useSkin()
   const { activeDialog, closeDialog } = useUIStore(s => ({ activeDialog: s.activeDialog, closeDialog: s.closeDialog }))
   const storeFieldDefs = useLibraryStore(s => s.fieldDefs)
   const { cards, decks, activeDeckIndex, applyLibrarySnapshot, save } = useLibraryStore(s => ({

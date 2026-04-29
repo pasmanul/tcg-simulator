@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUIStore } from '../../store/uiStore'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20]
 
 interface HistoryEntry { sides: number; result: number }
 
 export function DiceDialog() {
+  const { Button, Dialog } = useSkin()
   const { activeDialog, closeDialog, addLog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,

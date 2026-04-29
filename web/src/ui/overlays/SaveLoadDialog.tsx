@@ -5,11 +5,10 @@ import {
   listSaveFiles, writeSaveFile, readSaveFile,
   downloadSnapshot, uploadSnapshot,
 } from '../../lib/saveStorage'
-import { Dialog } from '../components/Dialog'
-import { Input } from '../components/Input'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function SaveLoadDialog() {
+  const { Button, Dialog, Input } = useSkin()
   const { activeDialog, closeDialog, addLog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,

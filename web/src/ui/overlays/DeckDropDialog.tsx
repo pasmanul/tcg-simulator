@@ -1,9 +1,9 @@
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function DeckDropDialog() {
+  const { Button, Dialog } = useSkin()
   const { deckDropInfo, setDeckDropInfo, addLog } = useUIStore(s => ({
     deckDropInfo: s.deckDropInfo,
     setDeckDropInfo: s.setDeckDropInfo,

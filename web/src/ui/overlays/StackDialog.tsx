@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
 import type { GameCard } from '../../domain/types'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function StackDialog() {
+  const { Button, Dialog } = useSkin()
   const { stackInfo, closeStackDialog, addLog } = useUIStore(s => ({
     stackInfo: s.stackInfo,
     closeStackDialog: s.closeStackDialog,

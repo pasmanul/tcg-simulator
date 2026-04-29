@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import type { GameConfigJson, ZoneDefinition, WindowDefinition } from '../../domain/types'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 interface Props {
   initialConfig: GameConfigJson
@@ -26,6 +26,7 @@ const numStyle: React.CSSProperties = {
 }
 
 export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
+  const { Button } = useSkin()
   const [windows, setWindows] = useState<WindowDefinition[]>([...initialConfig.windows])
   const [zones, setZones] = useState<ZoneDefinition[]>([...initialConfig.zones])
   const [selWindowId, setSelWindowId] = useState(initialConfig.windows[0]?.id ?? '')

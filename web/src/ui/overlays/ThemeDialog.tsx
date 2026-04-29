@@ -1,31 +1,31 @@
-import { THEMES } from '../../theme'
-import { useThemeStore } from '../../store/themeStore'
+import { SKINS } from '../../ui/skin'
+import { useSkinStore } from '../../store/skinStore'
 import { useUIStore } from '../../store/uiStore'
-import { Dialog } from '../components/Dialog'
+import { useSkin } from '../skin/SkinContext'
 
 export function ThemeDialog() {
+  const { Dialog } = useSkin()
   const activeDialog = useUIStore(s => s.activeDialog)
   const closeDialog = useUIStore(s => s.closeDialog)
-  const { currentTheme, setTheme } = useThemeStore(s => ({
-    currentTheme: s.currentTheme,
-    setTheme: s.setTheme,
+  const { currentSkin, setSkin } = useSkinStore(s => ({
+    currentSkin: s.currentSkin,
+    setSkin: s.setSkin,
   }))
 
   return (
     <Dialog
       open={activeDialog === 'theme'}
       onClose={closeDialog}
-      title="🎨 THEME"
+      title="🎨 SKIN"
       width="max-w-sm"
     >
-      {/* Theme grid */}
       <div className="grid grid-cols-2 gap-2.5">
-        {THEMES.map(theme => {
-          const isActive = theme.id === currentTheme.id
+        {SKINS.map(skin => {
+          const isActive = skin.id === currentSkin.id
           return (
             <button
-              key={theme.id}
-              onClick={() => setTheme(theme.id)}
+              key={skin.id}
+              onClick={() => setSkin(skin.id)}
               className="rounded-lg p-2.5 text-left cursor-pointer transition-all duration-[120ms]"
               style={{
                 background: isActive ? 'rgba(var(--purple-rgb),0.25)' : 'rgba(255,255,255,0.03)',
@@ -42,7 +42,7 @@ export function ThemeDialog() {
             >
               {/* Color swatches */}
               <div className="flex gap-1 mb-2">
-                {[theme.tokens.bg, theme.tokens.purple, theme.tokens.cyan, theme.tokens.pink].map((color, i) => (
+                {[skin.tokens.bg, skin.tokens.purple, skin.tokens.cyan, skin.tokens.pink].map((color, i) => (
                   <div
                     key={i}
                     className="w-4 h-4 rounded-[3px]"
@@ -62,7 +62,7 @@ export function ThemeDialog() {
                   marginBottom: isActive ? 4 : 0,
                 }}
               >
-                {theme.name}
+                {skin.name}
               </div>
 
               {isActive && (

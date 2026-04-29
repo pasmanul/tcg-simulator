@@ -1,7 +1,7 @@
 import type { ZoneDefinition } from '../../domain/types'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 interface Props {
   zoneDef: ZoneDefinition
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
+  const { Button } = useSkin()
   const { tapAllInZone, untapAllInZone, drawCard, shuffleZone, sortZone } = useGameStore(s => ({
     tapAllInZone: s.tapAllInZone,
     untapAllInZone: s.untapAllInZone,

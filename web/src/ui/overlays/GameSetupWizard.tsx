@@ -6,8 +6,7 @@ import type { FieldDef, GameProfile, GameConfigJson } from '../../domain/types'
 import defaultBoardConfig from '../../assets/gameConfig.json'
 import { BoardEditorDialog } from './BoardEditorDialog'
 import { FieldCard, labelToId, ensureUniqueId } from './fieldDefShared'
-import { Button } from '../components/Button'
-import { Input } from '../components/Input'
+import { useSkin } from '../skin/SkinContext'
 
 // ──────────────────────────────────────────────
 // プリセット
@@ -68,6 +67,7 @@ function StepIndicator({ current }: { current: number }) {
 // ウィザード本体
 // ──────────────────────────────────────────────
 export function GameSetupWizard() {
+  const { Button, Input } = useSkin()
   const { activeDialog, closeDialog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,

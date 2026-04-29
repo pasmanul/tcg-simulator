@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 function useToast() {
   const [msg, setMsg] = useState<string | null>(null)
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export function DeckGrid({ selectedCardId, onSelect }: Props) {
+  const { Button } = useSkin()
   const { currentDeckFn, cards, resolveImageUrl, cardBackUrl, loadDeck } = useLibraryStore(s => ({
     currentDeckFn: s.currentDeck,
     cards: s.cards,

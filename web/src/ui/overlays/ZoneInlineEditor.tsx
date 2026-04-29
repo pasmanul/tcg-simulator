@@ -3,8 +3,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { syncBoardConfigToLibrary } from '../../lib/boardConfigSync'
 import type { ZoneDefinition } from '../../domain/types'
-import { Input } from '../components/Input'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 interface Props {
   zoneId: string
@@ -19,6 +18,7 @@ const CHECKS: Array<[keyof ZoneDefinition, string]> = [
 ]
 
 export function ZoneInlineEditor({ zoneId, onClose }: Props) {
+  const { Button, Input } = useSkin()
   const zoneDef = useLayoutStore(s => s.zones.find(z => z.id === zoneId))
   const updateZone = useLayoutStore(s => s.updateZone)
   const removeZone = useLayoutStore(s => s.removeZone)

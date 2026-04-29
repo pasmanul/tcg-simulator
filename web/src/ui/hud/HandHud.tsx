@@ -3,9 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { buildDeckFromLibrary } from '../../domain/gameLogic'
 import type { GameCard } from '../../domain/types'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function HandHud() {
+  const { Button } = useSkin()
   const { initializeField, undo, zones } = useGameStore(s => ({
     initializeField: s.initializeField,
     undo: s.undo,

@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
 import type { Card, FieldDef } from '../../domain/types'
 import { labelToId, ensureUniqueId } from './fieldDefShared'
-import { Dialog } from '../components/Dialog'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 type NewFieldType = FieldDef['type']
 
@@ -33,6 +32,7 @@ const labelStyle: React.CSSProperties = {
 }
 
 export function CardEditorDialog({ onClose, card }: Props) {
+  const { Button, Dialog } = useSkin()
   const { fieldDefs, fileHandle, addCard, updateCard, deleteCard, addFieldDef } = useLibraryStore(s => ({
     fieldDefs: s.fieldDefs,
     fileHandle: s.fileHandle,

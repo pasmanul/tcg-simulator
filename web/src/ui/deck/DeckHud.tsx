@@ -2,9 +2,10 @@ import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
 import { buildDeckFromLibrary } from '../../domain/gameLogic'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export function DeckHud() {
+  const { Button } = useSkin()
   const {
     decks,
     activeDeckIndex,

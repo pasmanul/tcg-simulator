@@ -2,12 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { DeckPage } from './ui/pages/DeckPage'
-import { useThemeStore } from './store/themeStore'
+import { useSkinStore } from './store/skinStore'
+import { SkinProvider } from './ui/skin/SkinContext'
 
-useThemeStore.getState().loadSavedTheme()
+useSkinStore.getState().loadSavedSkin()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <DeckPage />
+    <SkinProvider>
+      <DeckPage />
+    </SkinProvider>
   </StrictMode>,
 )

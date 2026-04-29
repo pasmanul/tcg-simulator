@@ -1,6 +1,6 @@
 import { useLibraryStore } from '../../store/libraryStore'
 import type { Card, FieldDef } from '../../domain/types'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export interface FilterState {
   query: string
@@ -69,6 +69,7 @@ interface Props {
 const selectCls = 'bg-surface2 text-primary-lite border border-border rounded-theme px-2 py-1 font-body text-[11px] cursor-pointer'
 
 export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
+  const { Button } = useSkin()
   const fieldDefs = useLibraryStore(s => s.fieldDefs)
 
   const set = (partial: Partial<FilterState>) => onChange({ ...filter, ...partial })

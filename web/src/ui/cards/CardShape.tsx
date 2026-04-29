@@ -5,7 +5,7 @@ import type { GameCard } from '../../domain/types'
 import { CARD_W, CARD_H } from '../../theme'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
-import { useThemeStore } from '../../store/themeStore'
+import { useSkinStore } from '../../store/skinStore'
 
 interface Props {
   gc: GameCard
@@ -53,7 +53,7 @@ export function CardShape({
   const resolveUrl = useLibraryStore(s => s.resolveImageUrl)
   const backUrl = useLibraryStore(s => s.cardBackUrl)
   const setZoom = useUIStore(s => s.setZoom)
-  const tokens = useThemeStore(s => s.currentTheme.tokens)
+  const tokens = useSkinStore(s => s.currentSkin.tokens)
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const showBack = forceUp ? false : (masked || gc.face_down)

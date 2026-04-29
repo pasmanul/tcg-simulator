@@ -1,5 +1,5 @@
 import { useUIStore } from '../../store/uiStore'
-import { Button } from '../components/Button'
+import { useSkin } from '../skin/SkinContext'
 
 export interface SidebarItem {
   icon: string
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export function BoardSidebar({ items }: Props) {
+  const { Button } = useSkin()
   const { sidebarOpen, closeSidebar } = useUIStore(s => ({
     sidebarOpen: s.sidebarOpen,
     closeSidebar: s.closeSidebar,
