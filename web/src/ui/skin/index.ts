@@ -1,15 +1,10 @@
-// Skin registry — add new skins here
-import { retroStubSkin } from './retro-stub'
-import { liquidGlassSkin } from './liquid-glass'
-import { glassmorphismSkin } from './glassmorphism'
+import { darkCyberSkin } from './dark-cyber'
 import type { SkinDef } from './types'
 
 export type { SkinDef }
 
 export const SKINS: SkinDef[] = [
-  retroStubSkin,
-  liquidGlassSkin,
-  glassmorphismSkin,
+  darkCyberSkin,
 ]
 
-export const defaultSkin = liquidGlassSkin
+export const defaultSkin = darkCyberSkin

@@ -69,20 +69,25 @@ export function BoardHud() {
       </span>
 
       <Button variant="primary" onClick={handleInit}>INIT FIELD</Button>
-      <Button variant="secondary" onClick={() => openDialog('dice')}>DICE</Button>
-      <Button variant="secondary" onClick={() => openDialog('save-load')}>SAVE/LOAD</Button>
-      <Button variant="secondary" onClick={undo}>UNDO</Button>
+      <Button variant="secondary" onClick={() => openDialog('dice')}
+        style={{ background: '#0d1035', color: '#7799ee', border: '1px solid rgba(50,70,160,0.6)' }}>DICE</Button>
+      <Button variant="secondary" onClick={() => openDialog('save-load')}
+        style={{ background: '#061816', color: '#44bb99', border: '1px solid rgba(30,100,80,0.6)' }}>SAVE/LOAD</Button>
+      <Button variant="secondary" onClick={undo}
+        style={{ background: '#180808', color: '#dd7777', border: '1px solid rgba(120,30,30,0.6)' }}>UNDO</Button>
 
       <Button
         variant="secondary"
-        style={{ marginLeft: 'auto' }}
+        style={{ marginLeft: 'auto', background: '#061412', color: '#44cc88', border: '1px solid rgba(25,90,60,0.6)' }}
         onClick={() => window.open('/hand.html', 'hand', 'width=540,height=720')}
       >
         HAND
       </Button>
 
-      <Button variant="secondary" onClick={openDeckPanel}>DECK</Button>
-      <Button variant="secondary" onClick={() => openDialog('setup')}>LOAD CARDS</Button>
+      <Button variant="secondary" onClick={openDeckPanel}
+        style={{ background: '#080820', color: '#9977dd', border: '1px solid rgba(60,40,140,0.6)' }}>DECK</Button>
+      <Button variant="secondary" onClick={() => openDialog('setup')}
+        style={{ background: '#060c1c', color: '#6699cc', border: '1px solid rgba(30,60,110,0.6)' }}>LOAD CARDS</Button>
     </div>
   )
 }
