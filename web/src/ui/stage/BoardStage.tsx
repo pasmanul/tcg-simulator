@@ -9,7 +9,7 @@ import { ZoneGroup } from '../zones/ZoneGroup'
 import { ZoneOverlayButtons } from '../zones/ZoneOverlayButtons'
 import { ZoneEditOverlay } from '../zones/ZoneEditOverlay'
 import { ZoneInlineEditor } from '../overlays/ZoneInlineEditor'
-import { TOKENS, CARD_W, CARD_H } from '../../theme'
+import { CARD_W, CARD_H } from '../../theme'
 import { findDropZone, type CardDropDetail } from './cardDropTarget'
 
 export function BoardStage() {
@@ -114,7 +114,7 @@ export function BoardStage() {
   return (
     <div
       ref={containerRef}
-      style={{ flex: 1, background: TOKENS.bg, position: 'relative' }}
+      className="flex-1 bg-bg relative"
       onClick={() => closeContextMenu()}
     >
       {size.width > 0 && (

@@ -49,3 +49,5 @@ data/config.json
 # Playwright
 web/test-results/
 web/playwright-report/
+.playwright-mcp/
+screenshots/

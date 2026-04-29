@@ -3,8 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { buildDeckFromLibrary } from '../../domain/gameLogic'
 import type { GameCard } from '../../domain/types'
+import { useSkin } from '../skin/SkinContext'
 
 export function HandHud() {
+  const { Button } = useSkin()
   const { initializeField, undo, zones } = useGameStore(s => ({
     initializeField: s.initializeField,
     undo: s.undo,
@@ -28,7 +30,6 @@ export function HandHud() {
     let deckCards: GameCard[]
 
     if (cards.length === 0) {
-      // ライブラリ未ロード（ダミーモード）: 全ゾーンのカードを集めて使う
       deckCards = Object.values(zones).flatMap(zone => flattenCards(zone.cards))
     } else {
       deckCards = buildDeckFromLibrary(cards, currentDeck)
@@ -42,61 +43,18 @@ export function HandHud() {
     addLog(`フィールド初期化 — ${deckCards.length}枚`)
   }
 
-  const btn: React.CSSProperties = {
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 8,
-    padding: '7px 12px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    transition: 'all 150ms',
-  }
-
   return (
-    <div style={{
-      display: 'flex',
-      gap: 8,
-      padding: '6px 12px',
-      background: '#08091a',
-      borderBottom: '1px solid rgba(32,168,176,0.2)',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-    }}>
-      <span style={{
-        fontFamily: "'VT323', monospace",
-        fontSize: 16,
-        color: '#55ddee',
-        textShadow: '0 0 10px rgba(0,255,255,0.4)',
-        marginRight: 4,
-      }}>
+    <div className="flex gap-2 px-3 py-1.5 bg-surface border-b border-border items-center flex-wrap">
+      <span
+        className="font-mono text-[10px] mr-1"
+        style={{ color: 'var(--cyan)', textShadow: '0 0 10px rgba(var(--cyan-rgb),0.4)' }}
+      >
         手札
       </span>
 
-      <button
-        style={{ ...btn, background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', border: 'none' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        onClick={handleInit}
-      >
-        INIT FIELD
-      </button>
-
-      <button
-        style={{ ...btn, background: '#1a0c0c', color: '#eea0a0', border: '1px solid #803030' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#280e0e')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#1a0c0c')}
-        onClick={undo}
-      >
-        UNDO
-      </button>
-
-      <button
-        style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060', marginLeft: 'auto' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
-        onClick={() => openDialog('setup')}
-      >
-        LOAD CARDS
-      </button>
+      <Button variant="primary" onClick={handleInit}>INIT FIELD</Button>
+      <Button variant="secondary" onClick={undo}>UNDO</Button>
+      <Button variant="secondary" style={{ marginLeft: 'auto' }} onClick={() => openDialog('setup')}>LOAD CARDS</Button>
     </div>
   )
 }

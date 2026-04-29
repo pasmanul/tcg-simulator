@@ -1,10 +1,11 @@
 import { useLibraryStore } from '../../store/libraryStore'
 import type { Card, FieldDef } from '../../domain/types'
+import { useSkin } from '../skin/SkinContext'
 
 export interface FilterState {
   query: string
-  sort: string                       // 'name' | FieldDef.id
-  filters: Record<string, string>   // fieldDef.id -> 選択値（'' = すべて）
+  sort: string
+  filters: Record<string, string>
 }
 
 export function buildDefaultFilter(): FilterState {
@@ -13,7 +14,6 @@ export function buildDefaultFilter(): FilterState {
 
 export const DEFAULT_FILTER: FilterState = buildDefaultFilter()
 
-/** cards から各フィールドの実際の値を収集する */
 function collectFieldValues(cards: Card[], fieldId: string): string[] {
   const set = new Set<string>()
   for (const c of cards) {
@@ -32,7 +32,6 @@ function collectFieldValues(cards: Card[], fieldId: string): string[] {
   })
 }
 
-/** カード一覧をフィルタ＆ソートして返す純粋関数 */
 export function applyFilters(cards: Card[], filter: FilterState, fieldDefs: FieldDef[]): Card[] {
   return cards
     .filter(card => {
@@ -67,50 +66,30 @@ interface Props {
   onAddCard?: () => void
 }
 
-const sel: React.CSSProperties = {
-  background: '#0e1228',
-  color: '#A78BFA',
-  border: '1px solid rgba(124,58,237,0.4)',
-  borderRadius: 4,
-  padding: '3px 6px',
-  fontFamily: "'Chakra Petch', sans-serif",
-  fontSize: 11,
-  cursor: 'pointer',
-}
+const selectCls = 'bg-surface2 text-primary-lite border border-border rounded-theme px-2 py-1 font-body text-[11px] cursor-pointer'
 
 export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
+  const { Button } = useSkin()
   const fieldDefs = useLibraryStore(s => s.fieldDefs)
 
   const set = (partial: Partial<FilterState>) => onChange({ ...filter, ...partial })
   const setFieldFilter = (fieldId: string, value: string) =>
     onChange({ ...filter, filters: { ...filter.filters, [fieldId]: value } })
 
-  // sortable なフィールド
   const sortableFields = fieldDefs.filter(f => f.sortable)
-
-  // filterable なフィールド
   const filterableFields = fieldDefs.filter(f => f.filterable)
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: 6,
-      padding: '6px 8px',
-      background: '#060810',
-      borderBottom: '1px solid rgba(124,58,237,0.15)',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      flexShrink: 0,
-    }}>
+    <div className="flex gap-1.5 px-2 py-1.5 bg-bg2 border-b border-border flex-wrap items-center flex-shrink-0">
       <input
         type="text"
         placeholder="カード名で検索..."
         value={filter.query}
         onChange={e => set({ query: e.target.value })}
-        style={{ ...sel, color: '#E2E8F0', width: 140 }}
+        className="bg-surface2 text-text-base border border-border rounded-theme px-2 py-1 font-body text-[11px] w-[140px] focus:outline-none focus:border-primary"
       />
 
-      <select value={filter.sort} onChange={e => set({ sort: e.target.value })} style={sel}>
+      <select value={filter.sort} onChange={e => set({ sort: e.target.value })} className={selectCls}>
         <option value="name">名前順</option>
         {sortableFields.map(f => (
           <option key={f.id} value={f.id}>{f.label}昇順</option>
@@ -123,7 +102,6 @@ export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
         if (f.type === 'select' || f.type === 'multi-select') {
           options = f.options ?? []
         } else {
-          // number / text: カードプールから実際の値を収集
           options = collectFieldValues(cards, f.id)
         }
         return (
@@ -131,7 +109,7 @@ export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
             key={f.id}
             value={currentValue}
             onChange={e => setFieldFilter(f.id, e.target.value)}
-            style={sel}
+            className={selectCls}
           >
             <option value="">{f.label}:全</option>
             {options.map(opt => (
@@ -141,25 +119,14 @@ export function FilterBar({ cards, filter, onChange, onAddCard }: Props) {
         )
       })}
 
-      <button
-        onClick={() => onChange(buildDefaultFilter())}
-        style={{ ...sel, color: '#94A3B8', border: '1px solid rgba(255,255,255,0.1)' }}
-      >
+      <Button size="sm" variant="ghost" onClick={() => onChange(buildDefaultFilter())}>
         リセット
-      </button>
+      </Button>
 
       {onAddCard && (
-        <button
-          onClick={onAddCard}
-          style={{
-            ...sel,
-            color: '#44ddbb',
-            border: '1px solid rgba(0,200,150,0.5)',
-            marginLeft: 'auto',
-          }}
-        >
+        <Button size="sm" className="ml-auto" onClick={onAddCard}>
           + ADD
-        </button>
+        </Button>
       )}
     </div>
   )

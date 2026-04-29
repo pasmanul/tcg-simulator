@@ -1,6 +1,7 @@
 import type { ZoneDefinition } from '../../domain/types'
 import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
+import { useSkin } from '../skin/SkinContext'
 
 interface Props {
   zoneDef: ZoneDefinition
@@ -10,21 +11,8 @@ interface Props {
   height: number
 }
 
-const BTN: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
-  fontSize: 7,
-  padding: '3px 7px',
-  borderRadius: 3,
-  cursor: 'pointer',
-  background: 'rgba(10,14,32,0.85)',
-  border: '1px solid rgba(60,90,140,0.7)',
-  color: '#99bbdd',
-  lineHeight: 1.4,
-  transition: 'background 150ms, color 150ms',
-  whiteSpace: 'nowrap' as const,
-}
-
 export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
+  const { Button } = useSkin()
   const { tapAllInZone, untapAllInZone, drawCard, shuffleZone, sortZone } = useGameStore(s => ({
     tapAllInZone: s.tapAllInZone,
     untapAllInZone: s.untapAllInZone,
@@ -37,7 +25,6 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
   const TITLE_H = 22
   const btnRight = x + width - 4
 
-  // deck zone: DRAW + SHUFFLE at bottom of zone
   if (zoneDef.id === 'deck') {
     const btnY = y + height - 26
     return (
@@ -46,22 +33,22 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
         top: btnY,
         left: x + 4,
         right: `calc(100% - ${btnRight}px)`,
-        display: 'flex',
-        gap: 4,
         pointerEvents: 'all',
         zIndex: 10,
-      }}>
+      }} className="flex gap-1">
         {[
           { label: 'DRAW', onClick: () => { drawCard(); addLog('ドロー') } },
           { label: 'SHUFFLE', onClick: () => { shuffleZone('deck'); addLog('山札シャッフル') } },
         ].map(b => (
-          <button
+          <Button
             key={b.label}
-            style={{ ...BTN, flex: 1, textAlign: 'center' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
+            size="sm"
+            variant="secondary"
+            className="flex-1 text-center"
             onClick={b.onClick}
-          >{b.label}</button>
+          >
+            {b.label}
+          </Button>
         ))}
       </div>
     )
@@ -93,23 +80,20 @@ export function ZoneOverlayButtons({ zoneDef, x, y, width, height }: Props) {
         top: btnY,
         right: `calc(100% - ${btnRight}px)`,
         left: x + 4,
-        display: 'flex',
-        gap: 4,
         pointerEvents: 'all',
         zIndex: 10,
-        flexWrap: 'wrap',
       }}
+      className="flex gap-1 flex-wrap"
     >
       {buttons.map(b => (
-        <button
+        <Button
           key={b.label}
-          style={BTN}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,50,100,0.9)'; e.currentTarget.style.color = '#cce0ff' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,14,32,0.85)'; e.currentTarget.style.color = '#99bbdd' }}
+          size="sm"
+          variant="ghost"
           onClick={b.onClick}
         >
           {b.label}
-        </button>
+        </Button>
       ))}
     </div>
   )

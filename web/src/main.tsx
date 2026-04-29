@@ -2,13 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { BoardPage } from './ui/pages/BoardPage'
-import { useThemeStore } from './store/themeStore'
+import { useSkinStore } from './store/skinStore'
+import { SkinProvider } from './ui/skin/SkinContext'
 
-// 保存済みテーマをCSS変数に適用してからレンダリング
-useThemeStore.getState().loadSavedTheme()
+useSkinStore.getState().loadSavedSkin()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BoardPage />
+    <SkinProvider>
+      <BoardPage />
+    </SkinProvider>
   </StrictMode>,
 )

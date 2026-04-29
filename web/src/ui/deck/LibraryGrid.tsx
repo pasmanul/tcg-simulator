@@ -8,7 +8,6 @@ function LibraryCardTile({ card, onEdit }: { card: Card; onEdit: (card: Card) =>
   const imgUrl = resolveImageUrl(card) || cardBackUrl
   const [hovered, setHovered] = useState(false)
 
-  // sortable な数値フィールドのうち先頭を主要フィールドとして表示
   const primaryField = fieldDefs.find(f => f.sortable && f.type === 'number')
   const primaryValue = primaryField ? card.fields[primaryField.id] : undefined
 
@@ -24,73 +23,33 @@ function LibraryCardTile({ card, onEdit }: { card: Card; onEdit: (card: Card) =>
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={card.name}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-        cursor: 'grab',
-        userSelect: 'none',
-      }}
+      className="flex flex-col items-center gap-1 cursor-grab select-none"
     >
-      <div style={{
-        position: 'relative',
-        width: 140,
-        aspectRatio: '150/210',
-        borderRadius: 4,
-        overflow: 'hidden',
-        border: '1px solid rgba(124,58,237,0.3)',
-        background: '#0d1020',
-        flexShrink: 0,
-      }}>
+      <div className="relative w-[140px] rounded overflow-hidden border border-border bg-surface2 flex-shrink-0"
+        style={{ aspectRatio: '150/210' }}>
         {imgUrl ? (
-          <img src={imgUrl} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={imgUrl} alt={card.name} className="w-full h-full object-cover" />
         ) : (
-          <div style={{ width: '100%', height: '100%', background: '#1a1a2e' }} />
+          <div className="w-full h-full bg-surface" />
         )}
         {hovered && (
           <button
             onClick={e => { e.stopPropagation(); onEdit(card) }}
             onMouseDown={e => e.preventDefault()}
-            style={{
-              position: 'absolute',
-              top: 4,
-              right: 4,
-              background: 'rgba(14,18,40,0.85)',
-              border: '1px solid rgba(0,255,200,0.4)',
-              color: '#00FFD0',
-              borderRadius: 4,
-              width: 22,
-              height: 22,
-              fontSize: 11,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-            }}
+            className="absolute top-1 right-1 w-[22px] h-[22px] text-[11px] flex items-center justify-center rounded cursor-pointer"
+            style={{ background: 'rgba(14,18,40,0.85)', border: '1px solid rgba(0,255,200,0.4)', color: '#00FFD0' }}
             title="編集"
           >✎</button>
         )}
       </div>
 
-      <div style={{
-        fontFamily: "'Chakra Petch', sans-serif",
-        fontSize: 8,
-        color: '#94A3B8',
-        textAlign: 'center',
-        width: 140,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        lineHeight: 1.2,
-      }}>
+      <div className="font-body text-[8px] text-muted text-center w-[140px] overflow-hidden text-ellipsis whitespace-nowrap leading-tight">
         {card.name}
       </div>
 
       {primaryValue !== undefined && (
-        <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: '#44bbff' }}>
+        <div className="flex gap-1 items-center">
+          <span className="font-mono text-[6px] text-accent">
             {primaryField!.label.charAt(0)}{primaryValue}
           </span>
         </div>
@@ -131,28 +90,16 @@ export function LibraryGrid({ filter, onEditCard, onDeckCardDrop }: Props) {
       onDragOver={e => { e.preventDefault(); if (!isDragOver) setIsDragOver(true) }}
       onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false) }}
       onDrop={handleDrop}
+      className="flex-1 overflow-y-auto p-2 grid gap-2 rounded-lg transition-all duration-150"
       style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: 8,
-        display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, 152px)',
-        gap: 8,
         alignContent: 'start',
         outline: isDragOver ? '2px dashed rgba(255,100,100,0.4)' : '2px dashed transparent',
         outlineOffset: -4,
-        borderRadius: 8,
-        transition: 'outline 150ms',
-      }}>
+      }}
+    >
       {filtered.length === 0 && (
-        <div style={{
-          gridColumn: '1 / -1',
-          color: '#505c78',
-          fontFamily: "'Chakra Petch', sans-serif",
-          fontSize: 12,
-          padding: 24,
-          textAlign: 'center',
-        }}>
+        <div className="col-span-full text-muted font-body text-xs p-6 text-center">
           {cards.length === 0
             ? 'カードライブラリを読み込んでください'
             : '条件に一致するカードがありません'}

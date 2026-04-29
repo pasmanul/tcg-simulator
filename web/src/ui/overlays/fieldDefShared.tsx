@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FieldDef } from '../../domain/types'
+import { useSkin } from '../skin/SkinContext'
 
 export function labelToId(label: string): string {
   const ascii = label
@@ -26,24 +27,13 @@ export const TYPE_OPTIONS: { value: FieldDef['type']; label: string }[] = [
   { value: 'multi-select', label: '複数選択' },
 ]
 
-const dangerBtn: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', monospace",
-  fontSize: 7,
-  padding: '4px 8px',
-  borderRadius: 4,
-  cursor: 'pointer',
-  background: '#200c0c',
-  color: '#dd6666',
-  border: '1px solid #502828',
-}
-
 const cellInput: React.CSSProperties = {
-  background: '#0a0e1a',
-  color: '#E2E8F0',
-  border: '1px solid rgba(124,58,237,0.3)',
+  background: 'var(--surface2)',
+  color: 'var(--text)',
+  border: '1px solid rgba(var(--purple-rgb),0.3)',
   borderRadius: 4,
   padding: '6px 9px',
-  fontFamily: "'Chakra Petch', sans-serif",
+  fontFamily: 'var(--font-body)',
   fontSize: 12,
   boxSizing: 'border-box' as const,
   width: '100%',
@@ -57,6 +47,7 @@ export interface FieldCardProps {
 }
 
 export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps) {
+  const { Button } = useSkin()
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [optionInput, setOptionInput] = useState('')
   const needsOptions = field.type === 'select' || field.type === 'multi-select'
@@ -79,26 +70,25 @@ export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps)
   }
 
   return (
-    <div style={{
-      background: '#0a0e1a',
-      border: '1px solid rgba(124,58,237,0.25)',
-      borderRadius: 8,
-      padding: '12px 14px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 10,
-    }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div
+      className="rounded-lg flex flex-col gap-2.5"
+      style={{
+        background: 'var(--surface2)',
+        border: '1px solid rgba(var(--purple-rgb),0.25)',
+        padding: '12px 14px',
+      }}
+    >
+      <div className="flex gap-2 items-center">
         <input
           style={{ ...cellInput, flex: 1, fontSize: 13 }}
           value={field.label}
           onChange={e => handleLabelChange(e.target.value)}
           placeholder="表示名（例: マナコスト）"
         />
-        <button style={dangerBtn} onClick={onDelete}>×</button>
+        <Button variant="danger" size="sm" onClick={onDelete}>×</Button>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div className="flex gap-1.5 flex-wrap">
         {TYPE_OPTIONS.map(opt => {
           const active = field.type === opt.value
           return (
@@ -106,14 +96,14 @@ export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps)
               key={opt.value}
               onClick={() => onChange({ ...field, type: opt.value, options: opt.value === 'text' || opt.value === 'number' ? undefined : field.options })}
               style={{
-                fontFamily: "'Chakra Petch', sans-serif",
+                fontFamily: 'var(--font-body)',
                 fontSize: 11,
                 padding: '4px 10px',
                 borderRadius: 4,
                 cursor: 'pointer',
-                border: `1px solid ${active ? '#7c3aed' : '#1e2540'}`,
-                background: active ? 'rgba(124,58,237,0.2)' : 'transparent',
-                color: active ? '#A78BFA' : '#505c78',
+                border: `1px solid ${active ? 'var(--purple)' : 'rgba(var(--purple-rgb),0.15)'}`,
+                background: active ? 'rgba(var(--purple-rgb),0.2)' : 'transparent',
+                color: active ? 'var(--purple-lite)' : 'var(--muted)',
               }}
             >
               {opt.label}
@@ -124,21 +114,24 @@ export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps)
 
       {needsOptions && (
         <div>
-          <div style={{ fontSize: 10, color: '#505c78', marginBottom: 5, fontFamily: "'Chakra Petch', sans-serif" }}>選択肢</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+          <div className="font-body text-[10px] mb-1.5" style={{ color: 'var(--muted)' }}>選択肢</div>
+          <div className="flex flex-wrap gap-1 mb-1.5">
             {(field.options ?? []).map(opt => (
-              <span key={opt} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: 'rgba(124,58,237,0.12)',
-                border: '1px solid rgba(124,58,237,0.3)',
-                borderRadius: 4,
-                padding: '2px 7px',
-                fontSize: 11,
-                color: '#c4b5fd',
-                fontFamily: "'Chakra Petch', sans-serif",
-              }}>
+              <span
+                key={opt}
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-body text-xs"
+                style={{
+                  background: 'rgba(var(--purple-rgb),0.12)',
+                  border: '1px solid rgba(var(--purple-rgb),0.3)',
+                  color: 'var(--purple-lite)',
+                }}
+              >
                 {opt}
-                <span onClick={() => removeOption(opt)} style={{ cursor: 'pointer', color: '#7c3aed', fontSize: 12, lineHeight: 1 }}>×</span>
+                <span
+                  onClick={() => removeOption(opt)}
+                  className="cursor-pointer"
+                  style={{ color: 'var(--purple)', fontSize: 12, lineHeight: 1 }}
+                >×</span>
               </span>
             ))}
           </div>
@@ -156,18 +149,29 @@ export function FieldCard({ field, onChange, onDelete, allIds }: FieldCardProps)
       <div>
         <button
           onClick={() => setShowAdvanced(s => !s)}
-          style={{ background: 'transparent', border: 'none', color: '#505c78', cursor: 'pointer', fontSize: 10, fontFamily: "'Chakra Petch', sans-serif", padding: 0 }}
+          className="font-body text-[10px] cursor-pointer"
+          style={{ background: 'transparent', border: 'none', color: 'var(--muted)', padding: 0 }}
         >
           {showAdvanced ? '▼' : '▶'} 詳細設定
         </button>
         {showAdvanced && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, paddingLeft: 10 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: '#94A3B8', fontFamily: "'Chakra Petch', sans-serif" }}>
-              <input type="checkbox" style={{ accentColor: '#A78BFA', cursor: 'pointer' }} checked={!!field.sortable} onChange={e => onChange({ ...field, sortable: e.target.checked })} />
+          <div className="flex flex-col gap-1.5 mt-2 pl-2.5">
+            <label className="flex items-center gap-2 cursor-pointer font-body text-xs" style={{ color: 'var(--muted)' }}>
+              <input
+                type="checkbox"
+                style={{ accentColor: 'var(--purple-lite)', cursor: 'pointer' }}
+                checked={!!field.sortable}
+                onChange={e => onChange({ ...field, sortable: e.target.checked })}
+              />
               並び替えを有効にする
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: '#94A3B8', fontFamily: "'Chakra Petch', sans-serif" }}>
-              <input type="checkbox" style={{ accentColor: '#A78BFA', cursor: 'pointer' }} checked={!!field.filterable} onChange={e => onChange({ ...field, filterable: e.target.checked })} />
+            <label className="flex items-center gap-2 cursor-pointer font-body text-xs" style={{ color: 'var(--muted)' }}>
+              <input
+                type="checkbox"
+                style={{ accentColor: 'var(--purple-lite)', cursor: 'pointer' }}
+                checked={!!field.filterable}
+                onChange={e => onChange({ ...field, filterable: e.target.checked })}
+              />
               絞り込みを有効にする
             </label>
           </div>

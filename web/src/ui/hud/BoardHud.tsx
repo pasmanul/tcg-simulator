@@ -3,8 +3,10 @@ import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { newGameCard } from '../../domain/gameLogic'
 import type { GameCard } from '../../domain/types'
+import { useSkin } from '../skin/SkinContext'
 
 export function BoardHud() {
+  const { Button } = useSkin()
   const { undo, initializeField, zones } = useGameStore(s => ({
     undo: s.undo,
     initializeField: s.initializeField,
@@ -30,7 +32,6 @@ export function BoardHud() {
     let deckCards: GameCard[]
 
     if (cards.length === 0) {
-      // ライブラリ未ロード（ダミーモード）: 全ゾーンのカードを集めて使う
       deckCards = Object.values(zones).flatMap(zone => flattenCards(zone.cards))
     } else {
       const cardMap = new Map(cards.map(c => [c.id, c]))
@@ -49,123 +50,44 @@ export function BoardHud() {
     addLog(`フィールド初期化 — ${deckCards.length}枚`)
   }
 
-  const btn: React.CSSProperties = {
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 8,
-    padding: '7px 12px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    transition: 'all 150ms',
-    whiteSpace: 'nowrap' as const,
-  }
-
   return (
-    <div style={{
-      display: 'flex',
-      gap: 8,
-      padding: '6px 12px',
-      background: 'var(--surface)',
-      borderBottom: '1px solid rgba(var(--purple-rgb),0.2)',
-      alignItems: 'center',
-    }}>
-      {/* ハンバーガーメニュー */}
-      <button
+    <div className="flex gap-2 px-3 py-1.5 bg-surface border-b border-border items-center">
+      <Button
+        variant="ghost"
+        className="w-[30px] h-[30px] shrink-0 !p-0 text-base leading-none"
         onClick={toggleSidebar}
-        style={{
-          background: 'transparent',
-          border: '1px solid rgba(124,58,237,0.3)',
-          borderRadius: 5,
-          color: '#A78BFA',
-          fontSize: 16,
-          lineHeight: 1,
-          width: 30,
-          height: 30,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          transition: 'all 150ms',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.15)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         aria-label="メニュー"
       >
         ☰
-      </button>
+      </Button>
 
-      <span style={{
-        fontFamily: "'Press Start 2P', monospace",
-        fontSize: 10,
-        color: '#00FFFF',
-        textShadow: '0 0 12px rgba(0,255,255,0.6)',
-        marginRight: 8,
-      }}>
+      <span
+        className="font-mono text-[10px] mr-2"
+        style={{ color: 'var(--cyan)', textShadow: '0 0 12px rgba(var(--cyan-rgb),0.6)' }}
+      >
         TCG SIM
       </span>
 
-      <button
-        style={{ ...btn, background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', border: 'none' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        onClick={handleInit}
-      >
-        INIT FIELD
-      </button>
+      <Button variant="primary" onClick={handleInit}>INIT FIELD</Button>
+      <Button variant="secondary" onClick={() => openDialog('dice')}
+        style={{ background: '#0d1035', color: '#7799ee', border: '1px solid rgba(50,70,160,0.6)' }}>DICE</Button>
+      <Button variant="secondary" onClick={() => openDialog('save-load')}
+        style={{ background: '#061816', color: '#44bb99', border: '1px solid rgba(30,100,80,0.6)' }}>SAVE/LOAD</Button>
+      <Button variant="secondary" onClick={undo}
+        style={{ background: '#180808', color: '#dd7777', border: '1px solid rgba(120,30,30,0.6)' }}>UNDO</Button>
 
-      <button
-        style={{ ...btn, background: '#0e1440', color: '#a0b8ff', border: '1px solid #283880' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#141c60')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0e1440')}
-        onClick={() => openDialog('dice')}
-      >
-        DICE
-      </button>
-
-      <button
-        style={{ ...btn, background: '#0c1820', color: '#88c4aa', border: '1px solid #204040' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#0f2030')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1820')}
-        onClick={() => openDialog('save-load')}
-      >
-        SAVE/LOAD
-      </button>
-
-      <button
-        style={{ ...btn, background: '#1a0c0c', color: '#eea0a0', border: '1px solid #803030' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#280e0e')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#1a0c0c')}
-        onClick={undo}
-      >
-        UNDO
-      </button>
-
-      <button
-        style={{ ...btn, background: '#0c1c14', color: '#66ddaa', border: '1px solid #225040', marginLeft: 'auto' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102618')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1c14')}
+      <Button
+        variant="secondary"
+        style={{ marginLeft: 'auto', background: '#061412', color: '#44cc88', border: '1px solid rgba(25,90,60,0.6)' }}
         onClick={() => window.open('/hand.html', 'hand', 'width=540,height=720')}
       >
         HAND
-      </button>
+      </Button>
 
-      <button
-        style={{ ...btn, background: '#0c0c28', color: '#aa88dd', border: '1px solid #404080' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#141444')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c0c28')}
-        onClick={openDeckPanel}
-      >
-        DECK
-      </button>
-
-      <button
-        style={{ ...btn, background: '#0c1828', color: '#88aade', border: '1px solid #284060' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#102238')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#0c1828')}
-        onClick={() => openDialog('setup')}
-      >
-        LOAD CARDS
-      </button>
+      <Button variant="secondary" onClick={openDeckPanel}
+        style={{ background: '#080820', color: '#9977dd', border: '1px solid rgba(60,40,140,0.6)' }}>DECK</Button>
+      <Button variant="secondary" onClick={() => openDialog('setup')}
+        style={{ background: '#060c1c', color: '#6699cc', border: '1px solid rgba(30,60,110,0.6)' }}>LOAD CARDS</Button>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import type { GameConfigJson, ZoneDefinition, WindowDefinition } from '../../domain/types'
+import { useSkin } from '../skin/SkinContext'
 
 interface Props {
   initialConfig: GameConfigJson
@@ -9,13 +10,13 @@ interface Props {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: '#0a0e1a',
-  color: '#E2E8F0',
-  border: '1px solid rgba(124,58,237,0.3)',
+  background: 'var(--surface2)',
+  color: 'var(--text)',
+  border: '1px solid rgba(var(--purple-rgb),0.3)',
   borderRadius: 3,
   padding: '4px 7px',
   fontSize: 11,
-  fontFamily: "'Chakra Petch', sans-serif",
+  fontFamily: 'var(--font-body)',
   boxSizing: 'border-box',
 }
 
@@ -25,6 +26,7 @@ const numStyle: React.CSSProperties = {
 }
 
 export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
+  const { Button } = useSkin()
   const [windows, setWindows] = useState<WindowDefinition[]>([...initialConfig.windows])
   const [zones, setZones] = useState<ZoneDefinition[]>([...initialConfig.zones])
   const [selWindowId, setSelWindowId] = useState(initialConfig.windows[0]?.id ?? '')
@@ -160,54 +162,68 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.82)' }}
       onClick={onClose}
     >
       <div
-        style={{ background: '#0a0d1c', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 14, width: '95vw', height: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 0 60px rgba(0,0,0,0.8)', fontFamily: "'Chakra Petch', sans-serif", overflow: 'hidden' }}
+        className="relative rounded-2xl flex flex-col overflow-hidden font-body"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid rgba(var(--purple-rgb),0.4)',
+          width: '95vw',
+          height: '95vh',
+          boxShadow: '0 0 60px rgba(0,0,0,0.8)',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: '1px solid rgba(124,58,237,0.2)', flexShrink: 0 }}>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#A78BFA', textShadow: '0 0 12px rgba(167,139,250,0.5)' }}>
+        <div
+          className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+          style={{ borderBottom: '1px solid rgba(var(--purple-rgb),0.2)' }}
+        >
+          <span className="font-mono text-[10px]" style={{ color: 'var(--purple-lite)', textShadow: '0 0 12px rgba(var(--purple-rgb),0.5)' }}>
             BOARD EDITOR
           </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={onClose}
-              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#505c78', borderRadius: 5, padding: '5px 12px', cursor: 'pointer', fontFamily: "'Chakra Petch', sans-serif", fontSize: 11 }}
-            >
+          <div className="flex gap-2">
+            <Button variant="ghost" style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'var(--muted)' }} onClick={onClose}>
               キャンセル
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              style={{ background: '#4c1d95', color: 'var(--purple-lite)', border: 'none' }}
               onClick={() => onSave({ windows, zones })}
-              style={{ background: '#4c1d95', border: 'none', color: '#c4b5fd', borderRadius: 5, padding: '5px 14px', cursor: 'pointer', fontFamily: "'Press Start 2P', monospace", fontSize: 8 }}
             >
               保存
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+        <div className="flex flex-1 overflow-hidden min-h-0">
 
           {/* Left: Zone List */}
-          <div style={{ width: 220, borderRight: '1px solid rgba(124,58,237,0.2)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-
+          <div
+            className="flex flex-col flex-shrink-0"
+            style={{ width: 220, borderRight: '1px solid rgba(var(--purple-rgb),0.2)' }}
+          >
             {/* Window selector */}
-            <div style={{ padding: '8px 8px 6px', borderBottom: '1px solid rgba(124,58,237,0.15)', flexShrink: 0 }}>
-              <div style={{ fontSize: 9, color: '#505c78', fontFamily: "'Press Start 2P', monospace", marginBottom: 5 }}>WINDOW</div>
+            <div
+              className="flex-shrink-0"
+              style={{ padding: '8px 8px 6px', borderBottom: '1px solid rgba(var(--purple-rgb),0.15)' }}
+            >
+              <div className="font-mono text-[9px] mb-1.5" style={{ color: 'var(--muted)' }}>WINDOW</div>
               <select
                 value={selWindowId}
                 onChange={e => { setSelWindowId(e.target.value); setSelZoneId(null) }}
                 style={{
                   width: '100%',
-                  background: '#0a0e1a',
-                  color: '#c4b5fd',
-                  border: '1px solid rgba(124,58,237,0.4)',
+                  background: 'var(--surface2)',
+                  color: 'var(--purple-lite)',
+                  border: '1px solid rgba(var(--purple-rgb),0.4)',
                   borderRadius: 4,
                   padding: '5px 6px',
-                  fontFamily: "'Chakra Petch', sans-serif",
+                  fontFamily: 'var(--font-body)',
                   fontSize: 11,
                   cursor: 'pointer',
                 }}
@@ -219,33 +235,32 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
             </div>
 
             {/* Zone items */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
+            <div className="flex-1 overflow-y-auto py-1">
               {windowZones.length === 0 && (
-                <div style={{ padding: '12px 10px', color: '#334', fontSize: 10, textAlign: 'center' }}>ゾーンなし</div>
+                <div className="px-2.5 py-3 font-body text-[10px] text-center" style={{ color: 'var(--muted)', opacity: 0.5 }}>
+                  ゾーンなし
+                </div>
               )}
               {windowZones.map(zone => (
                 <div
                   key={zone.id}
                   onClick={() => setSelZoneId(zone.id)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                    background: zone.id === selZoneId ? 'rgba(124,58,237,0.15)' : 'transparent',
-                    borderLeft: `3px solid ${zone.id === selZoneId ? '#7c3aed' : 'transparent'}`,
+                    background: zone.id === selZoneId ? 'rgba(var(--purple-rgb),0.15)' : 'transparent',
+                    borderLeft: `3px solid ${zone.id === selZoneId ? 'var(--purple)' : 'transparent'}`,
                   }}
                 >
-                  <span style={{ fontSize: 9, flexShrink: 0, color: zone.visibility === 'public' ? '#3b82f6' : '#7c3aed' }}>
+                  <span className="text-[9px] flex-shrink-0" style={{ color: zone.visibility === 'public' ? '#3b82f6' : 'var(--purple)' }}>
                     {zone.visibility === 'public' ? '●' : '◆'}
                   </span>
-                  <span style={{ fontSize: 10, color: '#c4b5fd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="font-body text-[10px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: 'var(--purple-lite)' }}>
                     {zone.name}
                   </span>
                   <button
                     onClick={e => { e.stopPropagation(); deleteZone(zone.id) }}
-                    style={{ background: 'transparent', border: 'none', color: '#503050', cursor: 'pointer', fontSize: 13, padding: '0 2px', flexShrink: 0, lineHeight: 1 }}
+                    className="flex-shrink-0 cursor-pointer leading-none"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 13, padding: '0 2px', opacity: 0.5 }}
                     title="削除"
                   >×</button>
                 </div>
@@ -253,32 +268,43 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
             </div>
 
             {/* Add zone */}
-            <div style={{ padding: '8px', borderTop: '1px solid rgba(124,58,237,0.15)', flexShrink: 0 }}>
-              <button
+            <div className="p-2 flex-shrink-0" style={{ borderTop: '1px solid rgba(var(--purple-rgb),0.15)' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                style={{ width: '100%', background: 'rgba(var(--cyan-rgb),0.06)', color: 'var(--cyan)', border: '1px solid rgba(var(--cyan-rgb),0.25)' }}
                 onClick={addZone}
-                style={{ width: '100%', padding: '6px', background: '#0a1a0a', border: '1px solid #204020', borderRadius: 5, color: '#66dd66', fontFamily: "'Press Start 2P', monospace", fontSize: 6, cursor: 'pointer' }}
               >
                 + ゾーン追加
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Right: Preview + Settings */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
             {/* Grid Preview */}
-            <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(124,58,237,0.15)', flexShrink: 0, background: '#07091a' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#505c78' }}>PREVIEW</span>
-                <span style={{ fontSize: 10, color: '#334' }}>{cols} × {rows}</span>
-                <span style={{ fontSize: 10, color: '#505c78' }}>
-                  <span style={{ color: '#3b82f6' }}>●</span> 公開　<span style={{ color: '#7c3aed' }}>◆</span> 非公開
+            <div
+              className="flex-shrink-0 px-3.5 py-3"
+              style={{ borderBottom: '1px solid rgba(var(--purple-rgb),0.15)', background: 'var(--bg2)' }}
+            >
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="font-mono text-[8px]" style={{ color: 'var(--muted)' }}>PREVIEW</span>
+                <span className="font-body text-[10px]" style={{ color: 'var(--muted)', opacity: 0.5 }}>{cols} × {rows}</span>
+                <span className="font-body text-[10px]" style={{ color: 'var(--muted)' }}>
+                  <span style={{ color: '#3b82f6' }}>●</span> 公開　<span style={{ color: 'var(--purple)' }}>◆</span> 非公開
                 </span>
               </div>
 
               <div
                 ref={previewRef}
-                style={{ position: 'relative', width: previewW, height: previewH, background: '#050710', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 4, overflow: 'hidden', userSelect: 'none' }}
+                className="relative overflow-hidden select-none rounded"
+                style={{
+                  width: previewW,
+                  height: previewH,
+                  background: 'var(--bg)',
+                  border: '1px solid rgba(var(--purple-rgb),0.2)',
+                }}
               >
                 {/* Grid lines */}
                 {Array.from({ length: cols - 1 }).map((_, i) => (
@@ -295,8 +321,8 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                   const isPublic = zone.visibility === 'public'
                   const bg = isPublic
                     ? (isSel ? 'rgba(59,130,246,0.6)' : 'rgba(59,130,246,0.28)')
-                    : (isSel ? 'rgba(124,58,237,0.6)' : 'rgba(124,58,237,0.28)')
-                  const border = isPublic ? '#3b82f6' : '#7c3aed'
+                    : (isSel ? 'rgba(var(--purple-rgb),0.6)' : 'rgba(var(--purple-rgb),0.28)')
+                  const border = isPublic ? '#3b82f6' : 'var(--purple)'
                   return (
                     <div
                       key={zone.id}
@@ -324,10 +350,9 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                         zIndex: isDragging ? 10 : 1,
                       }}
                     >
-                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: "'Chakra Petch', sans-serif", pointerEvents: 'none', position: 'relative', zIndex: 1 }}>
+                      <span style={{ fontSize: 8, color: '#fff', textAlign: 'center', textShadow: '0 1px 2px rgba(0,0,0,0.9)', padding: '0 2px', maxWidth: '100%', overflow: 'hidden', fontFamily: 'var(--font-body)', pointerEvents: 'none', position: 'relative', zIndex: 1 }}>
                         {zone.name}
                       </span>
-                      {/* Resize handles (selected zone only) */}
                       {isSel && HANDLES.map(h => (
                         <div
                           key={h.mode}
@@ -351,9 +376,9 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
               </div>
 
               {/* Grid size inputs */}
-              <div style={{ marginTop: 8, display: 'flex', gap: 14, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: '#505c78' }}>グリッド:</span>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#94A3B8' }}>
+              <div className="mt-2 flex gap-3.5 items-center">
+                <span className="font-body text-[10px]" style={{ color: 'var(--muted)' }}>グリッド:</span>
+                <label className="flex items-center gap-1 font-body text-[10px]" style={{ color: 'var(--muted)' }}>
                   列
                   <input
                     type="number" min={1} max={24}
@@ -362,7 +387,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                     style={numStyle}
                   />
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#94A3B8' }}>
+                <label className="flex items-center gap-1 font-body text-[10px]" style={{ color: 'var(--muted)' }}>
                   行
                   <input
                     type="number" min={1} max={24}
@@ -375,80 +400,61 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
             </div>
 
             {/* Zone Settings */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
+            <div className="flex-1 overflow-y-auto px-3.5 py-3">
               {selZone ? (
                 <>
-                  <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#A78BFA', marginBottom: 10 }}>
+                  <div className="font-mono text-[7px] mb-2.5" style={{ color: 'var(--purple-lite)' }}>
                     ZONE SETTINGS
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 14px' }}>
-
+                  <div className="grid grid-cols-2 gap-x-3.5 gap-y-2">
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>ID</label>
-                      <input
-                        value={selZone.id}
-                        onChange={e => patchZone({ id: e.target.value })}
-                        style={inputStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>ID</label>
+                      <input value={selZone.id} onChange={e => patchZone({ id: e.target.value })} style={inputStyle} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>表示名</label>
-                      <input
-                        value={selZone.name}
-                        onChange={e => patchZone({ name: e.target.value })}
-                        style={inputStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>表示名</label>
+                      <input value={selZone.name} onChange={e => patchZone({ name: e.target.value })} style={inputStyle} />
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>列 (col)</label>
-                      <input
-                        type="number" min={0} max={cols - 1}
-                        value={selZone.grid_pos.col}
-                        onChange={e => patchGridPos({ col: Number(e.target.value) })}
-                        style={numStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>列 (col)</label>
+                      <input type="number" min={0} max={cols - 1} value={selZone.grid_pos.col} onChange={e => patchGridPos({ col: Number(e.target.value) })} style={numStyle} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>行 (row)</label>
-                      <input
-                        type="number" min={0} max={rows - 1}
-                        value={selZone.grid_pos.row}
-                        onChange={e => patchGridPos({ row: Number(e.target.value) })}
-                        style={numStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>行 (row)</label>
+                      <input type="number" min={0} max={rows - 1} value={selZone.grid_pos.row} onChange={e => patchGridPos({ row: Number(e.target.value) })} style={numStyle} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>列幅 (col_span)</label>
-                      <input
-                        type="number" min={1} max={cols}
-                        value={selZone.grid_pos.col_span}
-                        onChange={e => patchGridPos({ col_span: Number(e.target.value) })}
-                        style={numStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>列幅 (col_span)</label>
+                      <input type="number" min={1} max={cols} value={selZone.grid_pos.col_span} onChange={e => patchGridPos({ col_span: Number(e.target.value) })} style={numStyle} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>行高 (row_span)</label>
-                      <input
-                        type="number" min={1} max={rows}
-                        value={selZone.grid_pos.row_span}
-                        onChange={e => patchGridPos({ row_span: Number(e.target.value) })}
-                        style={numStyle}
-                      />
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>行高 (row_span)</label>
+                      <input type="number" min={1} max={rows} value={selZone.grid_pos.row_span} onChange={e => patchGridPos({ row_span: Number(e.target.value) })} style={numStyle} />
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 5 }}>公開設定</label>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="col-span-2">
+                      <label className="block font-body text-[10px] mb-1.5" style={{ color: 'var(--muted)' }}>公開設定</label>
+                      <div className="flex gap-2">
                         <button
                           onClick={() => patchZone({ visibility: 'public' })}
-                          style={{ padding: '4px 12px', borderRadius: 4, cursor: 'pointer', border: `1px solid ${selZone.visibility === 'public' ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`, background: selZone.visibility === 'public' ? 'rgba(59,130,246,0.2)' : '#0a0e1a', color: selZone.visibility === 'public' ? '#60a5fa' : '#505c78', fontFamily: "'Chakra Petch', sans-serif", fontSize: 11 }}
+                          className="px-3 py-1 rounded font-body text-xs cursor-pointer transition-all"
+                          style={{
+                            border: `1px solid ${selZone.visibility === 'public' ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`,
+                            background: selZone.visibility === 'public' ? 'rgba(59,130,246,0.2)' : 'var(--surface2)',
+                            color: selZone.visibility === 'public' ? '#60a5fa' : 'var(--muted)',
+                          }}
                         >
                           ● 公開
                         </button>
                         <button
                           onClick={() => patchZone({ visibility: 'private' })}
-                          style={{ padding: '4px 12px', borderRadius: 4, cursor: 'pointer', border: `1px solid ${selZone.visibility === 'private' ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`, background: selZone.visibility === 'private' ? 'rgba(124,58,237,0.2)' : '#0a0e1a', color: selZone.visibility === 'private' ? '#A78BFA' : '#505c78', fontFamily: "'Chakra Petch', sans-serif", fontSize: 11 }}
+                          className="px-3 py-1 rounded font-body text-xs cursor-pointer transition-all"
+                          style={{
+                            border: `1px solid ${selZone.visibility === 'private' ? 'var(--purple)' : 'rgba(255,255,255,0.1)'}`,
+                            background: selZone.visibility === 'private' ? 'rgba(var(--purple-rgb),0.2)' : 'var(--surface2)',
+                            color: selZone.visibility === 'private' ? 'var(--purple-lite)' : 'var(--muted)',
+                          }}
                         >
                           ◆ 非公開
                         </button>
@@ -456,7 +462,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: 10, color: '#505c78', marginBottom: 3 }}>段数 (row_count)</label>
+                      <label className="block font-body text-[10px] mb-0.5" style={{ color: 'var(--muted)' }}>段数 (row_count)</label>
                       <input
                         type="number" min={1} max={8}
                         value={selZone.row_count ?? (selZone.two_row ? 2 : 1)}
@@ -466,14 +472,14 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                     </div>
                     <div />
 
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
+                    <div className="col-span-2 flex flex-wrap gap-x-4 gap-y-1.5">
                       {CHECKS.map(([key, label]) => (
-                        <label key={key as string} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#94A3B8' }}>
+                        <label key={key as string} className="flex items-center gap-1.5 cursor-pointer font-body text-xs" style={{ color: 'var(--muted)' }}>
                           <input
                             type="checkbox"
                             checked={!!(selZone as unknown as Record<string, unknown>)[key as string]}
                             onChange={e => patchZone({ [key]: e.target.checked } as Partial<ZoneDefinition>)}
-                            style={{ accentColor: '#A78BFA', cursor: 'pointer' }}
+                            style={{ accentColor: 'var(--purple-lite)', cursor: 'pointer' }}
                           />
                           {label}
                         </label>
@@ -482,7 +488,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                   </div>
                 </>
               ) : (
-                <div style={{ color: '#334', fontSize: 11, textAlign: 'center', paddingTop: 28, fontFamily: "'Chakra Petch', sans-serif" }}>
+                <div className="font-body text-xs text-center pt-7" style={{ color: 'var(--muted)', opacity: 0.4 }}>
                   ゾーンを選択してください
                 </div>
               )}

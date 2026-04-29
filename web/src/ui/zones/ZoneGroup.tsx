@@ -7,7 +7,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useUIStore } from '../../store/uiStore'
 import { useLibraryStore } from '../../store/libraryStore'
 import { zoneColors, CARD_W, CARD_H } from '../../theme'
-import { useThemeStore } from '../../store/themeStore'
+import { useSkinStore } from '../../store/skinStore'
 import { calcCardPositions } from '../hooks/useCardLayout'
 import { CardShape } from '../cards/CardShape'
 import { logCardName } from '../../domain/gameLogic'
@@ -20,13 +20,6 @@ interface Props {
   height: number
   // Source zone override (for hand_view)
   sourceZoneId?: string
-}
-
-function hexToRgb(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return [r, g, b] as const
 }
 
 export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props) {
@@ -49,7 +42,8 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
   const cardBackUrl = useLibraryStore(s => s.cardBackUrl)
   const [backImg] = useImage(cardBackUrl)
 
-  const zonePalette = useThemeStore(s => s.currentTheme.zonePalette)
+  const zonePalette = useSkinStore(s => s.currentSkin.zonePalette)
+  const tokens = useSkinStore(s => s.currentSkin.tokens)
   const colors = zoneColors(zoneDef.id, zonePalette)
   const cardScale = zoneDef.card_scale ?? 1.0
 
@@ -72,8 +66,6 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
     cardW, cardH,
     effectiveRowCount,
   )
-
-  const [bgR, bgG, bgB] = hexToRgb(colors.bgTop)
 
   // Find which zone contains a point (used for drop target detection)
   const groupRef = useRef<Konva.Group>(null)
@@ -194,7 +186,7 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
               <Rect
                 x={pileX} y={pileY}
                 width={pileCardW} height={pileCardH}
-                fill="#061420"
+                fill={tokens.bg2}
                 stroke={colors.border}
                 strokeWidth={2}
                 cornerRadius={6}
@@ -209,9 +201,9 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
               return (
                 <>
                   <Rect x={bx} y={by} width={bw} height={bh}
-                    fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} />
+                    fill={tokens.surface2} stroke={tokens.cyan} strokeWidth={1} cornerRadius={3} />
                   <Text x={bx} y={by + 2} width={bw} align="center"
-                    text={bt} fontSize={9} fill="#ffdd66"
+                    text={bt} fontSize={9} fill={tokens.purpleLite}
                     fontFamily="'Press Start 2P', monospace" />
                 </>
               )
@@ -259,9 +251,9 @@ export function ZoneGroup({ zoneDef, x, y, width, height, sourceZoneId }: Props)
         return (
           <>
             <Rect x={bx} y={by} width={bw} height={bh}
-              fill="#0a0e1a" stroke="rgba(0,255,255,0.4)" strokeWidth={1} cornerRadius={3} listening={false} />
+              fill={tokens.surface2} stroke={tokens.cyan} strokeWidth={1} cornerRadius={3} listening={false} />
             <Text x={bx} y={by + 2} width={bw} align="center"
-              text={bt} fontSize={9} fill="#ffdd66"
+              text={bt} fontSize={9} fill={tokens.purpleLite}
               fontFamily="'Press Start 2P', monospace" listening={false} />
           </>
         )

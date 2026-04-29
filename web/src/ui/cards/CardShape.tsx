@@ -5,6 +5,7 @@ import type { GameCard } from '../../domain/types'
 import { CARD_W, CARD_H } from '../../theme'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
+import { useSkinStore } from '../../store/skinStore'
 
 interface Props {
   gc: GameCard
@@ -52,6 +53,7 @@ export function CardShape({
   const resolveUrl = useLibraryStore(s => s.resolveImageUrl)
   const backUrl = useLibraryStore(s => s.cardBackUrl)
   const setZoom = useUIStore(s => s.setZoom)
+  const tokens = useSkinStore(s => s.currentSkin.tokens)
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const showBack = forceUp ? false : (masked || gc.face_down)
@@ -125,8 +127,8 @@ export function CardShape({
           y={-cardH / 2}
           width={cardW}
           height={cardH}
-          fill={showBack ? '#1a1a3a' : '#0d1a0d'}
-          stroke={showBack ? '#3050a0' : '#205020'}
+          fill={showBack ? tokens.bg2 : tokens.surface}
+          stroke={showBack ? tokens.purple : tokens.cyan}
           strokeWidth={1}
           cornerRadius={6}
         />
@@ -140,7 +142,7 @@ export function CardShape({
           width={cardW - 8}
           text={gc.card.name}
           fontSize={11}
-          fill="#aaccaa"
+          fill={tokens.muted}
           fontFamily="'Chakra Petch', sans-serif"
           wrap="word"
         />
@@ -153,7 +155,7 @@ export function CardShape({
           y={-cardH / 2 - 2}
           width={cardW + 4}
           height={cardH + 4}
-          stroke="#50b4ff"
+          stroke={tokens.cyan}
           strokeWidth={3}
           fill="transparent"
           cornerRadius={8}
@@ -191,7 +193,7 @@ export function CardShape({
           y={-cardH / 2 + 2}
           width={20}
           height={16}
-          fill="#e07020"
+          fill={tokens.pink}
           cornerRadius={3}
           onClick={(e) => {
             e.cancelBubble = true

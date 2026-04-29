@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useLibraryStore } from '../../store/libraryStore'
+import { useSkin } from '../skin/SkinContext'
 
 function useToast() {
   const [msg, setMsg] = useState<string | null>(null)
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function DeckGrid({ selectedCardId, onSelect }: Props) {
+  const { Button } = useSkin()
   const { currentDeckFn, cards, resolveImageUrl, cardBackUrl, loadDeck } = useLibraryStore(s => ({
     currentDeckFn: s.currentDeck,
     cards: s.cards,
@@ -33,14 +35,8 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
 
   function addCard(cardId: string) {
     const existing = currentDeck.find(e => e.cardId === cardId)
-    if (existing && existing.count >= 4) {
-      showToast('同じカードは4枚まで')
-      return
-    }
-    if (totalCount >= 40) {
-      showToast('デッキは40枚まで')
-      return
-    }
+    if (existing && existing.count >= 4) { showToast('同じカードは4枚まで'); return }
+    if (totalCount >= 40) { showToast('デッキは40枚まで'); return }
     const next = existing
       ? currentDeck.map(e => e.cardId === cardId ? { ...e, count: e.count + 1 } : e)
       : [...currentDeck, { cardId, count: 1 }]
@@ -58,9 +54,8 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
   }
 
   function removeCard(cardId: string) {
-    const next = currentDeck.filter(e => e.cardId !== cardId)
+    loadDeck(currentDeck.filter(e => e.cardId !== cardId))
     onSelect(null)
-    loadDeck(next)
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -70,54 +65,32 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
     if (!raw) return
     try {
       const parsed = JSON.parse(raw)
-      if (parsed.source === 'deck') return  // デッキ→デッキは無視
+      if (parsed.source === 'deck') return
       if (parsed.cardId) addCard(parsed.cardId)
     } catch {
       // ignore
     }
   }
 
-  const actionBtn: React.CSSProperties = {
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 8,
-    padding: '6px 12px',
-    borderRadius: 5,
-    transition: 'all 150ms',
-    flex: 1,
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="flex flex-col h-full">
       {/* ドロップ領域 */}
       <div
         onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
+        className="flex-1 overflow-y-auto p-2 grid gap-2 rounded-lg transition-all duration-150"
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 8,
-          display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, 152px)',
-          gap: 8,
           alignContent: 'start',
           justifyContent: 'start',
           background: isDragOver ? 'rgba(0,255,255,0.04)' : 'transparent',
           border: isDragOver ? '2px dashed rgba(0,255,255,0.4)' : '2px dashed transparent',
-          borderRadius: 8,
-          transition: 'all 150ms',
           minHeight: 120,
         }}
       >
         {currentDeck.length === 0 && !isDragOver && (
-          <div style={{
-            gridColumn: '1 / -1',
-            color: '#2a3550',
-            fontFamily: "'Chakra Petch', sans-serif",
-            fontSize: 12,
-            padding: 24,
-            textAlign: 'center',
-          }}>
+          <div className="col-span-full text-muted font-body text-xs p-6 text-center opacity-30">
             ← 左からカードをドロップ
           </div>
         )}
@@ -137,47 +110,26 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
               onMouseEnter={() => setHoveredId(entry.cardId)}
               onMouseLeave={() => setHoveredId(null)}
               onClick={() => onSelect(isSelected ? null : entry.cardId)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 3,
-                cursor: 'grab',
-                userSelect: 'none',
-              }}
+              className="flex flex-col items-center gap-1 cursor-grab select-none"
             >
-              <div style={{
-                position: 'relative',
-                width: 140,
-                aspectRatio: '150/210',
-                borderRadius: 4,
-                overflow: 'visible',
-                border: isSelected ? '2px solid #00FFFF' : '1px solid rgba(0,255,255,0.2)',
-                background: '#0d1020',
-                flexShrink: 0,
-                boxShadow: isSelected ? '0 0 8px rgba(0,255,255,0.5)' : 'none',
-              }}>
-                <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 3 }}>
+              <div
+                className="relative w-[140px] flex-shrink-0 rounded overflow-visible bg-surface2"
+                style={{
+                  aspectRatio: '150/210',
+                  border: isSelected ? '2px solid var(--cyan)' : '1px solid rgba(0,255,255,0.2)',
+                  boxShadow: isSelected ? '0 0 8px rgba(0,255,255,0.5)' : 'none',
+                }}
+              >
+                <div className="w-full h-full overflow-hidden rounded-[3px]">
                   {imgUrl ? (
-                    <img src={imgUrl} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={imgUrl} alt={card.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', background: '#1a1a2e' }} />
+                    <div className="w-full h-full bg-surface" />
                   )}
                 </div>
                 {/* 枚数バッジ */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: -6,
-                  right: -6,
-                  background: '#0a0e1a',
-                  border: '1px solid rgba(0,255,255,0.4)',
-                  color: '#ffdd66',
-                  fontSize: 9,
-                  fontFamily: "'Press Start 2P', monospace",
-                  padding: '1px 4px',
-                  borderRadius: 3,
-                  lineHeight: 1.4,
-                }}>
+                <div className="absolute -bottom-1.5 -right-1.5 font-mono text-[9px] px-1 rounded leading-[1.4]"
+                  style={{ background: '#0a0e1a', border: '1px solid rgba(0,255,255,0.4)', color: '#ffdd66' }}>
                   ×{entry.count}
                 </div>
                 {/* ホバー一括削除ボタン */}
@@ -185,23 +137,8 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
                   <button
                     onClick={e => { e.stopPropagation(); removeCard(entry.cardId) }}
                     onMouseDown={e => e.preventDefault()}
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      background: 'rgba(20,8,8,0.88)',
-                      border: '1px solid rgba(255,80,80,0.5)',
-                      color: '#ff6666',
-                      borderRadius: 4,
-                      width: 22,
-                      height: 22,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      lineHeight: 1,
-                    }}
+                    className="absolute top-1 right-1 w-[22px] h-[22px] text-xs flex items-center justify-center rounded cursor-pointer"
+                    style={{ background: 'rgba(20,8,8,0.88)', border: '1px solid rgba(255,80,80,0.5)', color: '#ff6666' }}
                     title="デッキから全削除"
                   >✕</button>
                 )}
@@ -212,58 +149,34 @@ export function DeckGrid({ selectedCardId, onSelect }: Props) {
       </div>
 
       {/* +1 / -1 / 削除 */}
-      <div style={{
-        display: 'flex',
-        gap: 6,
-        padding: '8px',
-        borderTop: '1px solid rgba(124,58,237,0.15)',
-        flexShrink: 0,
-      }}>
+      <div className="flex gap-1.5 p-2 border-t border-border flex-shrink-0">
         {([
-          { action: 'inc', label: '+1', bg: '#0c280c', fg: '#88dd88', border: '#285028' },
-          { action: 'dec', label: '-1', bg: '#1a1020', fg: '#ddaa88', border: '#503828' },
-          { action: 'del', label: '削除', bg: '#200c0c', fg: '#dd8888', border: '#502828' },
-        ] as const).map(({ action, label, bg, fg, border }) => (
-          <button
+          { action: 'inc', label: '+1', variant: 'secondary' },
+          { action: 'dec', label: '-1', variant: 'secondary' },
+          { action: 'del', label: '削除', variant: 'danger' },
+        ] as const).map(({ action, label, variant }) => (
+          <Button
             key={action}
+            size="sm"
+            variant={variant}
             disabled={!selectedCardId}
+            className="flex-1"
             onClick={() => {
               if (!selectedCardId) return
               if (action === 'inc') addCard(selectedCardId)
               else if (action === 'dec') decCard(selectedCardId)
               else removeCard(selectedCardId)
             }}
-            style={{
-              ...actionBtn,
-              cursor: selectedCardId ? 'pointer' : 'not-allowed',
-              background: selectedCardId ? bg : '#111',
-              color: selectedCardId ? fg : '#333',
-              border: `1px solid ${selectedCardId ? border : '#222'}`,
-            }}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* トースト */}
       {toastMsg && (
-        <div style={{
-          position: 'fixed',
-          bottom: 24,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#1a0a0a',
-          border: '1px solid #cc3333',
-          color: '#ff8888',
-          padding: '8px 20px',
-          borderRadius: 8,
-          fontFamily: "'Chakra Petch', sans-serif",
-          fontSize: 13,
-          zIndex: 9000,
-          pointerEvents: 'none',
-          boxShadow: '0 0 20px rgba(255,0,0,0.2)',
-        }}>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 font-body text-[13px] px-5 py-2 rounded-lg pointer-events-none z-[9000]"
+          style={{ background: '#1a0a0a', border: '1px solid #cc3333', color: '#ff8888', boxShadow: '0 0 20px rgba(255,0,0,0.2)' }}>
           {toastMsg}
         </div>
       )}

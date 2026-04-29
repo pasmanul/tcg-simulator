@@ -8,10 +8,11 @@ import { CardEditorDialog } from '../overlays/CardEditorDialog'
 import { GameSetupWizard } from '../overlays/GameSetupWizard'
 import { useLibraryStore } from '../../store/libraryStore'
 import { useUIStore } from '../../store/uiStore'
-import { PAGE_STYLE } from '../pageLayout'
+import { useSkin } from '../skin/SkinContext'
 import type { Card } from '../../domain/types'
 
 function DeckPanelHeader() {
+  const { Button } = useSkin()
   const { activeDeckIndex, currentDeckName, newDeck, renameDeck, deleteDeck, decks, setDeckCardBack } = useLibraryStore(s => ({
     activeDeckIndex: s.activeDeckIndex,
     currentDeckName: s.currentDeckName,
@@ -30,16 +31,6 @@ function DeckPanelHeader() {
 
   const hasDeck = activeDeckIndex >= 0
   const deckName = currentDeckName()
-
-  const btn: React.CSSProperties = {
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 8,
-    padding: '5px 10px',
-    borderRadius: 5,
-    cursor: 'pointer',
-    transition: 'all 150ms',
-    whiteSpace: 'nowrap',
-  }
 
   function handleStartRename() {
     setNameInput(deckName)
@@ -73,27 +64,12 @@ function DeckPanelHeader() {
     setConfirmingDelete(false)
   }
 
-  const inputStyle: React.CSSProperties = {
-    background: '#0a0e1a',
-    color: '#E2E8F0',
-    borderRadius: 4,
-    padding: '4px 8px',
-    fontFamily: "'Chakra Petch', sans-serif",
-    fontSize: 12,
-  }
+  const inputCls = 'bg-surface2 text-text-base border border-border rounded-theme px-2 py-1 font-body text-xs focus:outline-none focus:border-primary'
 
   return (
-    <div style={{
-      padding: '6px 12px',
-      background: '#060810',
-      borderBottom: '1px solid rgba(0,255,255,0.15)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      flexShrink: 0,
-      minHeight: 36,
-    }}>
-      {/* デッキ名 */}
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-bg2 border-b border-border flex-shrink-0 min-h-[36px]"
+      style={{ borderBottomColor: 'rgba(0,255,255,0.15)' }}>
+
       {hasDeck && !addingDeck && !confirmingDelete && (
         editingName ? (
           <input
@@ -102,24 +78,15 @@ function DeckPanelHeader() {
             onChange={e => setNameInput(e.target.value)}
             onBlur={handleCommitRename}
             onKeyDown={e => { if (e.key === 'Enter') handleCommitRename(); if (e.key === 'Escape') setEditingName(false) }}
-            style={{ ...inputStyle, border: '1px solid rgba(0,255,255,0.5)', width: 160 }}
+            className={inputCls}
+            style={{ border: '1px solid rgba(0,255,255,0.5)', width: 160 }}
           />
         ) : (
           <span
             title="クリックでリネーム"
             onClick={handleStartRename}
-            style={{
-              fontFamily: "'Chakra Petch', sans-serif",
-              fontSize: 13,
-              color: '#00FFFF',
-              cursor: 'text',
-              borderBottom: '1px dashed rgba(0,255,255,0.3)',
-              padding: '1px 4px',
-              maxWidth: 200,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+            className="font-body text-[13px] text-accent cursor-text max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap px-1 py-px"
+            style={{ borderBottom: '1px dashed rgba(0,255,255,0.3)' }}
           >
             {deckName}
           </span>
@@ -127,12 +94,9 @@ function DeckPanelHeader() {
       )}
 
       {!hasDeck && !addingDeck && (
-        <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, color: '#334' }}>
-          デッキなし
-        </span>
+        <span className="font-body text-xs text-muted opacity-30">デッキなし</span>
       )}
 
-      {/* 新規追加UI */}
       {addingDeck ? (
         <>
           <input
@@ -142,92 +106,45 @@ function DeckPanelHeader() {
             onBlur={handleCommitAdd}
             onKeyDown={e => { if (e.key === 'Enter') handleCommitAdd(); if (e.key === 'Escape') handleCancelAdd() }}
             placeholder="デッキ名を入力"
-            style={{ ...inputStyle, border: '1px solid rgba(100,220,100,0.5)', width: 140 }}
+            className={inputCls}
+            style={{ border: '1px solid rgba(100,220,100,0.5)', width: 140 }}
           />
-          <button
-            style={{ ...btn, background: '#0a1a0a', color: '#66dd66', border: '1px solid #204020' }}
-            onMouseDown={e => e.preventDefault()}
-            onClick={handleCommitAdd}
-          >✓</button>
-          <button
-            style={{ ...btn, background: '#1a0a0a', color: '#dd6666', border: '1px solid #402020' }}
-            onMouseDown={e => e.preventDefault()}
-            onClick={handleCancelAdd}
-          >✕</button>
+          <Button size="sm" onMouseDown={e => e.preventDefault()} onClick={handleCommitAdd}>✓</Button>
+          <Button size="sm" variant="danger" onMouseDown={e => e.preventDefault()} onClick={handleCancelAdd}>✕</Button>
         </>
       ) : confirmingDelete ? (
         <>
-          <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 11, color: '#ff8888', whiteSpace: 'nowrap' }}>
-            「{deckName}」削除？
-          </span>
-          <button
-            style={{ ...btn, background: '#2a0a0a', color: '#ff6666', border: '1px solid #602020' }}
-            onClick={handleCommitDelete}
-          >はい</button>
-          <button
-            style={{ ...btn, background: '#111', color: '#888', border: '1px solid #333' }}
-            onClick={() => setConfirmingDelete(false)}
-          >いいえ</button>
+          <span className="font-body text-[11px] text-danger whitespace-nowrap">「{deckName}」削除？</span>
+          <Button size="sm" variant="danger" onClick={handleCommitDelete}>はい</Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmingDelete(false)}>いいえ</Button>
         </>
       ) : (
         <>
-          {/* + 新規 */}
-          <button
-            style={{ ...btn, background: '#0a1a0a', color: '#66dd66', border: '1px solid #204020' }}
-            title="新規デッキ"
-            onMouseEnter={e => (e.currentTarget.style.background = '#0e240e')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#0a1a0a')}
-            onClick={handleStartAdd}
-          >+</button>
-
-          {/* × 削除 */}
+          <Button size="sm" title="新規デッキ" onClick={handleStartAdd}>+</Button>
           {hasDeck && (
-            <button
-              style={{ ...btn, background: '#1a0a0a', color: '#dd6666', border: '1px solid #402020' }}
-              title="デッキを削除"
-              onMouseEnter={e => (e.currentTarget.style.background = '#240e0e')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#1a0a0a')}
-              onClick={() => setConfirmingDelete(true)}
-            >×</button>
+            <Button size="sm" variant="danger" title="デッキを削除" onClick={() => setConfirmingDelete(true)}>×</Button>
           )}
         </>
       )}
 
-      {/* カード裏面登録 */}
       {hasDeck && (
-        <label
-          title="デッキ裏面画像を設定"
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            cursor: 'pointer',
-          }}
-        >
+        <label title="デッキ裏面画像を設定" className="ml-auto flex items-center gap-1.5 cursor-pointer">
           {decks[activeDeckIndex]?.cardBack && (
             <img
               src={decks[activeDeckIndex].cardBack}
               alt="card back"
-              style={{ height: 22, aspectRatio: '150/210', objectFit: 'cover', borderRadius: 2, border: '1px solid rgba(124,58,237,0.4)' }}
+              className="h-[22px] rounded object-cover border border-border"
+              style={{ aspectRatio: '150/210' }}
             />
           )}
-          <span style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            padding: '4px 8px',
-            background: 'rgba(124,58,237,0.15)',
-            border: '1px solid rgba(124,58,237,0.4)',
-            borderRadius: 4,
-            color: '#A78BFA',
-            whiteSpace: 'nowrap',
-          }}>
+          <span className="font-mono text-[7px] px-2 py-1 rounded-theme text-primary-lite border border-border whitespace-nowrap"
+            style={{ background: 'rgba(124,58,237,0.15)' }}>
             BACK IMG
           </span>
           <input
             type="file"
             accept="image/*"
-            style={{ display: 'none' }}
+            className="hidden"
             onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
@@ -239,12 +156,12 @@ function DeckPanelHeader() {
           />
         </label>
       )}
-
     </div>
   )
 }
 
 export function DeckPage() {
+  const { Button } = useSkin()
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER)
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [cardEditorOpen, setCardEditorOpen] = useState(false)
@@ -266,56 +183,32 @@ export function DeckPage() {
   const openSetup = useUIStore(s => s.openDialog)
 
   return (
-    <div style={PAGE_STYLE}>
+    <div className="flex flex-col w-full h-full overflow-hidden bg-bg text-text-base font-body">
 
       {/* プロファイル情報バー */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '4px 14px',
-        background: '#060810',
-        borderBottom: '1px solid rgba(124,58,237,0.12)',
-        flexShrink: 0,
-        minHeight: 30,
-      }}>
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#505c78' }}>GAME:</span>
-        <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: 12, color: profileName ? '#A78BFA' : '#334', fontStyle: profileName ? 'normal' : 'italic', flex: 1 }}>
+      <div className="flex items-center gap-2.5 px-3.5 py-1 bg-bg2 border-b border-border flex-shrink-0 min-h-[30px]"
+        style={{ borderBottomColor: 'rgba(124,58,237,0.12)' }}>
+        <span className="font-mono text-[7px] text-muted">GAME:</span>
+        <span className={`font-body text-xs flex-1 ${profileName ? 'text-primary-lite' : 'text-muted italic opacity-40'}`}>
           {profileName || '未ロード'}
         </span>
-        <button
-          onClick={() => openSetup('setup')}
-          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', background: '#0c1428', color: '#88aade', border: '1px solid #203050' }}
-        >
-          ロード
-        </button>
+        <Button size="sm" onClick={() => openSetup('setup')}>ロード</Button>
         {profileName && (
-          <button
-            onClick={exportGameProfile}
-            style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', background: '#0c2814', color: '#66bb88', border: '1px solid #204030' }}
-          >
-            エクスポート
-          </button>
+          <Button size="sm" onClick={exportGameProfile}>エクスポート</Button>
         )}
       </div>
 
       <DeckHud />
 
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="flex-1 flex overflow-hidden">
         {/* 左パネル: カードプール */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid rgba(124,58,237,0.2)',
-          overflow: 'hidden',
-        }}>
+        <div className="flex-1 flex flex-col border-r border-border overflow-hidden">
           <FilterBar cards={allCards} filter={filter} onChange={setFilter} onAddCard={() => setCardEditorOpen(true)} />
           <LibraryGrid filter={filter} onEditCard={card => setEditingCard(card)} onDeckCardDrop={handleDeckCardDrop} />
         </div>
 
         {/* 右パネル: デッキ内容 */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="flex-1 flex flex-col overflow-hidden">
           <DeckPanelHeader />
           <DeckGrid selectedCardId={selectedCardId} onSelect={setSelectedCardId} />
         </div>
