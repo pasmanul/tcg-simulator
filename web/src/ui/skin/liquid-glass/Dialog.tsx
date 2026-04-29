@@ -18,7 +18,7 @@ export function Dialog({
 
       {/* Panel */}
       <div
-        className={`relative z-10 p-6 shadow-2xl overflow-y-auto max-h-[90vh] w-full ${width} ${className} backdrop-blur-[28px] bg-stone-900/70 shadow-lg border border-stone-700/40 rounded-lg`}
+        className={`relative z-10 p-6 shadow-2xl overflow-y-auto max-h-[90vh] w-full ${width} ${className} backdrop-blur-[28px] bg-stone-900/70 border border-stone-700/40 rounded-lg`}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {title !== undefined && (

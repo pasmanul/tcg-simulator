@@ -284,14 +284,14 @@ export interface ZoneColors {
   titleBar: string
 }
 
-/** @deprecated themeStore経由でzonePaletteを使うこと */
+/** @deprecated useSkinStore(s => s.currentSkin.zonePalette) を使うこと */
 export function zoneColors(zoneId: string, zonePalette?: Theme['zonePalette']): ZoneColors {
   const palette = zonePalette ?? darkCyber.zonePalette
   const t = palette[zoneId] ?? palette['temp'] ?? darkCyber.zonePalette['temp']
   return { bgTop: t[0], bgBottom: t[1], border: t[2], titleFg: t[3], titleBar: t[4] }
 }
 
-/** @deprecated themeStore.currentTheme.tokensを使うこと */
+/** @deprecated useSkinStore(s => s.currentSkin.tokens) を使うこと */
 export const TOKENS = darkCyber.tokens
 
 export const CARD_W = 150

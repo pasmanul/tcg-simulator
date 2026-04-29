@@ -1,11 +1,7 @@
 import type { ThemeTokens } from '../types'
 import type { ZonePalette } from '../types'
+import { hexToRgb } from '../utils'
 import { darkCyber } from '../../../theme'
-
-function hexToRgb(hex: string): string {
-  const c = hex.replace('#', '')
-  return `${parseInt(c.slice(0, 2), 16)},${parseInt(c.slice(2, 4), 16)},${parseInt(c.slice(4, 6), 16)}`
-}
 
 export const liquidGlassTokens: ThemeTokens = {
   bg:         '#1C1917',
@@ -45,4 +41,10 @@ export const liquidGlassCssOverrides = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 `
 
-export const liquidGlassZonePalette: ZonePalette = darkCyber.zonePalette
+// ウォームゴールド系ゾーンパレット [bg, border, text, tapped-bg, tapped-border]
+export const liquidGlassZonePalette: ZonePalette = {
+  ...darkCyber.zonePalette,
+  deck:   ['#1C1917', '#92400E', '#FCD34D', '#0C0A09', '#78350F'],
+  hand:   ['#1C1917', '#78350F', '#FCD34D', '#0C0A09', '#92400E'],
+  temp:   ['#1C1917', '#44403C', '#D6D3D1', '#0C0A09', '#57534E'],
+}

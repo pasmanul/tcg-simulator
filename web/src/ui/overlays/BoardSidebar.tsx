@@ -1,6 +1,7 @@
 import { useUIStore } from '../../store/uiStore'
 import { useSkin } from '../skin/SkinContext'
 
+
 export interface SidebarItem {
   icon: string
   label: string
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export function BoardSidebar({ items }: Props) {
-  const { Button } = useSkin()
+  const { Button, Panel } = useSkin()
   const { sidebarOpen, closeSidebar } = useUIStore(s => ({
     sidebarOpen: s.sidebarOpen,
     closeSidebar: s.closeSidebar,
@@ -30,8 +31,9 @@ export function BoardSidebar({ items }: Props) {
       )}
 
       {/* Sidebar pane */}
-      <div
-        className={`fixed top-0 left-0 bottom-0 w-60 z-[601] bg-surface border-r border-primary/40 flex flex-col font-body transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+      <Panel
+        variant="default"
+        className={`fixed top-0 left-0 bottom-0 w-60 z-[601] flex flex-col font-body transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] !rounded-none !border-t-0 !border-b-0 !border-l-0
           ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_32px_rgba(0,0,0,0.7)]' : '-translate-x-full'}`}
       >
         {/* Header */}
@@ -74,7 +76,7 @@ export function BoardSidebar({ items }: Props) {
             </button>
           ))}
         </div>
-      </div>
+      </Panel>
     </>
   )
 }

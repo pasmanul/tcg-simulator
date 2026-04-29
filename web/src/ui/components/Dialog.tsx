@@ -4,7 +4,7 @@ interface DialogProps {
   open: boolean
   onClose: () => void
   title?: string
-  children: React.ReactNode
+  children?: React.ReactNode
   width?: string
   className?: string
 }

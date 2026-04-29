@@ -1,10 +1,12 @@
 import { useUIStore } from '../../store/uiStore'
+import { useSkin } from '../skin/SkinContext'
 
 export function ActionLog() {
+  const { Panel } = useSkin()
   const log = useUIStore(s => s.actionLog)
 
   return (
-    <div className="flex flex-col bg-surface2 border border-primary/20 rounded-theme overflow-hidden h-full">
+    <Panel variant="inset" className="flex flex-col overflow-hidden h-full">
       {/* Header */}
       <div className="px-2.5 py-1.5 bg-surface2 border-b border-primary/15 font-mono text-[8px] text-muted tracking-wide flex-shrink-0">
         ACTION LOG
@@ -24,6 +26,6 @@ export function ActionLog() {
           <p className="text-muted text-[10px] font-mono mt-1">No actions yet</p>
         )}
       </div>
-    </div>
+    </Panel>
   )
 }

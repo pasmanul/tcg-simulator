@@ -54,7 +54,7 @@ export function BoardHud() {
     <div className="flex gap-2 px-3 py-1.5 bg-surface border-b border-border items-center">
       <Button
         variant="ghost"
-        style={{ width: 30, height: 30, flexShrink: 0, padding: 0, fontSize: 16, lineHeight: 1 }}
+        className="w-[30px] h-[30px] shrink-0 !p-0 text-base leading-none"
         onClick={toggleSidebar}
         aria-label="メニュー"
       >

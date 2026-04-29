@@ -1,11 +1,7 @@
 import type { ThemeTokens } from '../types'
 import type { ZonePalette } from '../types'
+import { hexToRgb } from '../utils'
 import { darkCyber } from '../../../theme'
-
-function hexToRgb(hex: string): string {
-  const c = hex.replace('#', '')
-  return `${parseInt(c.slice(0, 2), 16)},${parseInt(c.slice(2, 4), 16)},${parseInt(c.slice(4, 6), 16)}`
-}
 
 export const glassmorphismTokens: ThemeTokens = {
   bg:         '#0F0F1A',
@@ -45,4 +41,10 @@ export const glassmorphismCssOverrides = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 `
 
-export const glassmorphismZonePalette: ZonePalette = darkCyber.zonePalette
+// インディゴ/シアン系ゾーンパレット [bg, border, text, tapped-bg, tapped-border]
+export const glassmorphismZonePalette: ZonePalette = {
+  ...darkCyber.zonePalette,
+  deck:   ['#0F172A', '#3730A3', '#A5B4FC', '#080810', '#312E81'],
+  hand:   ['#0F172A', '#0E7490', '#67E8F9', '#080810', '#155E75'],
+  temp:   ['#0F172A', '#1E293B', '#94A3B8', '#080810', '#334155'],
+}

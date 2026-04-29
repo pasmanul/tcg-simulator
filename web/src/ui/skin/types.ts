@@ -14,7 +14,7 @@ export interface ButtonProps {
   disabled?: boolean
   className?: string
   style?: React.CSSProperties
-  children: React.ReactNode
+  children?: React.ReactNode
   type?: 'button' | 'submit' | 'reset'
   onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>
   onMouseLeave?: React.MouseEventHandler<HTMLButtonElement>
@@ -27,7 +27,7 @@ export interface DialogProps {
   open: boolean
   onClose: () => void
   title?: string
-  children: React.ReactNode
+  children?: React.ReactNode
   width?: string
   className?: string
 }

@@ -7,7 +7,7 @@ interface ButtonProps {
   disabled?: boolean
   className?: string
   style?: React.CSSProperties
-  children: React.ReactNode
+  children?: React.ReactNode
   type?: 'button' | 'submit' | 'reset'
   onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>
   onMouseLeave?: React.MouseEventHandler<HTMLButtonElement>

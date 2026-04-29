@@ -67,7 +67,7 @@ function StepIndicator({ current }: { current: number }) {
 // ウィザード本体
 // ──────────────────────────────────────────────
 export function GameSetupWizard() {
-  const { Button, Input } = useSkin()
+  const { Button, Dialog, Input } = useSkin()
   const { activeDialog, closeDialog } = useUIStore(s => ({
     activeDialog: s.activeDialog,
     closeDialog: s.closeDialog,
@@ -158,27 +158,8 @@ export function GameSetupWizard() {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.75)' }}>
-      <div
-        className="relative w-[560px] max-h-[88vh] overflow-y-auto rounded-2xl flex flex-col font-body"
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          padding: 28,
-          boxShadow: '0 0 60px rgba(var(--cyan-rgb),0.15)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-mono text-[11px]" style={{ color: 'var(--cyan)', textShadow: '0 0 16px rgba(var(--cyan-rgb),0.6)' }}>
-            NEW GAME SETUP
-          </h2>
-          <Button variant="ghost" onClick={closeDialog} style={{ border: 'none', color: 'var(--muted)', padding: '0 4px', fontSize: 18, lineHeight: 1 }} aria-label="閉じる">
-            ×
-          </Button>
-        </div>
-
-        <StepIndicator current={step} />
+    <Dialog open={true} onClose={closeDialog} title="NEW GAME SETUP" width="max-w-[560px]" className="flex flex-col font-body">
+      <StepIndicator current={step} />
 
         {/* ──────── Step 0: 基本情報 ──────── */}
         {step === 0 && (
@@ -345,7 +326,6 @@ export function GameSetupWizard() {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

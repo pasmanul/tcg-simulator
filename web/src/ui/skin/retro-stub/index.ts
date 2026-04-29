@@ -7,6 +7,7 @@ import { Select } from '../../components/Select'
 import { Panel }  from './Panel'
 import type { SkinDef } from '../types'
 import { darkCyber } from '../../../theme'
+import { hexToRgb } from '../utils'
 
 export const retroStubSkin: SkinDef = {
   id: 'retro-dark-cyber',
@@ -33,9 +34,4 @@ export const retroStubSkin: SkinDef = {
     '--glow':        '1',
   },
   components: { Button, Dialog, Input, Select, Panel },
-}
-
-function hexToRgb(hex: string): string {
-  const c = hex.replace('#', '')
-  return `${parseInt(c.slice(0,2),16)},${parseInt(c.slice(2,4),16)},${parseInt(c.slice(4,6),16)}`
 }

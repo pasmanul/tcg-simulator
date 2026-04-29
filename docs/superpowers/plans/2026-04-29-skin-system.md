@@ -207,7 +207,7 @@ const { Button, Dialog, Panel } = useSkin()
   - themeStore と同じ構造（currentSkin / setSkin / loadSavedSkin）
   - STORAGE_KEY: `'tcg-sim-skin'`
   - applySkin() がcssVarsを全てdocument.documentElementに適用
-  - デフォルト: glassmorphism（新スキン優先）
+  - デフォルト: liquid-glass（新スキン優先）
 
 - [x] **Task 1-3: `web/src/ui/skin/SkinContext.tsx` 作成**
   - SkinProvider / useSkin() / useSkinDef() を実装
@@ -357,7 +357,7 @@ const { Button, Dialog, Panel } = useSkin()
 - **既存 `ui/components/` は保留**: Phase 5まで削除しない。並行して参照されても問題ない
 - **SkinProvider はエントリポイント直下**: main/hand/deck.tsx の `<App>` 相当位置に置く
 - **themeStore はすぐ置き換え**: Phase 1完了時点で themeStore への参照はゼロにする
-- **デフォルトスキン**: glassmorphism（新スキン優先）
+- **デフォルトスキン**: liquid-glass（新スキン優先）
 
 ---
 

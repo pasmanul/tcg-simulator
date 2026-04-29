@@ -1,4 +1,4 @@
-import { SKINS } from '../../ui/skin'
+import { SKINS } from '../skin'
 import { useSkinStore } from '../../store/skinStore'
 import { useUIStore } from '../../store/uiStore'
 import { useSkin } from '../skin/SkinContext'
