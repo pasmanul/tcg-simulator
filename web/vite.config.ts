@@ -10,6 +10,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         hand: resolve(__dirname, 'hand.html'),
         deck: resolve(__dirname, 'deck.html'),
+        landing: resolve(__dirname, 'landing.html'),
       },
     },
   },
