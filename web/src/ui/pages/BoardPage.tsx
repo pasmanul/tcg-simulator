@@ -7,9 +7,7 @@ import { syncBoardConfigToLibrary } from '../../lib/boardConfigSync'
 import { useTabSync } from '../../sync/useTabSync'
 import { useCardHotkeys } from '../hooks/useCardHotkeys'
 import type { GameCard, Card, GameConfigJson } from '../../domain/types'
-import { BoardStage } from '../stage/BoardStage'
-import { BoardHud } from '../hud/BoardHud'
-import { ActionLog } from '../overlays/ActionLog'
+import { Canvas } from '../spatial/Canvas'
 import { ContextMenu } from '../overlays/ContextMenu'
 import { GameLoadDialog } from '../overlays/GameLoadDialog'
 import { SearchDialog } from '../overlays/SearchDialog'
@@ -24,7 +22,6 @@ import { BoardEditorDialog } from '../overlays/BoardEditorDialog'
 import { FieldEditorDialog } from '../overlays/FieldEditorDialog'
 import { ThemeDialog } from '../overlays/ThemeDialog'
 import { DeckPage } from './DeckPage'
-import { PAGE_CLASSES } from '../pageLayout'
 
 function makeDummyCard(index: number): GameCard {
   const card: Card = {
@@ -140,19 +137,9 @@ export function BoardPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={PAGE_CLASSES}>
-      {/* HUD bar */}
-      <BoardHud />
-
-      {/* Main content: stage + action log */}
-      <div className="flex flex-1 overflow-hidden">
-        <BoardStage />
-
-        {/* Action log sidebar */}
-        <div className="w-48 flex-shrink-0 border-l border-border overflow-y-auto">
-          <ActionLog />
-        </div>
-      </div>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      {/* Spatial canvas — replaces BoardHud + BoardStage */}
+      <Canvas onAddZone={handleAddZone} />
 
       {/* Overlays */}
       <ContextMenu />
@@ -174,30 +161,6 @@ export function BoardPage() {
           onClose={() => setBoardEditorOpen(false)}
         />
       )}
-
-      {/* ゾーン追加ボタン */}
-      <button
-        onClick={handleAddZone}
-        style={{
-          position: 'fixed',
-          left: 16,
-          bottom: 16,
-          width: 44,
-          height: 44,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #065f46, #047857)',
-          border: '1px solid #34d399',
-          color: '#6ee7b7',
-          fontSize: 24,
-          cursor: 'pointer',
-          zIndex: 300,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 0 12px rgba(52,211,153,0.4)',
-        }}
-        aria-label="ゾーン追加"
-      >+</button>
 
       {/* デッキビルダーパネル */}
       {deckPanelOpen && (

@@ -1,0 +1,198 @@
+/* =============================================================
+   TCG Simulator — Spatial Design System
+   Theme philosophy: not a game, a tool. Zones are draggable
+   boxes on an infinite canvas. Everything is light, calm,
+   editorial. Two tones ship by default:
+     [data-tone="dusk"]   — modern dark, indigo accent  (C1)
+     [data-tone="dawn"]   — warm light, peach accent    (C2)
+   Add a new tone by extending the [data-tone="…"] block at
+   the bottom of this file. All tokens have stable names; tones
+   only override values.
+   ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;600&display=swap');
+
+/* -------------------------------------------------------------
+   1.  Tone-agnostic structure (geometry, motion)
+   ------------------------------------------------------------- */
+:root {
+  /* Type families */
+  --font-body:    'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --font-display: 'Instrument Serif', 'Inter', serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Type scale — generous, editorial */
+  --fs-display: 32px;
+  --fs-h1:      22px;
+  --fs-h2:      16px;
+  --fs-body:    14px;
+  --fs-sm:      12px;
+  --fs-xs:      11px;
+  --fs-2xs:     10px;
+
+  /* Spacing — 4px grid, more generous than the gameplay HUD */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radii — soft, friendly */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Motion */
+  --ease:        cubic-bezier(.2,.7,.3,1);
+  --dur-fast:    120ms;
+  --dur-base:    200ms;
+  --dur-slow:    320ms;
+
+  /* Canvas geometry */
+  --zone-min-w: 220px;
+  --zone-min-h: 140px;
+  --grid-step:  16px;        /* snap-to-grid on canvas */
+}
+
+/* -------------------------------------------------------------
+   2.  DUSK — modern dark (default)
+   ------------------------------------------------------------- */
+:root,
+[data-tone="dusk"] {
+  /* Canvas / surfaces */
+  --canvas:     #0e1014;          /* infinite-canvas backdrop */
+  --canvas-grid:rgba(255,255,255,0.04);
+  --bg:         #14171d;          /* page chrome */
+  --surface:    #1a1e26;          /* zone box, panel */
+  --surface-2:  #20242d;          /* hover, list row */
+  --surface-3:  #272b35;          /* input field */
+  --overlay:    rgba(0,0,0,0.55); /* dialog scrim */
+
+  /* Text */
+  --text:       #e8eaef;
+  --text-2:     #a8adb8;          /* secondary */
+  --text-3:     #6b7280;          /* muted / placeholder */
+  --text-on-accent: #ffffff;
+
+  /* Accents — single primary, used sparingly */
+  --accent:     #6366f1;          /* indigo-500 */
+  --accent-2:   #818cf8;
+  --accent-soft: rgba(99,102,241,0.14);
+
+  /* Semantic */
+  --success:    #10b981;
+  --warning:    #f59e0b;
+  --danger:     #ef4444;
+  --info:       #06b6d4;
+
+  /* Borders / dividers */
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --border-accent: rgba(99,102,241,0.55);
+
+  /* Zone tints — quiet identity, no saturation overload */
+  --zone-battle:    #ef4444;
+  --zone-mana:      #10b981;
+  --zone-shield:    #f59e0b;
+  --zone-graveyard: #a78bfa;
+  --zone-deck:      #06b6d4;
+  --zone-hand:      #14b8a6;
+  --zone-temp:      #6b7280;
+
+  /* Shadows — soft, layered, no neon glow */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.5);
+  --shadow-zone-drag: 0 16px 40px rgba(0,0,0,0.55), 0 0 0 1.5px var(--accent);
+
+  /* Card art frame */
+  --card-bg:     #20242d;
+  --card-border: rgba(255,255,255,0.10);
+}
+
+/* -------------------------------------------------------------
+   3.  DAWN — warm light
+   ------------------------------------------------------------- */
+[data-tone="dawn"] {
+  --canvas:     #f5f1ec;
+  --canvas-grid:rgba(80,60,40,0.05);
+  --bg:         #faf7f2;
+  --surface:    #ffffff;
+  --surface-2:  #f5f0e8;
+  --surface-3:  #ede6da;
+  --overlay:    rgba(40,30,20,0.35);
+
+  --text:       #2a251f;
+  --text-2:     #6b5d4f;
+  --text-3:     #9a8a78;
+  --text-on-accent: #ffffff;
+
+  --accent:     #c96442;          /* warm terracotta */
+  --accent-2:   #e08568;
+  --accent-soft: rgba(201,100,66,0.12);
+
+  --success:    #5b8a3a;
+  --warning:    #c98a1f;
+  --danger:     #b8453a;
+  --info:       #4a7e9c;
+
+  --border:        rgba(60,40,20,0.10);
+  --border-strong: rgba(60,40,20,0.20);
+  --border-accent: rgba(201,100,66,0.55);
+
+  --zone-battle:    #b8453a;
+  --zone-mana:      #5b8a3a;
+  --zone-shield:    #c98a1f;
+  --zone-graveyard: #8b6db5;
+  --zone-deck:      #4a7e9c;
+  --zone-hand:      #3d8c8c;
+  --zone-temp:      #8a7a68;
+
+  --shadow-1: 0 1px 2px rgba(60,40,20,0.06);
+  --shadow-2: 0 4px 12px rgba(60,40,20,0.08), 0 1px 2px rgba(60,40,20,0.04);
+  --shadow-3: 0 16px 40px rgba(60,40,20,0.12), 0 2px 8px rgba(60,40,20,0.06);
+  --shadow-zone-drag: 0 16px 40px rgba(60,40,20,0.18), 0 0 0 1.5px var(--accent);
+
+  --card-bg:     #fffdf9;
+  --card-border: rgba(60,40,20,0.10);
+}
+
+/* -------------------------------------------------------------
+   4.  Base recipes
+   ------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+
+.font-display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+.font-mono    { font-family: var(--font-mono); }
+.text-2       { color: var(--text-2); }
+.text-3       { color: var(--text-3); }
+
+/* Canvas background — tiny dot grid, infinitely repeatable */
+.canvas-bg {
+  background-color: var(--canvas);
+  background-image: radial-gradient(circle, var(--canvas-grid) 1px, transparent 1px);
+  background-size: var(--grid-step) var(--grid-step);
+}
+
+/* Scrollbar — thin, themed */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
