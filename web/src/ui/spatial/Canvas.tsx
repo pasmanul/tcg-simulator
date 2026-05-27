@@ -223,8 +223,16 @@ export function Canvas({ onAddZone }: CanvasProps) {
             variant={getZoneVariant(zone)}
             selected={selectedZoneId === zone.id}
             onSelect={setSelectedZoneId}
-            onMove={(id, x, y) => updateZoneLayout(id, { x, y })}
-            onResize={(id, w, h) => updateZoneLayout(id, { w, h })}
+            onMove={(id, x, y) => {
+              const idx = boardZones.findIndex(z => z.id === id)
+              const cur = getZonePos(id, idx)
+              updateZoneLayout(id, { x, y, w: cur.w, h: cur.h })
+            }}
+            onResize={(id, w, h) => {
+              const idx = boardZones.findIndex(z => z.id === id)
+              const cur = getZonePos(id, idx)
+              updateZoneLayout(id, { x: cur.x, y: cur.y, w, h })
+            }}
             onCardClick={(card, _i, e) => handleCardClick(zone.id, card, e)}
             layoutMode={layoutMode}
           />

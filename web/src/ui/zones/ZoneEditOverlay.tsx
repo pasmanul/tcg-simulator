@@ -8,12 +8,6 @@ export const ZONE_TITLE_H = 22
 
 type DragMode = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 
-interface DragState {
-  mode: DragMode
-  startClientX: number
-  startClientY: number
-  origGridPos: GridPos
-}
 
 interface ZoneEditHandleProps {
   zoneDef: ZoneDefinition
@@ -63,7 +57,7 @@ const HANDLES: Array<{ mode: Exclude<DragMode, 'move'>; style: React.CSSProperti
 
 function ZoneEditHandle({ zoneDef, x, y, width, height, stageWidth, stageHeight, winDef }: ZoneEditHandleProps) {
   const [hovered, setHovered] = useState(false)
-  const [dragState, setDragState] = useState<DragState | null>(null)
+  const [dragging, setDragging] = useState(false)
 
   const updateZone = useLayoutStore(s => s.updateZone)
   const { toggleZoneUnlock, isZoneUnlocked, setEditingZoneId } = useUIStore(s => ({
@@ -78,29 +72,29 @@ function ZoneEditHandle({ zoneDef, x, y, width, height, stageWidth, stageHeight,
   function startDrag(e: React.PointerEvent, mode: DragMode) {
     if (!unlocked) return
     e.stopPropagation()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setDragState({
-      mode,
-      startClientX: e.clientX,
-      startClientY: e.clientY,
-      origGridPos: { ...zoneDef.grid_pos },
-    })
-  }
-
-  function handlePointerMove(e: React.PointerEvent) {
-    if (!dragState) return
+    const origGridPos = { ...zoneDef.grid_pos }
+    const startX = e.clientX
+    const startY = e.clientY
     const cellW = stageWidth / cols
     const cellH = stageHeight / rows
-    const dCol = Math.round((e.clientX - dragState.startClientX) / cellW)
-    const dRow = Math.round((e.clientY - dragState.startClientY) / cellH)
-    const newPos = computeNewPos(dragState.mode, dragState.origGridPos, dCol, dRow, cols, rows)
-    updateZone(zoneDef.id, { grid_pos: newPos })
-  }
+    setDragging(true)
 
-  function handlePointerUp() {
-    if (!dragState) return
-    setDragState(null)
-    syncBoardConfigToLibrary()
+    const onMove = (ev: PointerEvent) => {
+      const dCol = Math.round((ev.clientX - startX) / cellW)
+      const dRow = Math.round((ev.clientY - startY) / cellH)
+      const newPos = computeNewPos(mode, origGridPos, dCol, dRow, cols, rows)
+      updateZone(zoneDef.id, { grid_pos: newPos })
+    }
+
+    const onUp = () => {
+      setDragging(false)
+      syncBoardConfigToLibrary()
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
   }
 
   const btnStyle: React.CSSProperties = {
@@ -131,8 +125,6 @@ function ZoneEditHandle({ zoneDef, x, y, width, height, stageWidth, stageHeight,
         height,
         pointerEvents: 'none',
       }}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
     >
       {/* タイトルバー */}
       <div
@@ -143,7 +135,7 @@ function ZoneEditHandle({ zoneDef, x, y, width, height, stageWidth, stageHeight,
           right: 0,
           height: ZONE_TITLE_H,
           pointerEvents: 'all',
-          cursor: unlocked ? (dragState ? 'grabbing' : 'grab') : 'default',
+          cursor: unlocked ? (dragging ? 'grabbing' : 'grab') : 'default',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',

@@ -326,7 +326,10 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                   return (
                     <div
                       key={zone.id}
-                      onPointerDown={e => startDrag(e, zone, 'move')}
+                      onPointerDown={e => {
+                        if (selZoneId !== zone.id) { setSelZoneId(zone.id); return }
+                        startDrag(e, zone, 'move')
+                      }}
                       onPointerMove={e => handlePointerMove(e, zone)}
                       onPointerUp={e => handlePointerUp(e, zone)}
                       onPointerCancel={() => setDragState(null)}
@@ -364,7 +367,7 @@ export function BoardEditorDialog({ initialConfig, onSave, onClose }: Props) {
                           }}
                           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.5)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
-                          onPointerDown={e => startDrag(e, zone, h.mode)}
+                          onPointerDown={e => { e.stopPropagation(); startDrag(e, zone, h.mode) }}
                           onPointerMove={e => handlePointerMove(e, zone)}
                           onPointerUp={e => handlePointerUp(e, zone)}
                           onPointerCancel={() => setDragState(null)}
