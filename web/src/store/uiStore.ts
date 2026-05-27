@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { GameCard, ActionLogEntry } from '../domain/types'
+import { getInitialTone, setTone as persistTone, type Tone } from '../theme'
 
 export type DialogType = 'setup' | 'setup-wizard' | 'search' | 'dice' | 'save-load' | 'field-editor' | 'zone-inline-editor' | 'theme' | null
 
@@ -64,6 +65,16 @@ interface UIStore {
   setEditingZoneId: (id: string | null) => void
   toggleZoneUnlock: (id: string) => void
   isZoneUnlocked: (id: string) => boolean
+
+  // Spatial UI state
+  spatialLayout: Record<string, { x: number; y: number; w: number; h: number }>
+  tone: Tone
+  layoutMode: boolean
+  selectedZoneId: string | null
+  updateZoneLayout: (id: string, patch: Partial<{ x: number; y: number; w: number; h: number }>) => void
+  setSpatialTone: (t: Tone) => void
+  toggleLayoutMode: () => void
+  setSelectedZoneId: (id: string | null) => void
 }
 
 export const useUIStore = create<UIStore>((set, get) => ({
@@ -126,6 +137,18 @@ export const useUIStore = create<UIStore>((set, get) => ({
     return { unlockedZoneIds: next }
   }),
   isZoneUnlocked: (id) => get().unlockedZoneIds.has(id),
+
+  // Spatial UI
+  spatialLayout: {},
+  tone: getInitialTone(),
+  layoutMode: false,
+  selectedZoneId: null,
+  updateZoneLayout: (id, patch) => set(s => ({
+    spatialLayout: { ...s.spatialLayout, [id]: { ...(s.spatialLayout[id] ?? { x: 0, y: 0, w: 260, h: 200 }), ...patch } },
+  })),
+  setSpatialTone: (t) => { persistTone(t); set({ tone: t }) },
+  toggleLayoutMode: () => set(s => ({ layoutMode: !s.layoutMode, selectedZoneId: s.layoutMode ? null : s.selectedZoneId })),
+  setSelectedZoneId: (id) => set({ selectedZoneId: id }),
 
   addLog: (message) =>
     set((s) => ({

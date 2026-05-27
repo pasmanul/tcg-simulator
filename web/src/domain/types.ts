@@ -35,6 +35,7 @@ export interface GameProfile {
   boardConfig: GameConfigJson
   pool: Card[]
   decks: DeckRecord[]
+  layout?: Record<string, { x: number; y: number; w: number; h: number }>
 }
 
 export interface GameCard {
