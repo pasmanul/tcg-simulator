@@ -88,9 +88,9 @@ export function Canvas({ onAddZone }: CanvasProps) {
     currentDeck: s.currentDeck,
   }))
 
-  // Board zones only (exclude hand, source_zone_id mirrors, ui_widget)
+  // Board zones（ui_widgetのみ除外、source_zone_idミラーゾーンは含める）
   const boardZones = layoutZones.filter(
-    z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget
+    z => z.window_id === 'board' && !z.ui_widget
   )
 
   const BOARD_TOP = 64    // FloatingToolbar 高さ + margin
@@ -286,7 +286,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
       {boardZones.map((zone) => {
         const pos = getZonePos(zone)
         const accent = getZoneAccent(zone.id, tone)
-        const cards = (gameZones[zone.id]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
+        const sourceId = zone.source_zone_id ?? zone.id
+        const cards = (gameZones[sourceId]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
         return (
           <ZoneBox
             key={zone.id}
