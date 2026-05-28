@@ -93,16 +93,19 @@ export function Canvas({ onAddZone }: CanvasProps) {
     z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget
   )
 
+  const BOARD_TOP = 64    // FloatingToolbar 高さ + margin
+  const BOARD_BOTTOM = 148 // HandDock 高さ + margin
+
   function getZonePos(zone: ZoneDefinition) {
     if (spatialLayout[zone.id]) return spatialLayout[zone.id]
     if (zone.grid_pos && boardWindow) {
       const vw = window.innerWidth
-      const vh = window.innerHeight
+      const usableH = window.innerHeight - BOARD_TOP - BOARD_BOTTOM
       const cellW = vw / boardWindow.grid_cols
-      const cellH = vh / boardWindow.grid_rows
+      const cellH = usableH / boardWindow.grid_rows
       return {
         x: zone.grid_pos.col * cellW,
-        y: zone.grid_pos.row * cellH,
+        y: BOARD_TOP + zone.grid_pos.row * cellH,
         w: zone.grid_pos.col_span * cellW,
         h: zone.grid_pos.row_span * cellH,
       }
