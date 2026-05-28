@@ -85,7 +85,9 @@ export function moveCard(
 
   const [card] = fromZone.cards.splice(idx, 1)
   const destDef = zoneDefs?.find(z => z.id === toZoneId)
-  const movedCard = destDef ? { ...card, face_down: destDef.visibility === 'private' } : card
+  const movedCard = destDef
+    ? { ...card, face_down: destDef.show_face_up ? false : destDef.visibility === 'private' }
+    : card
   if (toIndex !== undefined) {
     toZone.cards.splice(toIndex, 0, movedCard)
   } else {

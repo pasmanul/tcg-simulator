@@ -308,11 +308,11 @@ export function Canvas({ onAddZone }: CanvasProps) {
               const cur = getZonePos(zone)
               updateZoneLayout(id, { x: cur.x, y: cur.y, w, h })
             }}
-            onCardClick={(card, _i, e) => handleCardClick(zone.id, card, e)}
-            onCardContextMenu={(card, _i, e) => handleCardContextMenu(zone.id, card, e)}
-            onCardDragStart={(card, e) => handleCardDragStart(zone.id, card, e)}
-            onCardDrop={(e, targetInstanceId) => handleCardDrop(zone.id, e, targetInstanceId)}
-            onCardHover={(card, pos) => handleCardHover(zone.id, card, pos)}
+            onCardClick={(card, _i, e) => handleCardClick(sourceId, card, e)}
+            onCardContextMenu={(card, _i, e) => handleCardContextMenu(sourceId, card, e)}
+            onCardDragStart={(card, e) => handleCardDragStart(sourceId, card, e)}
+            onCardDrop={(e, targetInstanceId) => handleCardDrop(sourceId, e, targetInstanceId)}
+            onCardHover={(card, pos) => handleCardHover(sourceId, card, pos)}
             layoutMode={layoutMode}
           />
         )

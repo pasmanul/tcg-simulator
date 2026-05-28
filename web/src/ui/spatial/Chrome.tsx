@@ -303,6 +303,7 @@ export function HandDock({
   return (
     <div
       ref={ref}
+      data-testid="zone-hand"
       onMouseDown={() => onSelect?.()}
       style={{
         ...posStyle,
@@ -333,7 +334,9 @@ export function HandDock({
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)',
           color: 'var(--sp-text-3)', marginLeft: 'auto',
-        }}>{cards.length}</span>
+        }}
+        data-testid="zone-hand-count"
+        >{cards.length}</span>
       </div>
       <div
         onDragOver={(e) => { if (!layoutMode) { e.preventDefault(); e.dataTransfer.dropEffect = 'move' } }}

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Zone, GameCard, GameStateSnapshot } from '../domain/types'
+import type { Zone, GameCard, GameStateSnapshot, ZoneDefinition } from '../domain/types'
 import { useLayoutStore } from './layoutStore'
 import {
   cloneZones,
@@ -16,9 +16,11 @@ import {
 interface GameStore {
   zones: Record<string, Zone>
   undoStack: GameStateSnapshot[]
+  revision: number
 
   // Zone management
   initZones: (zoneIds: string[]) => void
+  initZonesFromDefs: (zoneDefs: ZoneDefinition[]) => void
 
   // Game actions (all push snapshot first)
   moveCard: (fromZoneId: string, instanceId: string, toZoneId: string, toIndex?: number, toRow?: number) => void
@@ -47,7 +49,7 @@ interface GameStore {
   loadSnapshot: (snapshot: GameStateSnapshot) => void
 
   // Internal: apply snapshot from remote tab (no undo push)
-  _applySnapshot: (snapshot: GameStateSnapshot) => void
+  _applySnapshot: (snapshot: GameStateSnapshot, revision?: number) => void
 
   // Zone structure mutations (inline editor)
   addZoneToGame: (zoneId: string) => void
@@ -63,6 +65,7 @@ function updateCard(
   const next = cloneZones(zones)
   const zone = next[zoneId]
   if (!zone) return zones
+  if (!zone.cards.some(gc => gc.instanceId === instanceId)) return zones
   zone.cards = zone.cards.map(gc =>
     gc.instanceId === instanceId ? updater(gc) : gc,
   )
@@ -72,88 +75,105 @@ function updateCard(
 export const useGameStore = create<GameStore>((set, get) => ({
   zones: {},
   undoStack: [],
+  revision: 0,
 
   initZones: (zoneIds) => {
     const zones: Record<string, Zone> = {}
     for (const id of zoneIds) {
       zones[id] = { zoneId: id, cards: [] }
     }
-    set({ zones, undoStack: [] })
+    set(s => ({ zones, undoStack: [], revision: s.revision + 1 }))
+  },
+
+  initZonesFromDefs: (zoneDefs) => {
+    const zoneIds = zoneDefs
+      .filter(z => !z.source_zone_id && !z.ui_widget)
+      .map(z => z.id)
+    get().initZones([...new Set(zoneIds)])
   },
 
   moveCard: (fromZoneId, instanceId, toZoneId, toIndex, toRow) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zoneDefs = useLayoutStore.getState().zones
       let zones = moveCard(s.zones, fromZoneId, instanceId, toZoneId, toIndex, zoneDefs)
       if (toRow !== undefined) {
         zones = updateCard(zones, toZoneId, instanceId, gc => ({ ...gc, row: toRow }))
       }
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   tapCard: (zoneId, instanceId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({
         ...gc, tapped: !gc.tapped,
       }))
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   flipCard: (zoneId, instanceId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({
         ...gc, face_down: !gc.face_down,
       }))
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   setRow: (zoneId, instanceId, row) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({ ...gc, row }))
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   setMarker: (zoneId, instanceId, marker) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = updateCard(s.zones, zoneId, instanceId, gc => ({ ...gc, marker }))
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   tapAllInZone: (zoneId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const next = cloneZones(s.zones)
       const zone = next[zoneId]
+      if (!zone) return s
       if (zone) zone.cards = zone.cards.map(gc => ({ ...gc, tapped: true }))
-      return { zones: next, undoStack }
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones: next, undoStack, revision: s.revision + 1 }
     }),
 
   untapAllInZone: (zoneId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const next = cloneZones(s.zones)
       const zone = next[zoneId]
+      if (!zone) return s
       if (zone) zone.cards = zone.cards.map(gc => ({ ...gc, tapped: false }))
-      return { zones: next, undoStack }
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones: next, undoStack, revision: s.revision + 1 }
     }),
 
   sortZone: (zoneId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = sortZone(s.zones, zoneId)
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   shuffleZone: (zoneId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = shuffleZone(s.zones, zoneId)
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   drawCard: () =>
@@ -170,14 +190,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         undefined,
         zoneDefs,
       )
-      return { zones, undoStack }
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   initializeField: (deckCards) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = initializeField(s.zones, deckCards)
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   loadToDeck: (deckCards) =>
@@ -185,21 +206,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!s.zones['deck']) return s
       const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = { ...s.zones, deck: { zoneId: 'deck', cards: shuffleArray(deckCards) } }
-      return { zones, undoStack }
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   stackCard: (fromZoneId, instanceId, toZoneId, targetInstanceId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = stackCard(s.zones, fromZoneId, instanceId, toZoneId, targetInstanceId)
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   unstackCard: (zoneId, topInstanceId, detachInstanceId) =>
     set((s) => {
-      const undoStack = pushSnapshot(s.undoStack, s.zones)
       const zones = unstackCard(s.zones, zoneId, topInstanceId, detachInstanceId)
-      return { zones, undoStack }
+      if (zones === s.zones) return s
+      const undoStack = pushSnapshot(s.undoStack, s.zones)
+      return { zones, undoStack, revision: s.revision + 1 }
     }),
 
   undo: () =>
@@ -207,25 +230,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (s.undoStack.length === 0) return s
       const stack = [...s.undoStack]
       const snap = stack.pop()!
-      return { zones: cloneZones(snap.zones), undoStack: stack }
+      return { zones: cloneZones(snap.zones), undoStack: stack, revision: s.revision + 1 }
     }),
 
   loadSnapshot: (snapshot) =>
     set((s) => ({
       zones: cloneZones(snapshot.zones),
       undoStack: pushSnapshot(s.undoStack, s.zones),
+      revision: s.revision + 1,
     })),
 
-  _applySnapshot: (snapshot) =>
-    set(() => ({ zones: cloneZones(snapshot.zones) })),
+  _applySnapshot: (snapshot, revision) =>
+    set((s) => {
+      if (revision !== undefined && revision <= s.revision) return s
+      return {
+        zones: cloneZones(snapshot.zones),
+        revision: revision ?? s.revision + 1,
+      }
+    }),
 
   addZoneToGame: (zoneId) =>
-    set(s => ({ zones: { ...s.zones, [zoneId]: { zoneId, cards: [] } } })),
+    set(s => ({ zones: { ...s.zones, [zoneId]: { zoneId, cards: [] } }, revision: s.revision + 1 })),
 
   removeZoneFromGame: (zoneId) =>
     set(s => {
       const next = { ...s.zones }
       delete next[zoneId]
-      return { zones: next }
+      return { zones: next, revision: s.revision + 1 }
     }),
 }))

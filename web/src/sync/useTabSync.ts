@@ -15,6 +15,7 @@ interface StateUpdateMsg {
   type: 'STATE_UPDATE'
   from: TabRole
   snapshot: GameStateSnapshot
+  revision: number
   ts: number
 }
 
@@ -28,6 +29,7 @@ interface PongMsg {
   type: 'PONG'
   from: TabRole
   snapshot: GameStateSnapshot
+  revision: number
   library?: LibrarySnapshot
   ts: number
 }
@@ -49,9 +51,9 @@ export function useTabSync(role: TabRole) {
   const zonesRef = useRef(useGameStore.getState().zones)
   const isApplyingRemoteRef = useRef(false)
 
-  function applyRemoteSnapshot(snapshot: GameStateSnapshot) {
+  function applyRemoteSnapshot(snapshot: GameStateSnapshot, revision: number) {
     isApplyingRemoteRef.current = true
-    applySnapshot(snapshot)
+    applySnapshot(snapshot, revision)
     isApplyingRemoteRef.current = false
   }
 
@@ -80,7 +82,7 @@ export function useTabSync(role: TabRole) {
       if (msg.from === role) return
 
       if (msg.type === 'STATE_UPDATE') {
-        applyRemoteSnapshot(msg.snapshot)
+        applyRemoteSnapshot(msg.snapshot, msg.revision)
       }
 
       if (msg.type === 'PING') {
@@ -88,6 +90,7 @@ export function useTabSync(role: TabRole) {
           type: 'PONG',
           from: role,
           snapshot: { zones: zonesRef.current },
+          revision: useGameStore.getState().revision,
           library: getLibrarySnapshot(),
           ts: Date.now(),
         }
@@ -95,7 +98,7 @@ export function useTabSync(role: TabRole) {
       }
 
       if (msg.type === 'PONG') {
-        applyRemoteSnapshot(msg.snapshot)
+        if (role === 'hand') applyRemoteSnapshot(msg.snapshot, msg.revision)
         // ライブラリはボード→手札の一方向のみ
         if (msg.library && role === 'hand') applyRemoteLibrary(msg.library)
       }
@@ -121,6 +124,7 @@ export function useTabSync(role: TabRole) {
         type: 'STATE_UPDATE',
         from: role,
         snapshot: { zones: s.zones },
+        revision: s.revision,
         ts: Date.now(),
       }
       channelRef.current.postMessage(msg)

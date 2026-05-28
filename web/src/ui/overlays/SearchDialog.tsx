@@ -1,14 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useUIStore } from '../../store/uiStore'
 import { useGameStore } from '../../store/gameStore'
+import { useLayoutStore } from '../../store/layoutStore'
 import { useSkin } from '../skin/SkinContext'
-
-const MOVE_TARGETS = [
-  { id: 'hand', label: '手札' },
-  { id: 'mana', label: 'マナゾーン' },
-  { id: 'graveyard', label: '墓地' },
-  { id: 'temp', label: '保留' },
-]
 
 export function SearchDialog() {
   const { Button, Dialog, Input, Select } = useSkin()
@@ -19,10 +13,22 @@ export function SearchDialog() {
   }))
   const zones = useGameStore(s => s.zones)
   const moveCard = useGameStore(s => s.moveCard)
+  const layoutZones = useLayoutStore(s => s.zones)
 
   const [filter, setFilter] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [target, setTarget] = useState('hand')
+
+  const moveTargets = layoutZones
+    .filter(z => z.id !== 'deck' && !z.source_zone_id && !z.ui_widget && zones[z.id])
+    .map(z => ({ id: z.id, label: z.name }))
+
+  useEffect(() => {
+    if (moveTargets.length === 0) return
+    if (!moveTargets.some(t => t.id === target)) {
+      setTarget(moveTargets.find(t => t.id === 'hand')?.id ?? moveTargets[0].id)
+    }
+  }, [moveTargets, target])
 
   const deckCards = zones['deck']?.cards ?? []
   const q = filter.toLowerCase()
@@ -52,7 +58,7 @@ export function SearchDialog() {
   }
 
   function handleMove() {
-    const targetLabel = MOVE_TARGETS.find(t => t.id === target)?.label ?? target
+    const targetLabel = moveTargets.find(t => t.id === target)?.label ?? target
     for (const id of selected) {
       const name = deckCards.find(c => c.instanceId === id)?.card.name ?? 'カード'
       moveCard('deck', id, target)
@@ -104,7 +110,7 @@ export function SearchDialog() {
         <div className="flex items-center gap-2">
           <span className="text-muted text-[12px] font-body flex-shrink-0">移動先:</span>
           <Select
-            options={MOVE_TARGETS.map(t => ({ value: t.id, label: t.label }))}
+            options={moveTargets.map(t => ({ value: t.id, label: t.label }))}
             value={target}
             onChange={e => setTarget(e.target.value)}
           />
@@ -116,7 +122,7 @@ export function SearchDialog() {
           <Button
             variant="primary"
             onClick={handleMove}
-            disabled={selected.size === 0}
+            disabled={selected.size === 0 || moveTargets.length === 0}
           >
             移動 ({selected.size})
           </Button>
