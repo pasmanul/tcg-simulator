@@ -88,21 +88,24 @@ export function Canvas({ onAddZone }: CanvasProps) {
     currentDeck: s.currentDeck,
   }))
 
-  // Board zones only (exclude hand, source_zone_id mirrors, ui_widget)
+  // Board zones（ui_widgetのみ除外、source_zone_idミラーゾーンは含める）
   const boardZones = layoutZones.filter(
-    z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget
+    z => z.window_id === 'board' && !z.ui_widget
   )
+
+  const BOARD_TOP = 64   // FloatingToolbar 高さ + margin
+  const BOARD_BOTTOM = 8 // 下端マージン（HandDockはhand_view位置に移動済み）
 
   function getZonePos(zone: ZoneDefinition) {
     if (spatialLayout[zone.id]) return spatialLayout[zone.id]
     if (zone.grid_pos && boardWindow) {
       const vw = window.innerWidth
-      const vh = window.innerHeight
+      const usableH = window.innerHeight - BOARD_TOP - BOARD_BOTTOM
       const cellW = vw / boardWindow.grid_cols
-      const cellH = vh / boardWindow.grid_rows
+      const cellH = usableH / boardWindow.grid_rows
       return {
         x: zone.grid_pos.col * cellW,
-        y: zone.grid_pos.row * cellH,
+        y: BOARD_TOP + zone.grid_pos.row * cellH,
         w: zone.grid_pos.col_span * cellW,
         h: zone.grid_pos.row_span * cellH,
       }
@@ -228,8 +231,10 @@ export function Canvas({ onAddZone }: CanvasProps) {
     mapToDisplayCard(gc, handZone ?? { id: 'hand', masked: false } as ZoneDefinition, t.zone.hand)
   )
 
-  // Hand dock position — stored in spatialLayout, else default (bottom-center)
-  const handPos = spatialLayout['hand'] as { x: number; y: number; w: number; h: number } | undefined
+  // Hand dock position — stored in spatialLayout, else use hand_view grid_pos, else default (bottom-center)
+  const handViewZone = layoutZones.find(z => z.id === 'hand_view')
+  const handViewPos = handViewZone ? getZonePos(handViewZone) : undefined
+  const handPos = (spatialLayout['hand'] ?? handViewPos) as { x: number; y: number; w: number; h: number } | undefined
 
   // Selected zone info for InspectorPanel
   const selectedZone = selectedZoneId
@@ -281,7 +286,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
       {boardZones.map((zone) => {
         const pos = getZonePos(zone)
         const accent = getZoneAccent(zone.id, tone)
-        const cards = (gameZones[zone.id]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
+        const sourceId = zone.source_zone_id ?? zone.id
+        const cards = (gameZones[sourceId]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
         return (
           <ZoneBox
             key={zone.id}
@@ -302,11 +308,11 @@ export function Canvas({ onAddZone }: CanvasProps) {
               const cur = getZonePos(zone)
               updateZoneLayout(id, { x: cur.x, y: cur.y, w, h })
             }}
-            onCardClick={(card, _i, e) => handleCardClick(zone.id, card, e)}
-            onCardContextMenu={(card, _i, e) => handleCardContextMenu(zone.id, card, e)}
-            onCardDragStart={(card, e) => handleCardDragStart(zone.id, card, e)}
-            onCardDrop={(e, targetInstanceId) => handleCardDrop(zone.id, e, targetInstanceId)}
-            onCardHover={(card, pos) => handleCardHover(zone.id, card, pos)}
+            onCardClick={(card, _i, e) => handleCardClick(sourceId, card, e)}
+            onCardContextMenu={(card, _i, e) => handleCardContextMenu(sourceId, card, e)}
+            onCardDragStart={(card, e) => handleCardDragStart(sourceId, card, e)}
+            onCardDrop={(e, targetInstanceId) => handleCardDrop(sourceId, e, targetInstanceId)}
+            onCardHover={(card, pos) => handleCardHover(sourceId, card, pos)}
             layoutMode={layoutMode}
           />
         )

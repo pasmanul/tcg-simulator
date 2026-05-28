@@ -67,6 +67,7 @@ export function ZoneBox({
 
   return (
     <div
+      data-testid={`zone-${id}`}
       style={{
         position: 'absolute', left: x, top: y, width: w, height: h,
         background: 'var(--sp-surface)',
@@ -111,7 +112,9 @@ export function ZoneBox({
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)',
           color: 'var(--sp-text-3)', marginLeft: 'auto',
-        }}>
+        }}
+        data-testid={`zone-${id}-count`}
+        >
           {cards.length}
         </span>
         {headerExtras}
@@ -119,7 +122,19 @@ export function ZoneBox({
 
       {/* Body */}
       <div style={{ flex: 1, padding: 'var(--space-3)', overflow: 'hidden', minHeight: 0 }}>
-        {variant === 'pile' && <PileView cards={cards} accent={accent} />}
+        {variant === 'pile' && (
+          <PileView
+            cards={cards}
+            zoneId={id}
+            accent={accent}
+            onCardClick={onCardClick}
+            onCardContextMenu={onCardContextMenu}
+            onCardDragStart={onCardDragStart}
+            onCardDrop={onCardDrop}
+            onCardHover={onCardHover}
+            layoutMode={layoutMode}
+          />
+        )}
         {variant === 'tiles' && (
           <TilesView
             cards={cards}
@@ -160,7 +175,39 @@ export function ZoneBox({
   )
 }
 
-function PileView({ cards, accent }: { cards: DisplayCard[]; accent?: string }) {
+function PileView({
+  cards,
+  zoneId,
+  accent,
+  onCardClick,
+  onCardContextMenu,
+  onCardDragStart,
+  onCardDrop,
+  onCardHover,
+  layoutMode,
+}: {
+  cards: DisplayCard[]
+  zoneId: string
+  accent?: string
+  onCardClick?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardContextMenu?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardDragStart?: (c: DisplayCard, e: DragEvent) => void
+  onCardDrop?: (e: DragEvent, targetInstanceId?: string) => void
+  onCardHover?: (c: DisplayCard | null, pos?: { x: number; y: number }) => void
+  layoutMode?: boolean
+}) {
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const topIndex = cards.length - 1
+  const topCard = cards[topIndex]
+
+  function clearHover() {
+    if (zoomTimer.current) {
+      clearTimeout(zoomTimer.current)
+      zoomTimer.current = null
+    }
+    onCardHover?.(null)
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'relative', width: 80, height: 112 }}>
@@ -174,8 +221,24 @@ function PileView({ cards, accent }: { cards: DisplayCard[]; accent?: string }) 
             boxShadow: 'var(--sp-shadow-1)',
           }} />
         ))}
-        {cards.length > 0 ? (
-          <div style={{
+        {topCard ? (
+          <button
+            data-testid={`zone-${zoneId}-pile-top`}
+            draggable={!layoutMode}
+            onClick={(e) => onCardClick?.(topCard, topIndex, e)}
+            onContextMenu={(e) => onCardContextMenu?.(topCard, topIndex, e)}
+            onDragStart={(e) => onCardDragStart?.(topCard, e)}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+            onDrop={(e) => onCardDrop?.(e, topCard.instanceId)}
+            onMouseEnter={(e) => {
+              clearHover()
+              const pos = { x: e.clientX, y: e.clientY }
+              onCardHover?.(topCard)
+              zoomTimer.current = setTimeout(() => onCardHover?.(topCard, pos), 500)
+            }}
+            onMouseLeave={clearHover}
+            title={topCard.masked || topCard.faceDown ? '?' : topCard.name}
+            style={{
             position: 'absolute', inset: 0,
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
@@ -183,6 +246,7 @@ function PileView({ cards, accent }: { cards: DisplayCard[]; accent?: string }) 
             border: '1px solid var(--sp-card-border)',
             borderRadius: 'var(--radius-sm)',
             boxShadow: 'var(--sp-shadow-2)',
+            cursor: layoutMode ? 'default' : 'grab',
           }}>
             <div style={{
               fontFamily: 'var(--font-display)',
@@ -193,7 +257,7 @@ function PileView({ cards, accent }: { cards: DisplayCard[]; accent?: string }) 
               fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-2xs)',
               color: 'var(--sp-text-3)', marginTop: 4, letterSpacing: '0.08em',
             }}>CARDS</div>
-          </div>
+          </button>
         ) : (
           <div style={{
             position: 'absolute', inset: 0,

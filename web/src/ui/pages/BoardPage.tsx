@@ -132,6 +132,7 @@ export function BoardPage() {
           hand:   { zoneId: 'hand',   cards: dummy.slice(30, 35) },
           shield: { zoneId: 'shield', cards: dummy.slice(35, 40).map(c => ({ ...c, face_down: true })) },
         },
+        revision: s.revision + 1,
       }))
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
