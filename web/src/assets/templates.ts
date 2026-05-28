@@ -81,37 +81,37 @@ const DM: GameTemplate = {
       HAND_WINDOW,
     ],
     zones: [
-      // row 0-4: バトルゾーン（全幅・大）
+      // row 0-3: バトルゾーン（全幅・大）
       {
         id: 'battle', name: 'バトルゾーン', window_id: 'board',
-        grid_pos: { col: 0, row: 0, col_span: 12, row_span: 5 },
+        grid_pos: { col: 0, row: 0, col_span: 12, row_span: 4 },
         visibility: 'public', pile_mode: false, tappable: true, card_scale: 1.2, two_row: true, masked: false,
       },
-      // row 5-7: シールド（左）・山札（中）・墓地（右）
+      // row 4-6: シールド（左）・山札（中）・墓地（右）
       {
         id: 'shield', name: 'シールド', window_id: 'board',
-        grid_pos: { col: 0, row: 5, col_span: 6, row_span: 3 },
+        grid_pos: { col: 0, row: 4, col_span: 6, row_span: 3 },
         visibility: 'private', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
       {
         id: 'deck', name: '山札', window_id: 'board',
-        grid_pos: { col: 6, row: 5, col_span: 3, row_span: 3 },
+        grid_pos: { col: 6, row: 4, col_span: 3, row_span: 3 },
         visibility: 'private', pile_mode: true, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
       {
         id: 'graveyard', name: '墓地', window_id: 'board',
-        grid_pos: { col: 9, row: 5, col_span: 3, row_span: 3 },
+        grid_pos: { col: 9, row: 4, col_span: 3, row_span: 3 },
         visibility: 'public', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
-      // row 8-9: マナゾーン（左）・手札表示（右）
+      // row 7-9: マナゾーン（左）・手札表示（右）
       {
         id: 'mana', name: 'マナゾーン', window_id: 'board',
-        grid_pos: { col: 0, row: 8, col_span: 10, row_span: 2 },
+        grid_pos: { col: 0, row: 7, col_span: 10, row_span: 3 },
         visibility: 'public', pile_mode: false, tappable: true, card_scale: 1.0, two_row: false, masked: false,
       },
       {
         id: 'hand_view', name: '手札', window_id: 'board',
-        grid_pos: { col: 10, row: 8, col_span: 2, row_span: 2 },
+        grid_pos: { col: 10, row: 7, col_span: 2, row_span: 3 },
         visibility: 'private', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: true,
         source_zone_id: 'hand',
       },
@@ -290,28 +290,28 @@ const MTG: GameTemplate = {
         grid_pos: { col: 10, row: 3, col_span: 2, row_span: 3 },
         visibility: 'public', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
-      // row 5-9 左: 土地ゾーン（広め・下まで伸ばす）
+      // row 5-9 左: 土地ゾーン（下まで伸ばす）
       {
         id: 'lands', name: '土地ゾーン', window_id: 'board',
         grid_pos: { col: 0, row: 5, col_span: 6, row_span: 5 },
         visibility: 'public', pile_mode: false, tappable: true, card_scale: 1.0, two_row: false, masked: false,
       },
-      // row 5-7 右寄り: 追放ゾーン
+      // row 5-9 中: 追放ゾーン（下まで伸ばす）
       {
         id: 'exile', name: '追放ゾーン', window_id: 'board',
-        grid_pos: { col: 6, row: 5, col_span: 4, row_span: 3 },
+        grid_pos: { col: 6, row: 5, col_span: 4, row_span: 5 },
         visibility: 'public', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
-      // row 6-9 右端: 統率領域
+      // row 6-7 右端: 統率領域
       {
         id: 'command', name: '統率領域', window_id: 'board',
-        grid_pos: { col: 10, row: 6, col_span: 2, row_span: 4 },
+        grid_pos: { col: 10, row: 6, col_span: 2, row_span: 2 },
         visibility: 'public', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: false,
       },
-      // row 8-9 追放の下: 手札表示（余りスペース）
+      // row 8-9 右端: 手札表示（余りスペース）
       {
         id: 'hand_view', name: '手札', window_id: 'board',
-        grid_pos: { col: 6, row: 8, col_span: 4, row_span: 2 },
+        grid_pos: { col: 10, row: 8, col_span: 2, row_span: 2 },
         visibility: 'private', pile_mode: false, tappable: false, card_scale: 1.0, two_row: false, masked: true,
         source_zone_id: 'hand',
       },
