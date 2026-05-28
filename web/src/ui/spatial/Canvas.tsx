@@ -58,7 +58,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
     moveCard: s.moveCard,
     stackCard: s.stackCard,
   }))
-  const { zones: layoutZones } = useLayoutStore(s => ({ zones: s.zones }))
+  const { zones: layoutZones, windows: layoutWindows } = useLayoutStore(s => ({ zones: s.zones, windows: s.windows }))
+  const boardWindow = layoutWindows.find(w => w.id === 'board')
   const {
     spatialLayout, tone, layoutMode, selectedZoneId,
     updateZoneLayout, setSpatialTone, toggleLayoutMode, setSelectedZoneId,
@@ -92,10 +93,23 @@ export function Canvas({ onAddZone }: CanvasProps) {
     z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget
   )
 
-  function getZonePos(zoneId: string, idx: number) {
-    if (spatialLayout[zoneId]) return spatialLayout[zoneId]
-    const entry = DEFAULT_LAYOUT.find(d => d.id === zoneId)
+  function getZonePos(zone: ZoneDefinition) {
+    if (spatialLayout[zone.id]) return spatialLayout[zone.id]
+    if (zone.grid_pos && boardWindow) {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const cellW = vw / boardWindow.grid_cols
+      const cellH = vh / boardWindow.grid_rows
+      return {
+        x: zone.grid_pos.col * cellW,
+        y: zone.grid_pos.row * cellH,
+        w: zone.grid_pos.col_span * cellW,
+        h: zone.grid_pos.row_span * cellH,
+      }
+    }
+    const entry = DEFAULT_LAYOUT.find(d => d.id === zone.id)
     if (entry) return { x: entry.x, y: entry.y, w: entry.w, h: entry.h }
+    const idx = boardZones.findIndex(z => z.id === zone.id)
     const col = idx % 3
     const row = Math.floor(idx / 3)
     return { x: 240 + col * 280, y: 80 + row * 220, w: 260, h: 200 }
@@ -226,7 +240,7 @@ export function Canvas({ onAddZone }: CanvasProps) {
         }
         const zone = layoutZones.find(z => z.id === selectedZoneId)
         if (!zone) return null
-        const pos = getZonePos(selectedZoneId, 0)
+        const pos = getZonePos(zone)
         return { id: zone.id, title: zone.name, ...pos }
       })()
     : null
@@ -264,8 +278,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
       )}
 
       {/* Zone boxes */}
-      {boardZones.map((zone, idx) => {
-        const pos = getZonePos(zone.id, idx)
+      {boardZones.map((zone) => {
+        const pos = getZonePos(zone)
         const accent = getZoneAccent(zone.id, tone)
         const cards = (gameZones[zone.id]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
         return (
@@ -281,13 +295,11 @@ export function Canvas({ onAddZone }: CanvasProps) {
             selected={selectedZoneId === zone.id}
             onSelect={setSelectedZoneId}
             onMove={(id, x, y) => {
-              const idx = boardZones.findIndex(z => z.id === id)
-              const cur = getZonePos(id, idx)
+              const cur = getZonePos(zone)
               updateZoneLayout(id, { x, y, w: cur.w, h: cur.h })
             }}
             onResize={(id, w, h) => {
-              const idx = boardZones.findIndex(z => z.id === id)
-              const cur = getZonePos(id, idx)
+              const cur = getZonePos(zone)
               updateZoneLayout(id, { x: cur.x, y: cur.y, w, h })
             }}
             onCardClick={(card, _i, e) => handleCardClick(zone.id, card, e)}
