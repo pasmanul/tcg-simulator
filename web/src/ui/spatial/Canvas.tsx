@@ -231,8 +231,10 @@ export function Canvas({ onAddZone }: CanvasProps) {
     mapToDisplayCard(gc, handZone ?? { id: 'hand', masked: false } as ZoneDefinition, t.zone.hand)
   )
 
-  // Hand dock position — stored in spatialLayout, else default (bottom-center)
-  const handPos = spatialLayout['hand'] as { x: number; y: number; w: number; h: number } | undefined
+  // Hand dock position — stored in spatialLayout, else use hand_view grid_pos, else default (bottom-center)
+  const handViewZone = layoutZones.find(z => z.id === 'hand_view')
+  const handViewPos = handViewZone ? getZonePos(handViewZone) : undefined
+  const handPos = (spatialLayout['hand'] ?? handViewPos) as { x: number; y: number; w: number; h: number } | undefined
 
   // Selected zone info for InspectorPanel
   const selectedZone = selectedZoneId
