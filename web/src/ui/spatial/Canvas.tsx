@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { DragEvent, MouseEvent } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
@@ -7,7 +7,7 @@ import { newGameCard } from '../../domain/gameLogic'
 import type { GameCard, ZoneDefinition } from '../../domain/types'
 import { TONE_TOKENS, DEFAULT_LAYOUT, type Tone } from '../../theme'
 import { ZoneBox, type DisplayCard } from './ZoneBox'
-import { FloatingToolbar, LayersPanel, InspectorPanel, HandDock } from './Chrome'
+import { FloatingToolbar, InspectorPanel, HandDock } from './Chrome'
 
 interface CanvasProps {
   onAddZone?: () => void
@@ -50,17 +50,21 @@ function mapToDisplayCard(gc: GameCard, zone: ZoneDefinition, accent: string): D
 }
 
 export function Canvas({ onAddZone }: CanvasProps) {
-  const { zones: gameZones, undo, drawCard, initializeField } = useGameStore(s => ({
+  const { zones: gameZones, undo, drawCard, initializeField, moveCard, stackCard } = useGameStore(s => ({
     zones: s.zones,
     undo: s.undo,
     drawCard: s.drawCard,
     initializeField: s.initializeField,
+    moveCard: s.moveCard,
+    stackCard: s.stackCard,
   }))
-  const { zones: layoutZones } = useLayoutStore(s => ({ zones: s.zones }))
+  const { zones: layoutZones, windows: layoutWindows } = useLayoutStore(s => ({ zones: s.zones, windows: s.windows }))
+  const boardWindow = layoutWindows.find(w => w.id === 'board')
   const {
     spatialLayout, tone, layoutMode, selectedZoneId,
     updateZoneLayout, setSpatialTone, toggleLayoutMode, setSelectedZoneId,
     openDialog, openContextMenu, openDeckPanel, toggleSidebar, addLog,
+    setDeckDropInfo, setHoveredCard, setZoom,
   } = useUIStore(s => ({
     spatialLayout: s.spatialLayout,
     tone: s.tone,
@@ -75,6 +79,9 @@ export function Canvas({ onAddZone }: CanvasProps) {
     openDeckPanel: s.openDeckPanel,
     toggleSidebar: s.toggleSidebar,
     addLog: s.addLog,
+    setDeckDropInfo: s.setDeckDropInfo,
+    setHoveredCard: s.setHoveredCard,
+    setZoom: s.setZoom,
   }))
   const { cards: libraryCards, currentDeck: currentDeckFn } = useLibraryStore(s => ({
     cards: s.cards,
@@ -86,10 +93,23 @@ export function Canvas({ onAddZone }: CanvasProps) {
     z => z.window_id === 'board' && !z.source_zone_id && !z.ui_widget
   )
 
-  function getZonePos(zoneId: string, idx: number) {
-    if (spatialLayout[zoneId]) return spatialLayout[zoneId]
-    const entry = DEFAULT_LAYOUT.find(d => d.id === zoneId)
+  function getZonePos(zone: ZoneDefinition) {
+    if (spatialLayout[zone.id]) return spatialLayout[zone.id]
+    if (zone.grid_pos && boardWindow) {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const cellW = vw / boardWindow.grid_cols
+      const cellH = vh / boardWindow.grid_rows
+      return {
+        x: zone.grid_pos.col * cellW,
+        y: zone.grid_pos.row * cellH,
+        w: zone.grid_pos.col_span * cellW,
+        h: zone.grid_pos.row_span * cellH,
+      }
+    }
+    const entry = DEFAULT_LAYOUT.find(d => d.id === zone.id)
     if (entry) return { x: entry.x, y: entry.y, w: entry.w, h: entry.h }
+    const idx = boardZones.findIndex(z => z.id === zone.id)
     const col = idx % 3
     const row = Math.floor(idx / 3)
     return { x: 240 + col * 280, y: 80 + row * 220, w: 260, h: 200 }
@@ -100,7 +120,82 @@ export function Canvas({ onAddZone }: CanvasProps) {
     if (!zone) return
     const gc = findGameCard(zone.cards, card.instanceId)
     if (!gc) return
+    const zoneDef = layoutZones.find(z => z.id === zoneId)
+    if (zoneDef?.tappable) {
+      useGameStore.getState().tapCard(zoneId, card.instanceId)
+      addLog(`${gc.card.name} をタップ/アンタップ`)
+      return
+    }
     openContextMenu({ x: e.clientX, y: e.clientY, zoneId, cardInstanceId: card.instanceId, card: gc })
+  }
+
+  function handleCardContextMenu(zoneId: string, card: DisplayCard, e: MouseEvent) {
+    e.preventDefault()
+    const zone = gameZones[zoneId]
+    if (!zone) return
+    const gc = findGameCard(zone.cards, card.instanceId)
+    if (!gc) return
+    openContextMenu({ x: e.clientX, y: e.clientY, zoneId, cardInstanceId: card.instanceId, card: gc })
+  }
+
+  function handleCardHover(zoneId: string, card: DisplayCard | null, pos?: { x: number; y: number }) {
+    if (!card) {
+      setHoveredCard(null)
+      setZoom(null)
+      return
+    }
+    const zone = gameZones[zoneId]
+    const gc = zone ? findGameCard(zone.cards, card.instanceId) : undefined
+    if (!gc) return
+    setHoveredCard({ instanceId: card.instanceId, zoneId, cardName: gc.card.name })
+    if (pos && !card.masked && !card.faceDown) {
+      setZoom(gc, pos)
+    }
+  }
+
+  function parseDrag(e: DragEvent): { fromZoneId: string; instanceId: string } | null {
+    const raw = e.dataTransfer.getData('application/x-dmapp-card') || e.dataTransfer.getData('text/plain')
+    if (!raw) return null
+    try {
+      const parsed = JSON.parse(raw) as { fromZoneId?: string; instanceId?: string }
+      if (!parsed.fromZoneId || !parsed.instanceId) return null
+      return { fromZoneId: parsed.fromZoneId, instanceId: parsed.instanceId }
+    } catch {
+      return null
+    }
+  }
+
+  function handleCardDragStart(zoneId: string, card: DisplayCard, e: DragEvent) {
+    e.dataTransfer.effectAllowed = 'move'
+    const payload = JSON.stringify({ fromZoneId: zoneId, instanceId: card.instanceId })
+    e.dataTransfer.setData('application/x-dmapp-card', payload)
+    e.dataTransfer.setData('text/plain', payload)
+    setZoom(null)
+  }
+
+  function handleCardDrop(targetZoneId: string, e: DragEvent, targetInstanceId?: string) {
+    const payload = parseDrag(e)
+    if (!payload) return
+    e.preventDefault()
+    e.stopPropagation()
+    if (payload.instanceId === targetInstanceId) return
+
+    const targetZone = layoutZones.find(z => z.id === targetZoneId)
+    if (targetZoneId === 'deck' && payload.fromZoneId !== 'deck' && !targetInstanceId) {
+      setDeckDropInfo({ fromZoneId: payload.fromZoneId, instanceId: payload.instanceId })
+      return
+    }
+
+    if (targetInstanceId && !targetZone?.pile_mode) {
+      stackCard(payload.fromZoneId, payload.instanceId, targetZoneId, targetInstanceId)
+      addLog(`進化スタック → ${targetZone?.name ?? targetZoneId}`)
+      return
+    }
+
+    if (payload.fromZoneId !== targetZoneId) {
+      moveCard(payload.fromZoneId, payload.instanceId, targetZoneId)
+      addLog(`カード移動 → ${targetZone?.name ?? targetZoneId}`)
+    }
   }
 
   function flattenCards(gcs: GameCard[]): GameCard[] {
@@ -127,24 +222,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
 
   const t = TONE_TOKENS[tone]
 
-  // LayersPanel zone list (board zones + hand)
-  const handZone = layoutZones.find(z => z.id === 'hand')
-  const zonePanelList = [
-    ...boardZones.map(zone => ({
-      id: zone.id,
-      title: zone.name,
-      accent: getZoneAccent(zone.id, tone),
-      count: gameZones[zone.id]?.cards.length ?? 0,
-    })),
-    ...(handZone ? [{
-      id: 'hand',
-      title: handZone.name,
-      accent: t.zone.hand,
-      count: gameZones['hand']?.cards.length ?? 0,
-    }] : []),
-  ]
-
   // Hand zone cards for HandDock
+  const handZone = layoutZones.find(z => z.id === 'hand')
   const handCards: DisplayCard[] = (gameZones['hand']?.cards ?? []).map(gc =>
     mapToDisplayCard(gc, handZone ?? { id: 'hand', masked: false } as ZoneDefinition, t.zone.hand)
   )
@@ -161,7 +240,7 @@ export function Canvas({ onAddZone }: CanvasProps) {
         }
         const zone = layoutZones.find(z => z.id === selectedZoneId)
         if (!zone) return null
-        const pos = getZonePos(selectedZoneId, 0)
+        const pos = getZonePos(zone)
         return { id: zone.id, title: zone.name, ...pos }
       })()
     : null
@@ -189,15 +268,6 @@ export function Canvas({ onAddZone }: CanvasProps) {
         onToggleTone={() => setSpatialTone(tone === 'dusk' ? 'dawn' : 'dusk')}
       />
 
-      {/* Layers panel */}
-      <LayersPanel
-        zones={zonePanelList}
-        selected={selectedZoneId}
-        onSelect={setSelectedZoneId}
-        onAddZone={onAddZone}
-        layoutMode={layoutMode}
-      />
-
       {/* Inspector panel (layout mode) */}
       {layoutMode && (
         <InspectorPanel
@@ -208,8 +278,8 @@ export function Canvas({ onAddZone }: CanvasProps) {
       )}
 
       {/* Zone boxes */}
-      {boardZones.map((zone, idx) => {
-        const pos = getZonePos(zone.id, idx)
+      {boardZones.map((zone) => {
+        const pos = getZonePos(zone)
         const accent = getZoneAccent(zone.id, tone)
         const cards = (gameZones[zone.id]?.cards ?? []).map(gc => mapToDisplayCard(gc, zone, accent))
         return (
@@ -221,19 +291,22 @@ export function Canvas({ onAddZone }: CanvasProps) {
             accent={accent}
             cards={cards}
             variant={getZoneVariant(zone)}
+            cardScale={zone.masked ? 1 : 2}
             selected={selectedZoneId === zone.id}
             onSelect={setSelectedZoneId}
             onMove={(id, x, y) => {
-              const idx = boardZones.findIndex(z => z.id === id)
-              const cur = getZonePos(id, idx)
+              const cur = getZonePos(zone)
               updateZoneLayout(id, { x, y, w: cur.w, h: cur.h })
             }}
             onResize={(id, w, h) => {
-              const idx = boardZones.findIndex(z => z.id === id)
-              const cur = getZonePos(id, idx)
+              const cur = getZonePos(zone)
               updateZoneLayout(id, { x: cur.x, y: cur.y, w, h })
             }}
             onCardClick={(card, _i, e) => handleCardClick(zone.id, card, e)}
+            onCardContextMenu={(card, _i, e) => handleCardContextMenu(zone.id, card, e)}
+            onCardDragStart={(card, e) => handleCardDragStart(zone.id, card, e)}
+            onCardDrop={(e, targetInstanceId) => handleCardDrop(zone.id, e, targetInstanceId)}
+            onCardHover={(card, pos) => handleCardHover(zone.id, card, pos)}
             layoutMode={layoutMode}
           />
         )
@@ -243,6 +316,10 @@ export function Canvas({ onAddZone }: CanvasProps) {
       <HandDock
         cards={handCards}
         onCardClick={(card, _i, e) => handleCardClick('hand', card, e)}
+        onCardContextMenu={(card, _i, e) => handleCardContextMenu('hand', card, e)}
+        onCardDragStart={(card, e) => handleCardDragStart('hand', card, e)}
+        onCardDrop={(e, targetInstanceId) => handleCardDrop('hand', e, targetInstanceId)}
+        onCardHover={(card, pos) => handleCardHover('hand', card, pos)}
         layoutMode={layoutMode}
         position={handPos}
         selected={selectedZoneId === 'hand'}

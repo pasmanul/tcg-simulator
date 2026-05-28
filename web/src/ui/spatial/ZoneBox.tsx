@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { ReactNode, MouseEvent } from 'react'
+import { useRef, useState } from 'react'
+import type { DragEvent, ReactNode, MouseEvent } from 'react'
 
 export interface DisplayCard {
   instanceId: string
@@ -22,19 +22,25 @@ interface ZoneBoxProps {
   accent?: string
   cards?: DisplayCard[]
   variant?: 'tiles' | 'pile' | 'list'
+  cardScale?: number
   selected?: boolean
   layoutMode?: boolean
   onSelect?: (id: string) => void
   onMove?: (id: string, x: number, y: number) => void
   onResize?: (id: string, w: number, h: number) => void
   onCardClick?: (card: DisplayCard, index: number, e: MouseEvent) => void
+  onCardContextMenu?: (card: DisplayCard, index: number, e: MouseEvent) => void
+  onCardDragStart?: (card: DisplayCard, e: DragEvent) => void
+  onCardDrop?: (e: DragEvent, targetInstanceId?: string) => void
+  onCardHover?: (card: DisplayCard | null, pos?: { x: number; y: number }) => void
   headerExtras?: ReactNode
 }
 
 export function ZoneBox({
   id, x, y, w, h, title, accent,
-  cards = [], variant = 'tiles',
-  selected, onSelect, onMove, onResize, onCardClick,
+  cards = [], variant = 'tiles', cardScale = 1,
+  selected, onSelect, onMove, onResize, onCardClick, onCardContextMenu,
+  onCardDragStart, onCardDrop, onCardHover,
   layoutMode, headerExtras,
 }: ZoneBoxProps) {
 
@@ -72,6 +78,15 @@ export function ZoneBox({
         overflow: 'hidden',
       }}
       onMouseDown={() => onSelect?.(id)}
+      onDragOver={(e) => {
+        if (layoutMode) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+      }}
+      onDrop={(e) => {
+        if (layoutMode) return
+        onCardDrop?.(e)
+      }}
     >
       {/* Header */}
       <div
@@ -105,8 +120,29 @@ export function ZoneBox({
       {/* Body */}
       <div style={{ flex: 1, padding: 'var(--space-3)', overflow: 'hidden', minHeight: 0 }}>
         {variant === 'pile' && <PileView cards={cards} accent={accent} />}
-        {variant === 'tiles' && <TilesView cards={cards} onCardClick={onCardClick} />}
-        {variant === 'list' && <ListView cards={cards} onCardClick={onCardClick} />}
+        {variant === 'tiles' && (
+          <TilesView
+            cards={cards}
+            cardScale={cardScale}
+            onCardClick={onCardClick}
+            onCardContextMenu={onCardContextMenu}
+            onCardDragStart={onCardDragStart}
+            onCardDrop={onCardDrop}
+            onCardHover={onCardHover}
+            layoutMode={layoutMode}
+          />
+        )}
+        {variant === 'list' && (
+          <ListView
+            cards={cards}
+            onCardClick={onCardClick}
+            onCardContextMenu={onCardContextMenu}
+            onCardDragStart={onCardDragStart}
+            onCardDrop={onCardDrop}
+            onCardHover={onCardHover}
+            layoutMode={layoutMode}
+          />
+        )}
       </div>
 
       {/* Resize handle */}
@@ -172,9 +208,24 @@ function PileView({ cards, accent }: { cards: DisplayCard[]; accent?: string }) 
   )
 }
 
-function TilesView({ cards, onCardClick }: {
+function TilesView({
+  cards,
+  cardScale = 1,
+  onCardClick,
+  onCardContextMenu,
+  onCardDragStart,
+  onCardDrop,
+  onCardHover,
+  layoutMode,
+}: {
   cards: DisplayCard[]
+  cardScale?: number
   onCardClick?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardContextMenu?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardDragStart?: (c: DisplayCard, e: DragEvent) => void
+  onCardDrop?: (e: DragEvent, targetInstanceId?: string) => void
+  onCardHover?: (c: DisplayCard | null, pos?: { x: number; y: number }) => void
+  layoutMode?: boolean
 }) {
   if (cards.length === 0) return <EmptyHint label="drag cards here" />
   return (
@@ -183,21 +234,52 @@ function TilesView({ cards, onCardClick }: {
       alignContent: 'flex-start', height: '100%', overflow: 'auto',
     }}>
       {cards.map((c, i) => (
-        <MiniCard key={c.instanceId} card={c} onClick={(e) => onCardClick?.(c, i, e)} />
+        <MiniCard
+          key={c.instanceId}
+          card={c}
+          scale={cardScale}
+          draggable={!layoutMode}
+          onClick={(e) => onCardClick?.(c, i, e)}
+          onContextMenu={(e) => onCardContextMenu?.(c, i, e)}
+          onDragStart={(e) => onCardDragStart?.(c, e)}
+          onDrop={(e) => onCardDrop?.(e, c.instanceId)}
+          onHover={(pos) => onCardHover?.(c, pos)}
+          onHoverEnd={() => onCardHover?.(null)}
+        />
       ))}
     </div>
   )
 }
 
-function ListView({ cards, onCardClick }: {
+function ListView({
+  cards,
+  onCardClick,
+  onCardContextMenu,
+  onCardDragStart,
+  onCardDrop,
+  onCardHover,
+  layoutMode,
+}: {
   cards: DisplayCard[]
   onCardClick?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardContextMenu?: (c: DisplayCard, i: number, e: MouseEvent) => void
+  onCardDragStart?: (c: DisplayCard, e: DragEvent) => void
+  onCardDrop?: (e: DragEvent, targetInstanceId?: string) => void
+  onCardHover?: (c: DisplayCard | null, pos?: { x: number; y: number }) => void
+  layoutMode?: boolean
 }) {
   if (cards.length === 0) return <EmptyHint label="—" />
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%', overflow: 'auto' }}>
       {cards.map((c, i) => (
-        <button key={c.instanceId} onClick={(e) => onCardClick?.(c, i, e)} style={{
+        <button key={c.instanceId}
+        draggable={!layoutMode}
+        onClick={(e) => onCardClick?.(c, i, e)}
+        onContextMenu={(e) => onCardContextMenu?.(c, i, e)}
+        onDragStart={(e) => onCardDragStart?.(c, e)}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+        onDrop={(e) => onCardDrop?.(e, c.instanceId)}
+        style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 8px',
           background: 'transparent', border: 'none',
@@ -206,8 +288,16 @@ function ListView({ cards, onCardClick }: {
           textAlign: 'left', cursor: 'pointer',
           transition: 'background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease)',
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--sp-surface-2)'; e.currentTarget.style.transform = 'translateX(4px)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none' }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'var(--sp-surface-2)'
+          e.currentTarget.style.transform = 'translateX(4px)'
+          onCardHover?.(c)
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.transform = 'none'
+          onCardHover?.(null)
+        }}
         >
           <span style={{
             width: 4, height: 4, borderRadius: '50%',
@@ -234,17 +324,56 @@ function EmptyHint({ label }: { label: string }) {
   )
 }
 
-function MiniCard({ card, onClick }: { card: DisplayCard; onClick: (e: MouseEvent) => void }) {
+function MiniCard({
+  card,
+  scale = 1,
+  draggable,
+  onClick,
+  onContextMenu,
+  onDragStart,
+  onDrop,
+  onHover,
+  onHoverEnd,
+}: {
+  card: DisplayCard
+  scale?: number
+  draggable?: boolean
+  onClick: (e: MouseEvent) => void
+  onContextMenu?: (e: MouseEvent) => void
+  onDragStart?: (e: DragEvent) => void
+  onDrop?: (e: DragEvent) => void
+  onHover?: (pos?: { x: number; y: number }) => void
+  onHoverEnd?: () => void
+}) {
   const [hover, setHover] = useState(false)
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lift = card.tapped ? 'rotate(90deg)' : hover ? 'translateY(-5px)' : 'none'
+  const w = Math.round(56 * scale)
+  const h = Math.round(78 * scale)
+  const fs = Math.round(8 * scale)
   return (
     <button
+      draggable={draggable}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
+      onDragStart={onDragStart}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+      onDrop={onDrop}
+      onMouseEnter={(e) => {
+        setHover(true)
+        if (zoomTimer.current) clearTimeout(zoomTimer.current)
+        const pos = { x: e.clientX, y: e.clientY }
+        onHover?.()
+        zoomTimer.current = setTimeout(() => onHover?.(pos), 500)
+      }}
+      onMouseLeave={() => {
+        setHover(false)
+        if (zoomTimer.current) { clearTimeout(zoomTimer.current); zoomTimer.current = null }
+        onHoverEnd?.()
+      }}
       title={card.masked || card.faceDown ? '?' : card.name}
       style={{
-        width: 56, height: 78,
+        width: w, height: h,
         background: card.imageData
           ? `url(${card.imageData}) center/cover no-repeat`
           : 'var(--sp-card-bg)',
@@ -264,28 +393,28 @@ function MiniCard({ card, onClick }: { card: DisplayCard; onClick: (e: MouseEven
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-mono)', fontSize: 9,
+          fontFamily: 'var(--font-mono)', fontSize: Math.round(9 * scale),
           color: 'var(--sp-text-3)', letterSpacing: '0.1em',
           background: 'var(--sp-card-bg)',
         }}>TCG</div>
       ) : !card.imageData ? (
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-            <span style={{ fontSize: 8, fontWeight: 600, color: 'var(--sp-text)', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: fs, fontWeight: 600, color: 'var(--sp-text)', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {card.name}
             </span>
             {card.cost != null && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: card.titleFg || 'var(--sp-text-2)', flexShrink: 0 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: fs, color: card.titleFg || 'var(--sp-text-2)', flexShrink: 0 }}>
                 {card.cost}
               </span>
             )}
           </div>
           <div style={{
-            height: 28, borderRadius: 3,
+            height: Math.round(28 * scale), borderRadius: 3,
             background: card.glow || 'var(--sp-surface-3)',
             opacity: 0.6,
           }} />
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: 'var(--sp-text-3)', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: Math.round(7 * scale), color: 'var(--sp-text-3)', textTransform: 'uppercase' }}>
             {card.civ}
           </div>
         </>
@@ -295,7 +424,7 @@ function MiniCard({ card, onClick }: { card: DisplayCard; onClick: (e: MouseEven
         <div style={{
           position: 'absolute', bottom: 2, right: 2,
           background: '#f97316', color: '#fff',
-          borderRadius: 4, fontSize: 7, fontFamily: 'var(--font-mono)',
+          borderRadius: 4, fontSize: Math.round(7 * scale), fontFamily: 'var(--font-mono)',
           padding: '1px 3px', lineHeight: 1,
         }}>{card.stackCount}</div>
       )}

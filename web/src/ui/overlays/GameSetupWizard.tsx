@@ -4,6 +4,7 @@ import { useLayoutStore } from '../../store/layoutStore'
 import { useUIStore } from '../../store/uiStore'
 import type { FieldDef, GameProfile, GameConfigJson } from '../../domain/types'
 import defaultBoardConfig from '../../assets/gameConfig.json'
+import { GAME_TEMPLATES } from '../../assets/templates'
 import { BoardEditorDialog } from './BoardEditorDialog'
 import { FieldCard, labelToId, ensureUniqueId } from './fieldDefShared'
 import { useSkin } from '../skin/SkinContext'
@@ -81,6 +82,18 @@ export function GameSetupWizard() {
   const [showBoardEditor, setShowBoardEditor] = useState(false)
   const [step, setStep] = useState(0)
   const [nameError, setNameError] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+
+  function applyTemplate(templateId: string) {
+    const t = GAME_TEMPLATES.find(t => t.id === templateId)
+    if (!t) return
+    setSelectedTemplate(templateId)
+    if (!gameName.trim()) setGameName(t.name)
+    setMaxDeckSize(t.deckRules.maxDeckSize ? String(t.deckRules.maxDeckSize) : '')
+    setMaxCopies(t.deckRules.maxCopies ? String(t.deckRules.maxCopies) : '')
+    setFieldDefs(t.fieldDefs.map(f => ({ ...f })))
+    setBoardConfig(t.boardConfig)
+  }
 
   if (activeDialog !== 'setup-wizard') return null
 
@@ -164,9 +177,42 @@ export function GameSetupWizard() {
         {/* ──────── Step 0: 基本情報 ──────── */}
         {step === 0 && (
           <div className="flex flex-col gap-1">
-            <p className="font-body text-xs mb-4" style={{ color: 'var(--muted)' }}>
-              新しいゲームの基本情報を設定します。
+            <p className="font-body text-xs mb-3" style={{ color: 'var(--muted)' }}>
+              テンプレートを選ぶか、手動で設定します。
             </p>
+
+            <div className="mb-4">
+              <div className="font-body text-[10px] mb-1.5" style={{ color: 'var(--muted)' }}>テンプレートから始める:</div>
+              <div className="grid grid-cols-2 gap-2">
+                {GAME_TEMPLATES.map(t => {
+                  const active = selectedTemplate === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => applyTemplate(t.id)}
+                      className="text-left rounded-lg p-3 cursor-pointer transition-all"
+                      style={{
+                        border: `1px solid ${active ? 'var(--cyan)' : 'var(--border)'}`,
+                        background: active ? 'rgba(var(--cyan-rgb),0.08)' : 'var(--surface2)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className="font-mono text-[9px] px-1.5 py-0.5 rounded"
+                          style={{ background: active ? 'var(--cyan)' : 'var(--surface1)', color: active ? 'var(--bg)' : 'var(--muted)' }}
+                        >
+                          {t.icon}
+                        </span>
+                        <span className="font-body text-xs font-semibold" style={{ color: active ? 'var(--cyan)' : 'var(--text)' }}>
+                          {t.name}
+                        </span>
+                      </div>
+                      <p className="font-body text-[10px]" style={{ color: 'var(--muted)' }}>{t.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
             <Input
               label="ゲーム名 *"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode, type MouseEvent } from 'react'
+import { useState, useEffect, useRef, type DragEvent, type ReactNode, type MouseEvent } from 'react'
 import type { DisplayCard } from './ZoneBox'
 
 // ─────────────────────────────────────────────────────────
@@ -236,6 +236,10 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
 interface HandDockProps {
   cards: DisplayCard[]
   onCardClick?: (card: DisplayCard, index: number, e: MouseEvent) => void
+  onCardContextMenu?: (card: DisplayCard, index: number, e: MouseEvent) => void
+  onCardDragStart?: (card: DisplayCard, e: DragEvent) => void
+  onCardDrop?: (e: DragEvent, targetInstanceId?: string) => void
+  onCardHover?: (card: DisplayCard | null, pos?: { x: number; y: number }) => void
   layoutMode?: boolean
   position?: { x: number; y: number; w: number; h: number }
   onInitPosition?: (x: number, y: number, w: number, h: number) => void
@@ -245,7 +249,21 @@ interface HandDockProps {
   onSelect?: () => void
 }
 
-export function HandDock({ cards, onCardClick, layoutMode, position, onInitPosition, onMove, onResize, selected, onSelect }: HandDockProps) {
+export function HandDock({
+  cards,
+  onCardClick,
+  onCardContextMenu,
+  onCardDragStart,
+  onCardDrop,
+  onCardHover,
+  layoutMode,
+  position,
+  onInitPosition,
+  onMove,
+  onResize,
+  selected,
+  onSelect,
+}: HandDockProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // layoutMode ON かつ position 未設定 → DOM rect から即座に確定させる
@@ -317,14 +335,28 @@ export function HandDock({ cards, onCardClick, layoutMode, position, onInitPosit
           color: 'var(--sp-text-3)', marginLeft: 'auto',
         }}>{cards.length}</span>
       </div>
-      <div style={{ display: 'flex', gap: 6, overflow: 'auto', padding: 12, flex: 1, minHeight: 80, alignItems: 'flex-start' }}>
+      <div
+        onDragOver={(e) => { if (!layoutMode) { e.preventDefault(); e.dataTransfer.dropEffect = 'move' } }}
+        onDrop={(e) => { if (!layoutMode) onCardDrop?.(e) }}
+        style={{ display: 'flex', gap: 6, overflow: 'auto', padding: 12, flex: 1, minHeight: 80, alignItems: 'flex-start' }}
+      >
         {cards.length === 0 ? (
           <div style={{
             width: 320, display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--sp-text-3)', fontSize: 'var(--fs-xs)', fontStyle: 'italic',
           }}>empty hand — press ↓ to draw</div>
         ) : cards.map((c, i) => (
-          <BigCard key={c.instanceId} card={c} onClick={(e) => onCardClick?.(c, i, e)} />
+          <BigCard
+            key={c.instanceId}
+            card={c}
+            draggable={!layoutMode}
+            onClick={(e) => onCardClick?.(c, i, e)}
+            onContextMenu={(e) => onCardContextMenu?.(c, i, e)}
+            onDragStart={(e) => onCardDragStart?.(c, e)}
+            onDrop={(e) => onCardDrop?.(e, c.instanceId)}
+            onHover={(pos) => onCardHover?.(c, pos)}
+            onHoverEnd={() => onCardHover?.(null)}
+          />
         ))}
       </div>
       {/* Resize handle */}
@@ -342,13 +374,47 @@ export function HandDock({ cards, onCardClick, layoutMode, position, onInitPosit
   )
 }
 
-function BigCard({ card, onClick }: { card: DisplayCard; onClick: (e: MouseEvent) => void }) {
+function BigCard({
+  card,
+  draggable,
+  onClick,
+  onContextMenu,
+  onDragStart,
+  onDrop,
+  onHover,
+  onHoverEnd,
+}: {
+  card: DisplayCard
+  draggable?: boolean
+  onClick: (e: MouseEvent) => void
+  onContextMenu?: (e: MouseEvent) => void
+  onDragStart?: (e: DragEvent) => void
+  onDrop?: (e: DragEvent) => void
+  onHover?: (pos?: { x: number; y: number }) => void
+  onHoverEnd?: () => void
+}) {
   const [hover, setHover] = useState(false)
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   return (
     <button
+      draggable={draggable}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
+      onDragStart={onDragStart}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+      onDrop={onDrop}
+      onMouseEnter={(e) => {
+        setHover(true)
+        if (zoomTimer.current) clearTimeout(zoomTimer.current)
+        const pos = { x: e.clientX, y: e.clientY }
+        onHover?.()
+        zoomTimer.current = setTimeout(() => onHover?.(pos), 500)
+      }}
+      onMouseLeave={() => {
+        setHover(false)
+        if (zoomTimer.current) { clearTimeout(zoomTimer.current); zoomTimer.current = null }
+        onHoverEnd?.()
+      }}
       title={card.masked || card.faceDown ? '?' : card.name}
       style={{
         width: 72, height: 100,
